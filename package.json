@@ -1,0 +1,14 @@
+{
+  "name": "training-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "telegraf": "^4.12.2",
+    "sequelize": "^6.32.1",
+    "sqlite3": "^5.1.6",
+    "quickchart-js": "^3.1.0"
+  }
+}
