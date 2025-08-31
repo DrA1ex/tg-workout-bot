@@ -32,12 +32,14 @@ export default {
         selectExercise: 'Выберите упражнение:',
         selectedExercise: 'Выбрано упражнение: *{{exercise}}*',
         reuseLastSet: 'Использовать параметры последней тренировки?\n{{lastSet}}',
+        useLastValues: 'Использовать прошлые',
+        useNewValues: 'Указать новые',
         enterSets: 'Введите количество подходов:',
         enterWeight: 'Введите вес (кг):',
         enterReps: 'Введите количество повторений:',
         enterTime: 'Введите время в секундах:',
         isTimeQuestion: 'Это упражнение на время?',
-        workoutSaved: 'Тренировка сохранена!'
+        workoutSaved: 'Тренировка сохранена!',
     },
 
     // Add exercise flow

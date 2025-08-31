@@ -73,9 +73,12 @@ export function* addWorkout(state) {
         const lastSetInfo = lastWorkout.formatString(language);
 
         const reuse = yield requestChoice(
-            state,
-            {reuse: "Use last values", new: "Enter new", cancel: _('buttons.cancel')},
-            `${language === 'en' ? 'Last workout' : 'Последняя тренировка'}: ${lastSetInfo}\n${language === 'en' ? 'Use these values or enter new ones?' : 'Хотите использовать эти данные или ввести новые?'}`
+            state, {
+                reuse: _('addWorkout.useLastValues'),
+                new: _('addWorkout.useNewValues'),
+                cancel: _('buttons.cancel')
+            },
+            _('addWorkout.reuseLastSet', {lastSet: lastSetInfo})
         );
 
         if (reuse === "cancel") return yield cancelled(state);

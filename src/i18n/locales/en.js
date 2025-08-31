@@ -32,6 +32,8 @@ export default {
         selectExercise: 'Select exercise:',
         selectedExercise: 'Selected exercise: *{{exercise}}*',
         reuseLastSet: 'Use parameters from last workout?\n{{lastSet}}',
+        useLastValues: 'Use previous',
+        useNewValues: 'Enter new',
         enterSets: 'Enter number of sets:',
         enterWeight: 'Enter weight (kg):',
         enterReps: 'Enter number of reps:',
