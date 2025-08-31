@@ -1,3 +1,4 @@
+import * as dotenv from "dotenv";
 import {Telegraf} from "telegraf";
 import {startFlow, handleTextMessage, handleCallbackQuery} from "./runtime/index.js";
 
@@ -10,6 +11,7 @@ import * as tg from "telegraf/filters";
 import {viewWorkouts} from "./flows/view_workout.js";
 import {createMainKeyboard, getUserLanguage, t} from "./i18n/index.js";
 
+dotenv.config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 bot.start(async (ctx) => {
