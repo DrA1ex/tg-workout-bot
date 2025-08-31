@@ -24,7 +24,7 @@ bot.start(async (ctx) => {
 // Handle localized button presses
 bot.on(tg.message("text"), async ctx => {
     const messageText = ctx.message.text;
-    const {_, language} = await getUserLanguage(ctx.from.id);
+    const {_} = await getUserLanguage(ctx.from.id);
 
     // Check for button matches in current language
     if (messageText === _('buttons.addWorkout')) {

@@ -1,5 +1,3 @@
-import {getUserLanguage, t} from "../i18n/index.js";
-
 /**
  * Simple string request from user
  * opts: { validator?: (string) => boolean }

@@ -1,11 +1,11 @@
 import {models} from "../db/index.js";
 import {requestChoice, response, cancelled} from "../runtime/primitives.js";
 import {startFlow} from "../runtime/index.js";
-import {getUserLanguage, t} from "../i18n/index.js";
+import {getUserLanguage} from "../i18n/index.js";
 
 const PER_PAGE = 10;
 
-export function* deleteWorkout(state, ctx) {
+export function* deleteWorkout(state) {
     const {_, language} = yield getUserLanguage(state.telegramId);
         
     // 1. Get all dates with workouts

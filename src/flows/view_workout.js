@@ -1,10 +1,10 @@
 import {models} from "../db/index.js";
 import {requestChoice, response, cancelled} from "../runtime/primitives.js";
-import {getUserLanguage, t} from "../i18n/index.js";
+import {getUserLanguage} from "../i18n/index.js";
 
 const PER_PAGE = 10;
 
-export function* viewWorkouts(state, ctx) {
+export function* viewWorkouts(state) {
     const {_, language} = yield getUserLanguage(state.telegramId);
         
     // 1. Get list of dates

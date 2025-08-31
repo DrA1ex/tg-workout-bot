@@ -1,7 +1,7 @@
 import {models} from "../db/index.js";
 import {requestChoice, response, cancelled, responseMarkdown} from "../runtime/primitives.js";
 import QuickChart from "quickchart-js";
-import {getUserLanguage, t, formatDate} from "../i18n/index.js";
+import {getUserLanguage, formatDate} from "../i18n/index.js";
 
 function _dt(row, language = 'ru') {
     return formatDate(new Date(row.get("date")), language);

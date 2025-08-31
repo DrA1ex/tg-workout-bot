@@ -1,7 +1,7 @@
 // src/runtime/index.js
 import {Markup} from "telegraf";
 import {generateCalendar} from "../modules/calendar.js";
-import {getUserLanguage, t} from "../i18n/index.js";
+import {getUserLanguage} from "../i18n/index.js";
 
 /**
  * Sessions (in memory)

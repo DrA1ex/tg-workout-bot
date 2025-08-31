@@ -6,7 +6,7 @@ import {
     responseMarkdown
 } from "../runtime/primitives.js";
 import {models} from "../db/index.js";
-import {getUserLanguage, t, formatDate} from "../i18n/index.js";
+import {getUserLanguage, formatDate} from "../i18n/index.js";
 
 function* requestStringWorkoutFiled(state, label, validator = undefined, skip = false) {
     const {_} = yield getUserLanguage(state.telegramId);
