@@ -11,6 +11,7 @@ import {timezoneSettings} from "./flows/timezone.js";
 import * as tg from "telegraf/filters";
 import {viewWorkouts} from "./flows/view_workout.js";
 import {createMainKeyboard, getUserLanguage, t} from "./i18n/index.js";
+import {myExercises} from "./flows/my_exercises.js";
 
 dotenv.config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
@@ -36,6 +37,7 @@ bot.on(tg.message("text"), async ctx => {
         [_('buttons.showProgress')]: showProgress,
         [_('buttons.language')]: selectLanguage,
         [_('buttons.timezone')]: timezoneSettings,
+        [_('buttons.myExercises')]: myExercises,
     };
 
     const fn = menus[messageText];

@@ -11,16 +11,17 @@ export default {
         addWorkout: 'Add Workout',
         addExercise: 'Add Exercise',
         viewWorkout: 'View Workouts',
-        deleteWorkout: 'Delete Workout',
+        deleteWorkout: 'Delete Workouts',
         showProgress: 'Show Progress',
         language: 'Language',
         timezone: 'Timezone',
-        cancel: 'Cancel',
+        myExercises: 'My Exercises',
         today: 'Today',
         pickDate: 'Pick Date',
+        cancel: 'Cancel',
         skip: 'Skip',
-        previous: '< Previous',
-        next: 'Next >',
+        previous: '← Previous',
+        next: 'Next →',
         deleteAll: '❌ Delete All'
     },
 
@@ -44,6 +45,16 @@ export default {
         workoutAddedLastValues: 'Workout added using *last values*!',
         enterRepsOrTime: 'Enter reps or time (add "s" for seconds):',
         enterNotes: 'Enter notes (or skip):'
+    },
+
+    // My exercises flow
+    myExercises: {
+        title: 'My Exercises',
+        noExercises: 'You don\'t have any exercises yet.',
+        exerciseList: 'Your exercises list:',
+        exerciseItemWithNotes: '• *{{name}}* - {{notes}}',
+        exerciseItemWithoutNotes: '• *{{name}}*',
+        backToMenu: 'Back to menu'
     },
 
     // Add exercise flow

@@ -15,9 +15,10 @@ export default {
         showProgress: 'Посмотреть прогресс',
         language: 'Язык',
         timezone: 'Часовой пояс',
-        cancel: 'Отменить',
+        myExercises: 'Мои упражнения',
         today: 'Сегодня',
         pickDate: 'Выбрать дату',
+        cancel: 'Отмена',
         skip: 'Пропустить',
         previous: '< Предыдущая',
         next: 'Следующая >',
@@ -44,6 +45,16 @@ export default {
         workoutAddedLastValues: 'Тренировка добавлена используя *последние значения*!',
         enterRepsOrTime: 'Введите повторения или время (добавьте "с" для секунд):',
         enterNotes: 'Введите примечания (или пропустите):'
+    },
+
+    // My exercises flow
+    myExercises: {
+        title: 'Мои упражнения',
+        noExercises: 'У вас пока нет упражнений.',
+        exerciseList: 'Список ваших упражнений:',
+        exerciseItemWithNotes: '• *{{name}}* - {{notes}}',
+        exerciseItemWithoutNotes: '• *{{name}}*',
+        backToMenu: 'Вернуться в меню'
     },
 
     // Add exercise flow

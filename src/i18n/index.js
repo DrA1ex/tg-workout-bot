@@ -97,7 +97,7 @@ export function formatDate(date, language = 'en', timezone = 'UTC', options = {}
  */
 export function createMainKeyboard(language) {
     return Markup.keyboard([
-        [t(language, 'buttons.addWorkout'), t(language, 'buttons.addExercise')],
+        [t(language, 'buttons.addWorkout'), t(language, 'buttons.addExercise'), t(language, 'buttons.myExercises')],
         [t(language, 'buttons.viewWorkout'), t(language, 'buttons.showProgress'), t(language, 'buttons.deleteWorkout')],
         [t(language, 'buttons.language'), t(language, 'buttons.timezone')]
     ]).resize();
