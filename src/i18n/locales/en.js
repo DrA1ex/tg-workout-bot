@@ -43,6 +43,10 @@ export default {
         isTimeQuestion: 'Is this a time-based exercise?',
         workoutSaved: 'Workout saved!',
         workoutAddedLastValues: 'Workout added using *last values*!',
+        addAnother: 'Add another workout for the same date?',
+        yes: 'Yes, add another',
+        no: 'No, finish',
+        scenarioCompleted: 'Workout(s) have been added.',
         enterRepsOrTime: 'Enter reps or time (add "s" for seconds):',
         enterNotes: 'Enter notes (or skip):'
     },

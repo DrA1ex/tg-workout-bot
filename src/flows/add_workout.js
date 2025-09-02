@@ -20,35 +20,17 @@ function* requestStringWorkoutFiled(state, label, validator = undefined, skip = 
     return value;
 }
 
-export function* addWorkout(state) {
-    const {_, language} = yield getUserLanguage(state.telegramId);
+// Helper function to add a single workout
+function* addSingleWorkout(state, workoutDate, timezone, language) {
+    const {_} = yield getUserLanguage(state.telegramId);
 
-    const user = yield UserDAO.findByTelegramId(state.telegramId);
-    const timezone = user?.timezone || 'UTC';
-
-    // 1. Date selection
-    const dateChoice = yield requestChoice(
-        state,
-        {today: _('buttons.today'), pick: _('buttons.pickDate'), cancel: _('buttons.cancel')},
-        _('addWorkout.selectDate')
-    );
-
-    if (dateChoice === "cancel") return yield cancelled(state);
-
-    let workoutDate = getCurrentDateInTimezone(timezone);
-    if (dateChoice === "pick") {
-        workoutDate = yield requestDate(state, _('addWorkout.pickDate'));
-    }
-
-    yield responseMarkdown(state, _('addWorkout.selectedDate', {date: formatDate(workoutDate, language, timezone)}));
-
-    // 2. Exercise selection
+    // Exercise selection
     const exercises = yield ExerciseDAO.getUserExercises(state.telegramId);
     const exerciseNames = exercises.map(e => (typeof e === "string" ? e : e.name));
 
     if (!exerciseNames.length) {
         yield response(state, _('addWorkout.noExercises'));
-        return;
+        return false;
     }
 
     const exOptions = exerciseNames.reduce((acc, ex, idx) => {
@@ -62,7 +44,7 @@ export function* addWorkout(state) {
 
     yield responseMarkdown(state, _('addWorkout.selectedExercise', {exercise}));
 
-    // 3. Suggest using last workout parameters
+    // Suggest using last workout parameters
     const lastWorkout = yield WorkoutDAO.getLastWorkout(state.telegramId, exercise);
 
     if (lastWorkout) {
@@ -92,11 +74,11 @@ export function* addWorkout(state) {
             });
 
             yield responseMarkdown(state, _('addWorkout.workoutAddedLastValues'));
-            return;
+            return true;
         }
     }
 
-    // 4. Enter new data
+    // Enter new data
     const sets = yield* requestStringWorkoutFiled(state, _('addWorkout.enterSets'), txt => !isNaN(parseInt(txt)));
     const weightInput = yield* requestStringWorkoutFiled(state, _('addWorkout.enterWeight'), txt => !isNaN(parseFloat(txt)), true);
 
@@ -105,7 +87,7 @@ export function* addWorkout(state) {
     let repsOrTime = repsInput.trim();
     if (repsOrTime.endsWith("s") || repsOrTime.endsWith("с")) {
         isTime = true;
-        repsOrTime = repsOrTime.slice(0, -1);
+        repsOrTime = repsInput.slice(0, -1);
     }
     const reps = parseFloat(repsOrTime);
 
@@ -123,4 +105,54 @@ export function* addWorkout(state) {
     });
 
     yield response(state, _('addWorkout.workoutSaved'));
+    return true;
+}
+
+export function* addWorkout(state) {
+    const {_, language} = yield getUserLanguage(state.telegramId);
+
+    const user = yield UserDAO.findByTelegramId(state.telegramId);
+    const timezone = user?.timezone || 'UTC';
+
+    // 1. Date selection
+    const dateChoice = yield requestChoice(
+        state,
+        {today: _('buttons.today'), pick: _('buttons.pickDate'), cancel: _('buttons.cancel')},
+        _('addWorkout.selectDate')
+    );
+
+    if (dateChoice === "cancel") return yield cancelled(state);
+
+    let workoutDate = getCurrentDateInTimezone(timezone);
+    if (dateChoice === "pick") {
+        workoutDate = yield requestDate(state, _('addWorkout.pickDate'));
+    }
+
+    yield responseMarkdown(state, _('addWorkout.selectedDate', {date: formatDate(workoutDate, language, timezone)}));
+
+    // 2. Add workouts loop
+    while (true) {
+        const success = yield* addSingleWorkout(state, workoutDate, timezone, language);
+
+        if (!success) {
+            break; // Exit if workout addition failed
+        }
+
+        // Ask if user wants to add another workout
+        const addAnother = yield requestChoice(
+            state,
+            {
+                yes: _('addWorkout.yes'),
+                no: _('addWorkout.no'),
+            },
+            _('addWorkout.addAnother')
+        );
+
+        if (addAnother === "no") {
+            yield response(state, _('addWorkout.scenarioCompleted'));
+            break;
+        }
+
+        // If "yes", continue the loop
+    }
 }
