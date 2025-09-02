@@ -12,9 +12,9 @@ import {skipError} from "./session-manager.js";
 export async function handleCalendarDay(ctx, session, data) {
     const dayRe = /^calendar_day_([^_]+)_(\d{4})-(\d{2})-(\d{2})$/;
     const m = data.match(dayRe);
-    
+
     if (!m) return false;
-    
+
     const [, prefix, y, mm, dd] = m;
     if (session.pending.prefix !== prefix) {
         await ctx.answerCbQuery();
@@ -23,7 +23,7 @@ export async function handleCalendarDay(ctx, session, data) {
 
     session.pending = null;
     await ctx.editMessageReplyMarkup({inline_keyboard: []}).catch(skipError);
-    await ctx.answerCbQuery();
+    await ctx.answerCbQuery().catch(skipError);
 
     // Return the selected date for processing
     return new Date(Number(y), Number(mm) - 1, Number(dd));
@@ -35,15 +35,15 @@ export async function handleCalendarDay(ctx, session, data) {
 export async function handleCalendarMonth(ctx, session, data) {
     const monthRe = /^calendar_month_([^_]+)_(-?\d+)_(-?\d+)$/;
     const m = data.match(monthRe);
-    
+
     if (!m) return false;
-    
+
     const [, prefix, targetYearStr, targetMonthStr] = m;
     if (session.pending.prefix !== prefix) {
         await ctx.answerCbQuery();
         return false; // Not our calendar - ignore
     }
-    
+
     const targetYear = Number(targetYearStr);
     const targetMonth = Number(targetMonthStr);
 
@@ -76,7 +76,7 @@ export async function handleCalendarMonth(ctx, session, data) {
         console.error("[runtime] editMessageReplyMarkup error:", err);
         await ctx.answerCbQuery().catch(skipError);
     }
-    
+
     return true; // Month was updated
 }
 
@@ -86,9 +86,9 @@ export async function handleCalendarMonth(ctx, session, data) {
 export async function handleCalendarCancel(ctx, session, data) {
     const cancelRe = /^calendar_cancel_([^_]+)$/;
     const m = data.match(cancelRe);
-    
+
     if (!m) return false;
-    
+
     const [, prefix] = m;
     if (session.pending.prefix !== prefix) {
         await ctx.answerCbQuery();
@@ -118,7 +118,7 @@ export async function handleCalendarCancel(ctx, session, data) {
  * Check if data is a calendar event
  */
 export function isCalendarEvent(data) {
-    return data.startsWith('calendar_');
+    return typeof data === "string" ? data.startsWith('calendar_') : false;
 }
 
 /**
@@ -126,22 +126,22 @@ export function isCalendarEvent(data) {
  */
 export async function processCalendarEvent(ctx, session, data) {
     if (!isCalendarEvent(data)) return false;
-    
+
     // Handle calendar cancel button
     if (await handleCalendarCancel(ctx, session, data)) {
-        return { type: 'cancelled' };
+        return {type: 'cancelled'};
     }
-    
+
     // Handle day selection
     const selectedDate = await handleCalendarDay(ctx, session, data);
     if (selectedDate) {
-        return { type: 'day_selected', date: selectedDate };
+        return {type: 'day_selected', date: selectedDate};
     }
-    
+
     // Handle month switching
     if (await handleCalendarMonth(ctx, session, data)) {
-        return { type: 'month_updated' };
+        return {type: 'month_updated'};
     }
-    
+
     return false;
 }

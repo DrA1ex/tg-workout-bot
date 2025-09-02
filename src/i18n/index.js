@@ -6,7 +6,7 @@ import {UserDAO} from "../dao/index.js";
 /**
  * Get user's language preference
  * @param {number} telegramId - Telegram user ID
- * @returns {string} Language code (en/ru)
+ * @returns {Promise<*>} Language code (en/ru)
  */
 export async function getUserLanguage(telegramId) {
     let language;

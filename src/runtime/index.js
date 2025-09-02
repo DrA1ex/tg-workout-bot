@@ -27,7 +27,7 @@ export async function startFlow(ctx, generatorFn, initialState = {}) {
         const {_} = await getUserLanguage(ctx.from?.id || 0);
         return ctx.reply(_('runtime.userNotFound'));
     }
-    
+
     // If there's an existing session, clean it up properly and signal interruption
     if (hasSession(userId)) {
         const oldSession = getSession(userId);
@@ -49,15 +49,14 @@ export async function startFlow(ctx, generatorFn, initialState = {}) {
 export async function handleTextMessage(ctx, text) {
     const userId = getUserId(ctx);
     const session = getSession(userId);
-    
+
     if (!session) {
         const {_} = await getUserLanguage(ctx.from?.id || 0);
         return ctx.reply(_('runtime.noActiveFlow'));
     }
 
     const result = await processTextMessage(ctx, session, text);
-    
-    if (result && result.action === 'proceed') {
+    if (result?.action === 'proceed') {
         return _proceed(ctx, session, result.input);
     }
 }
@@ -77,14 +76,13 @@ export async function handleCallbackQuery(ctx) {
     }
 
     const result = await processCallbackQuery(ctx, session, data);
-    
+
     if (result && result.action === 'proceed') {
         return _proceed(ctx, session, result.input);
     }
-    
+
     if (result && result.action === 'cancel') {
         deleteSession(userId);
-        return;
     }
 }
 
@@ -160,17 +158,17 @@ async function _proceed(ctx, session, input) {
 
         // --- Process generator value ---
         const result = await processGeneratorValue(ctx, session, userId, value);
-        
+
         if (result.action === 'wait') {
             return; // Wait for user input
         }
-        
+
         if (result.action === 'cancel') {
             await cleanupSession(session);
             deleteSession(userId);
             return;
         }
-        
+
         if (result.action === 'throw') {
             try {
                 next = gen.throw(result.error);
@@ -182,7 +180,7 @@ async function _proceed(ctx, session, input) {
                 return;
             }
         }
-        
+
         // Continue with next value
         next = gen.next(result.value);
     }

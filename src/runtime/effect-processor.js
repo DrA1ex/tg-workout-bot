@@ -14,9 +14,9 @@ export async function clearExistingKeyboards(ctx, session) {
     if (session.pending?.messageId) {
         try {
             await ctx.telegram.editMessageReplyMarkup(
-                ctx.chat.id, 
-                session.pending.messageId, 
-                null, 
+                ctx.chat.id,
+                session.pending.messageId,
+                null,
                 {inline_keyboard: []}
             ).catch(skipError);
             session.pending.messageId = null;
@@ -53,13 +53,13 @@ export async function processResponseMarkdownEffect(ctx, value) {
  */
 export async function processStringEffect(ctx, session, value) {
     const {_} = await getUserLanguage(ctx.from?.id || 0);
-    
+
     session.pending = {
         type: "string",
         validator: value.validator || null,
         cancellable: value.cancellable ?? false
     };
-    
+
     try {
         const extra = value.cancellable
                       ? Markup.inlineKeyboard([Markup.button.callback(_('buttons.cancel'), `cancel`)])
@@ -79,13 +79,15 @@ export async function processStringEffect(ctx, session, value) {
  */
 export async function processChoiceEffect(ctx, session, value) {
     const {_} = await getUserLanguage(ctx.from?.id || 0);
-    
+
+    const options = { ...(value.options || {}) };
+
     session.pending = {
         type: "choice",
-        options: value.options || {},
+        options,
         allowCustom: !!value.allowCustom,
     };
-    
+
     try {
         const keyboard = Object.entries(value.options || {}).map(
             ([key, label]) => [Markup.button.callback(label, String(key))]
@@ -102,19 +104,19 @@ export async function processChoiceEffect(ctx, session, value) {
  */
 export async function processDateEffect(ctx, session, value) {
     const {_, language} = await getUserLanguage(ctx.from?.id || 0);
-    
+
     const now = new Date();
     const startYear = now.getFullYear();
     const startMonth = now.getMonth();
     const prefix = value.prefix || "flow";
-    
+
     session.pending = {
         type: "date",
         prefix,
         calendarYear: startYear,
         calendarMonth: startMonth
     };
-    
+
     try {
         const msg = await ctx.reply(value.prompt || _('runtime.selectDate'), generateCalendar(startYear, startMonth, prefix, language));
         session.pending.messageId = msg.message_id;
@@ -133,14 +135,12 @@ export async function processDateEffect(ctx, session, value) {
  */
 export async function processCancelEffect(ctx, session, userId, value) {
     const {_} = await getUserLanguage(ctx.from?.id || 0);
-    
+
     try {
         await ctx.reply(value.text || _('bot.actionCancelled'));
     } catch (e) {
         console.warn("[runtime] error sending cancel:", e);
     }
-    
-    // Cleanup will be handled by the caller
 }
 
 /**
@@ -149,34 +149,34 @@ export async function processCancelEffect(ctx, session, userId, value) {
 export async function processEffect(ctx, session, userId, value) {
     // Clear any existing keyboards before processing new effects
     await clearExistingKeyboards(ctx, session);
-    
-    switch (value.type) {
+
+    switch (value?.type) {
         case "response":
             await processResponseEffect(ctx, value);
-            return { type: 'continue' };
+            return {type: 'continue'};
 
         case "response_markdown":
             await processResponseMarkdownEffect(ctx, value);
-            return { type: 'continue' };
+            return {type: 'continue'};
 
         case "string":
             await processStringEffect(ctx, session, value);
-            return { type: 'wait' };
+            return {type: 'wait'};
 
         case "choice":
             await processChoiceEffect(ctx, session, value);
-            return { type: 'wait' };
+            return {type: 'wait'};
 
         case "date":
             await processDateEffect(ctx, session, value);
-            return { type: 'wait' };
+            return {type: 'wait'};
 
         case "cancel":
             await processCancelEffect(ctx, session, userId, value);
-            return { type: 'cancel' };
+            return {type: 'cancel'};
 
         default:
             console.warn("[runtime] Unknown effect type:", value.type);
-            return { type: 'continue' };
+            return {type: 'continue'};
     }
 }

@@ -14,9 +14,9 @@ export async function handleStringInput(ctx, session, text) {
         const {_} = await getUserLanguage(ctx.from?.id || 0);
         return ctx.reply(_('runtime.invalidInput'));
     }
-    
+
     session.pending = null;
-    return { action: 'proceed', input: text };
+    return {action: 'proceed', input: text};
 }
 
 /**
@@ -26,38 +26,43 @@ export async function handleChoiceInput(ctx, session, text) {
     const {allowCustom} = session.pending;
     if (!allowCustom) {
         const {_} = await getUserLanguage(ctx.from?.id || 0);
-        return ctx.reply(_('runtime.selectWithButton'));
+        await ctx.reply(_('runtime.selectWithButton'));
+        return {action: 'wait'};
     }
 
     // Remove buttons directly, since the context has a different message
     if (session.pending.messageId) {
         await ctx.telegram.editMessageReplyMarkup(
-            session.ctx.chat.id, 
-            session.pending.messageId, 
-            null, 
+            session.ctx.chat.id,
+            session.pending.messageId,
+            null,
             {inline_keyboard: []}
         ).catch(skipError);
     }
 
     session.pending = null;
-    return { action: 'proceed', input: text };
+    return {action: 'proceed', input: text};
 }
 
 /**
  * Handle text message when expecting date input
  */
-export async function handleDateInput(ctx, text) {
+export async function handleDateInput(ctx, session, text) {
     const {_} = await getUserLanguage(ctx.from?.id || 0);
     // If we expect a date and got text - no logic here (need callback), ignore
-    return ctx.reply(_('runtime.selectDateInCalendar'));
+    await ctx.reply(_('runtime.selectDateInCalendar'));
+
+    return {action: 'wait'};
 }
 
 /**
  * Handle unexpected text input
  */
-export async function handleUnexpectedInput(ctx, text) {
+export async function handleUnexpectedInput(ctx, session, text) {
     const {_} = await getUserLanguage(ctx.from?.id || 0);
-    return ctx.reply(_('runtime.unexpectedInput'));
+    await ctx.reply(_('runtime.unexpectedInput'));
+
+    return {action: 'wait'};
 }
 
 /**
@@ -66,20 +71,22 @@ export async function handleUnexpectedInput(ctx, text) {
 export async function processTextMessage(ctx, session, text) {
     if (!session.pending) {
         const {_} = await getUserLanguage(ctx.from?.id || 0);
-        return ctx.reply(_('runtime.responseNotExpected'));
+        await ctx.reply(_('runtime.responseNotExpected'));
+
+        return {action: 'wait'};
     }
 
     switch (session.pending.type) {
         case "string":
             return await handleStringInput(ctx, session, text);
-            
+
         case "choice":
             return await handleChoiceInput(ctx, session, text);
-            
+
         case "date":
-            return await handleDateInput(ctx, text);
-            
+            return await handleDateInput(ctx, session, text);
+
         default:
-            return await handleUnexpectedInput(ctx, text);
+            return await handleUnexpectedInput(ctx, session, text);
     }
 }

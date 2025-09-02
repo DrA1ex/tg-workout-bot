@@ -13,7 +13,7 @@ const sessions = new Map();
  * Get user ID from context
  */
 export function getUserId(ctx) {
-    return String(ctx.from?.id || ctx.chat?.id || "");
+    return (ctx.from?.id ?? ctx.chat?.id)?.toString() ?? null;
 }
 
 /**
@@ -62,5 +62,5 @@ export function hasSession(userId) {
  * Get all sessions (for debugging)
  */
 export function getAllSessions() {
-    return sessions;
+    return new Map(sessions);
 }
