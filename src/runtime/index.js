@@ -2,6 +2,9 @@
 import {Markup} from "telegraf";
 import {generateCalendar} from "../modules/calendar.js";
 import {getUserLanguage} from "../i18n/index.js";
+import {
+    FlowInterruptedException
+} from "./exceptions.js";
 
 /**
  * Sessions (in memory)
@@ -31,7 +34,13 @@ export async function startFlow(ctx, generatorFn, initialState = {}) {
         const {_} = await getUserLanguage(ctx.from?.id || 0);
         return ctx.reply(_('runtime.userNotFound'));
     }
-    if (sessions.has(userId)) sessions.delete(userId);
+    
+    // If there's an existing session, clean it up properly and signal interruption
+    if (sessions.has(userId)) {
+        const oldSession = sessions.get(userId);
+        await _signalFlowInterruption(oldSession);
+        await _cleanupSession(oldSession, userId);
+    }
 
     const gen = generatorFn({...initialState});
     const session = {gen, state: {...initialState}, pending: null, ctx};
@@ -227,11 +236,48 @@ export async function handleCallbackQuery(ctx) {
 }
 
 /**
- * External flow cancellation
+ * Signal flow interruption by throwing an exception into the generator
  */
-export function cancelFlowForUser(ctx) {
-    const userId = getUserId(ctx);
-    if (sessions.has(userId)) sessions.delete(userId);
+async function _signalFlowInterruption(session) {
+    if (!session || !session.gen) return;
+    
+    try {
+        // Try to throw an interruption exception into the generator
+        // This allows the flow to handle its own cleanup
+        session.gen.throw(new FlowInterruptedException("Flow interrupted by new menu selection"));
+    } catch (err) {
+        // If the generator doesn't handle the exception, it's fine
+        // The runtime will catch it and clean up
+    }
+}
+
+/**
+ * Clean up session resources (remove keyboards, etc.)
+ */
+async function _cleanupSession(session, userId = null) {
+    if (!session) return;
+    
+    try {
+        // Clear any pending inline keyboards
+        if (session.pending?.messageId && session.ctx) {
+            await session.ctx.telegram.editMessageReplyMarkup(
+                session.ctx.chat.id, 
+                session.pending.messageId, 
+                null, 
+                {inline_keyboard: []}
+            ).catch(skipError);
+        }
+        
+        // Clear any pending state
+        session.pending = null;
+        
+        // Remove session from sessions map if userId provided
+        if (userId && sessions.has(userId)) {
+            sessions.delete(userId);
+        }
+    } catch (err) {
+        console.warn("[runtime] Error during session cleanup:", err);
+    }
 }
 
 /**
@@ -251,7 +297,7 @@ async function _proceed(ctx, session, input) {
         next = gen.next(input);
     } catch (err) {
         console.error("[runtime] unhandled generator error:", err);
-        sessions.delete(userId);
+        await _cleanupSession(session, userId);
 
         await ctx.reply(_('runtime.flowError')).catch(skipError);
         return;
@@ -277,7 +323,7 @@ async function _proceed(ctx, session, input) {
                     continue;
                 } catch (err2) {
                     console.error("[runtime] generator threw while handling promise rejection:", err2);
-                    sessions.delete(userId);
+                    await _cleanupSession(session, userId);
 
                     await ctx.reply(_('runtime.operationError')).catch(skipError);
                     return;
@@ -287,6 +333,21 @@ async function _proceed(ctx, session, input) {
 
         // --- Effects (objects) ---
         if (value && typeof value === "object" && typeof value.type === "string") {
+            // Clear any existing keyboards before processing new effects
+            if (session.pending?.messageId) {
+                try {
+                    await ctx.telegram.editMessageReplyMarkup(
+                        ctx.chat.id, 
+                        session.pending.messageId, 
+                        null, 
+                        {inline_keyboard: []}
+                    ).catch(skipError);
+                    session.pending.messageId = null;
+                } catch (e) {
+                    console.warn("[runtime] Error clearing keyboards:", e);
+                }
+            }
+            
             switch (value.type) {
                 case "response":
                     try {
@@ -317,7 +378,10 @@ async function _proceed(ctx, session, input) {
                                       ? Markup.inlineKeyboard([Markup.button.callback(_('buttons.cancel'), `cancel`)])
                                       : undefined
 
-                        await ctx.reply(value.prompt || _('runtime.enterText'), extra);
+                        const msg = await ctx.reply(value.prompt || _('runtime.enterText'), extra);
+                        if (extra) {
+                            session.pending.messageId = msg.message_id;
+                        }
                     } catch (e) {
                         console.error(e);
                     }
@@ -352,7 +416,8 @@ async function _proceed(ctx, session, input) {
                         calendarMonth: startMonth
                     };
                     try {
-                        await ctx.reply(value.prompt || _('runtime.selectDate'), generateCalendar(startYear, startMonth, prefix, language));
+                        const msg = await ctx.reply(value.prompt || _('runtime.selectDate'), generateCalendar(startYear, startMonth, prefix, language));
+                        session.pending.messageId = msg.message_id;
                     } catch (e) {
                         console.error("[runtime] error sending calendar:", e);
                         try {
@@ -369,7 +434,7 @@ async function _proceed(ctx, session, input) {
                     } catch (e) {
                         console.warn("[runtime] error sending cancel:", e);
                     }
-                    sessions.delete(userId);
+                    await _cleanupSession(session, userId);
                     return;
 
                 default:
@@ -395,8 +460,13 @@ async function _proceed(ctx, session, input) {
                     next = gen.throw(err);
                     continue;
                 } catch (err2) {
+                    // Handle custom flow exceptions in function execution
+                    if (err2.name === 'FlowInterruptedException') {
+                        return _proceed(ctx, session, undefined);
+                    }
+                    
                     console.error("[runtime] function effect error:", err2);
-                    sessions.delete(userId);
+                    await _cleanupSession(session, userId);
                     await ctx.reply(_('runtime.operationError'));
                     return;
                 }

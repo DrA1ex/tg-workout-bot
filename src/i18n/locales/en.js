@@ -157,8 +157,8 @@ export default {
         selectDateInCalendar: 'Please select a date in the calendar.',
         unexpectedInput: 'Unexpected input.',
         unexpectedChoice: 'Unexpected choice.',
-        flowError: 'An error occurred in the scenario.',
-        operationError: 'Error executing operation.',
+        flowError: 'An error occurred in the flow. Please try again.',
+        operationError: 'An error occurred during the operation. Please try again.',
         enterText: 'Enter text:',
         selectOption: 'Select option:',
         selectDate: 'Select date:'
