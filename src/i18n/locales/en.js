@@ -14,6 +14,7 @@ export default {
         deleteWorkout: 'Delete Workout',
         showProgress: 'Show Progress',
         language: 'Language',
+        timezone: 'Timezone',
         cancel: 'Cancel',
         today: 'Today',
         pickDate: 'Pick Date',
@@ -39,7 +40,10 @@ export default {
         enterReps: 'Enter number of reps:',
         enterTime: 'Enter time in seconds:',
         isTimeQuestion: 'Is this a time-based exercise?',
-        workoutSaved: 'Workout saved!'
+        workoutSaved: 'Workout saved!',
+        workoutAddedLastValues: 'Workout added using *last values*!',
+        enterRepsOrTime: 'Enter reps or time (add "s" for seconds):',
+        enterNotes: 'Enter notes (or skip):'
     },
 
     // Add exercise flow
@@ -86,10 +90,23 @@ export default {
         exerciseLabel: "Data for *{{exercise}}*:"
     },
 
+    // Workout formatting
+    workout: {
+        sets: '{{count}} sets',
+        weight: 'Weight {{weight}} kg',
+        time: '{{time}} sec',
+        reps: '{{count}} reps'
+    },
+
     // Calendar
     calendar: {
         days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
         cancel: 'Cancel'
+    },
+
+    // Locale settings
+    locale: {
+        date: 'en-US'
     },
 
     // Validation messages
@@ -105,6 +122,18 @@ export default {
         russian: '🇷🇺 Русский',
         english: '🇺🇸 English',
         changed: 'Language changed to English'
+    },
+
+    // Timezone selection
+    timezone: {
+        select: 'Select timezone:',
+        current: 'Current timezone: *{{timezone}}* ({{offset}})',
+        updated: 'Timezone updated to: *{{timezone}}* ({{offset}})',
+        selectPrompt: 'Select your timezone:',
+        custom: 'Enter custom timezone',
+        enterCustom: 'Enter your timezone (e.g., Europe/Moscow, +03:00, UTC):',
+        enterCustomPrompt: 'Enter timezone:',
+        invalidFormat: 'Invalid timezone format. Please use format like Europe/Moscow, +03:00, or UTC.'
     },
 
     // Runtime messages

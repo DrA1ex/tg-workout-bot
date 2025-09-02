@@ -27,7 +27,7 @@ export function generateCalendar(year, month, prefix = "flow", language = 'ru') 
     keyboard.push([
         Markup.button.callback("<", `calendar_month_${prefix}_${renderYear}_${renderMonthIndex - 1}`),
         Markup.button.callback(
-            new Date(renderYear, renderMonthIndex).toLocaleString(language === 'en' ? 'en-US' : 'ru-RU', {
+            new Date(renderYear, renderMonthIndex).toLocaleString(t(language, 'locale.date'), {
                 month: "long",
                 year: "numeric"
             }),

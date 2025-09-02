@@ -1,6 +1,6 @@
 import {requestChoice, requestString, response, cancelled} from "../runtime/primitives.js";
-import {models} from "../db/index.js";
 import {getUserLanguage} from "../i18n/index.js";
+import {ExerciseDAO} from "../dao/index.js";
 
 export function* addExercise(state) {
     const {_} = yield getUserLanguage(state.telegramId);
@@ -26,18 +26,11 @@ function* addNewExercise(state) {
         {allowCustom: true}
     );
 
-    // Save to database
-    const [user] = yield models.User.findOrCreate({where: {telegramId: state.telegramId}});
-    const exercises = JSON.parse(user.exercises || "[]");
-
-    if (exercises.find(e => (e.name || e) === name)) {
-        yield response(state, _('addExercise.exerciseExists', {name}));
-        return;
-    }
-
-    exercises.push({name, notes: notes === "__skip" ? "" : notes});
-    user.exercises = JSON.stringify(exercises);
-    yield user.save();
+    // Save to database using DAO
+    yield ExerciseDAO.addUserExercise(state.telegramId, {
+        name,
+        notes: notes === "__skip" ? "" : notes
+    });
 
     yield response(state, _('addExercise.exerciseAdded', {name}));
 }
@@ -47,16 +40,8 @@ function* addExistingExercise(state) {
 
     const search = yield requestString(state, _('addExercise.enterSearch'));
 
-    // Search in global database
-    const found = yield models.GlobalExercise.findAll({
-        where: {
-            name: models.GlobalExercise.sequelize.where(
-                models.GlobalExercise.sequelize.fn('LOWER', models.GlobalExercise.sequelize.col('name')),
-                'LIKE',
-                `%${search}%`)
-        },
-        limit: 10
-    });
+    // Search in global database using DAO
+    const found = yield ExerciseDAO.searchGlobalExercises(search, 10);
 
     if (!found.length) {
         yield response(state, _('addExercise.nothingFound'));
@@ -75,18 +60,11 @@ function* addExistingExercise(state) {
     const exercise = found[selected];
     if (!exercise) return yield cancelled(state);
 
-    // Add to user's list
-    const [user] = yield models.User.findOrCreate({where: {telegramId: state.telegramId}});
-    const exercises = JSON.parse(user.exercises || "[]");
-
-    if (exercises.find(e => (e.name || e) === exercise.name)) {
-        yield response(state, _('addExercise.exerciseExists', {name: exercise.name}));
-        return;
-    }
-
-    exercises.push({name: exercise.name, notes: exercise.notes || ""});
-    user.exercises = JSON.stringify(exercises);
-    yield user.save();
+    // Add to user's list using DAO
+    yield ExerciseDAO.addUserExercise(state.telegramId, {
+        name: exercise.name,
+        notes: exercise.notes || ""
+    });
 
     yield response(state, _('addExercise.exerciseAdded', {name: exercise.name}));
 }

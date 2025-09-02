@@ -1,73 +1,46 @@
-import {models} from "../db/index.js";
-import {requestChoice, response, cancelled} from "../runtime/primitives.js";
-import {getUserLanguage} from "../i18n/index.js";
-
-const PER_PAGE = 10;
+import {response, cancelled} from "../runtime/primitives.js";
+import {formatDate, getUserLanguage} from "../i18n/index.js";
+import {paginateDates} from "../utils/pagination.js";
+import {UserDAO, WorkoutDAO} from "../dao/index.js";
 
 export function* viewWorkouts(state) {
     const {_, language} = yield getUserLanguage(state.telegramId);
-        
-    // 1. Get list of dates
-    const dates = yield models.Workout.findAll({
-        attributes: [[models.Workout.sequelize.fn("date", models.Workout.sequelize.col("date")), "d"]],
-        where: {telegramId: state.telegramId},
-        group: ["d"],
-        order: [[models.Workout.sequelize.literal("d"), "DESC"]],
-    });
 
-    if (!dates.length) {
+    const user = yield UserDAO.findByTelegramId(state.telegramId);
+    const timezone = user?.timezone || 'UTC';
+
+    // 1. Get list of dates grouped by date in user's timezone
+    const allDates = yield WorkoutDAO.getDatesWithWorkouts(state.telegramId, timezone);
+
+    if (!allDates.length) {
         return yield response(state, _('viewWorkout.noWorkouts'));
     }
 
-    const allDates = dates.map(r => r.get("d"));
+    // 2. Use pagination utility to select date
+    const selectedDate = yield* paginateDates(
+        state, 
+        allDates, 
+        _('viewWorkout.datesWithWorkouts'), 
+        language, 
+        timezone, 
+        formatDate, 
+        _
+    );
 
-    let page = 0;
-    while (true) {
-        // 2. Create page
-        const pageDates = allDates.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
-        const options = {};
+    if (!selectedDate) return yield cancelled(state);
 
-        pageDates.forEach(d => {
-            options[d] = d;
-        });
+    // 3. Get workouts for selected date
+    const rows = yield WorkoutDAO.getWorkoutsByDate(state.telegramId, selectedDate, timezone);
 
-        if (page > 0) options["prev"] = _('buttons.previous');
-        if ((page + 1) * PER_PAGE < allDates.length) options["next"] = _('buttons.next');
-        options["cancel"] = _('buttons.cancel');
-
-        const choice = yield requestChoice(state, options, _('viewWorkout.datesWithWorkouts'));
-
-        if (choice === "cancel") return yield cancelled(state);
-        if (choice === "prev") {
-            page--;
-            continue;
-        }
-        if (choice === "next") {
-            page++;
-            continue;
-        }
-
-        // 3. User selected date → get workouts
-        const q = models.Workout.sequelize;
-        const rows = yield models.Workout.findAll({
-            where: {
-                telegramId: state.telegramId,
-                date: q.where(q.fn('DATE', q.col('date')), choice)
-            },
-            order: [["id", "ASC"]],
-        });
-
-        if (!rows.length) {
-            yield response(state, `No workouts on ${choice}.`);
-            continue;
-        }
-
-        let message = _('viewWorkout.workoutsOnDate', {date: choice});
-        rows.forEach(w => {
-            message += `\n${w.formatString(language)}`;
-        });
-
-        yield response(state, message);
+    if (!rows.length) {
+        yield response(state, `No workouts on ${formatDate(new Date(selectedDate), language, timezone)}.`);
         return;
     }
+
+    let message = _('viewWorkout.workoutsOnDate', {date: formatDate(new Date(selectedDate), language, timezone)});
+    rows.forEach(w => {
+        message += `\n${w.formatString(language, timezone)}`;
+    });
+
+    yield response(state, message);
 }

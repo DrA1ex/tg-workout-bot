@@ -1,20 +1,17 @@
 import {Markup} from "telegraf";
-
-import {models} from "../db/index.js";
-import en from "./locales/en.js";
-import ru from "./locales/ru.js";
-
-const locales = {en, ru};
+import {locales} from "./locales/index.js";
+import {formatDateInTimezone} from "../utils/timezone.js";
+import {UserDAO} from "../dao/index.js";
 
 /**
- * Get user's preferred language from database
+ * Get user's language preference
  * @param {number} telegramId - Telegram user ID
  * @returns {string} Language code (en/ru)
  */
 export async function getUserLanguage(telegramId) {
     let language;
     try {
-        const user = await models.User.findByPk(telegramId);
+        const user = await UserDAO.findByTelegramId(telegramId);
         language = user?.language || 'en';
     } catch (error) {
         console.error('Error getting user language:', error);
@@ -34,12 +31,8 @@ export async function getUserLanguage(telegramId) {
  */
 export async function setUserLanguage(telegramId, language) {
     try {
-        const [user] = await models.User.findOrCreate({
-            where: {telegramId},
-            defaults: {language}
-        });
-        user.language = language;
-        await user.save();
+        const [user] = await UserDAO.findOrCreate(telegramId, {language});
+        await UserDAO.updateLanguage(telegramId, language);
     } catch (error) {
         console.error('Error setting user language:', error);
     }
@@ -74,14 +67,20 @@ export function createLocalizer(language) {
 }
 
 /**
- * Format date according to user's locale
+ * Format date according to user's locale and timezone
  * @param {Date} date - Date to format
  * @param {string} language - Language code (en/ru)
+ * @param {string} timezone - User's timezone
  * @param {object} options - Intl.DateTimeFormat options
  * @returns {string} Formatted date
  */
-export function formatDate(date, language = 'en', options = {}) {
-    const locale = language === 'en' ? 'en-US' : 'ru-RU';
+export function formatDate(date, language = 'en', timezone = 'UTC', options = {}) {
+    if (timezone && timezone !== 'UTC') {
+        return formatDateInTimezone(date, timezone, language, options);
+    }
+
+    // Fallback to original implementation for UTC
+    const locale = t(language, 'locale.date');
     const defaultOptions = {
         year: 'numeric',
         month: '2-digit',
@@ -99,7 +98,7 @@ export function formatDate(date, language = 'en', options = {}) {
 export function createMainKeyboard(language) {
     return Markup.keyboard([
         [t(language, 'buttons.addWorkout'), t(language, 'buttons.addExercise')],
-        [t(language, 'buttons.viewWorkout'), t(language, 'buttons.deleteWorkout')],
-        [t(language, 'buttons.showProgress'), t(language, 'buttons.language')]
+        [t(language, 'buttons.viewWorkout'), t(language, 'buttons.showProgress'), t(language, 'buttons.deleteWorkout')],
+        [t(language, 'buttons.language'), t(language, 'buttons.timezone')]
     ]).resize();
 }
