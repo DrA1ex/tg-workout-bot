@@ -150,6 +150,7 @@ describeWithSilencedConsole('Effect Processor Tests', ['warn', 'error'], () => {
                 options,
                 allowCustom: false,
                 deletePrevious: false,
+                validator: null,
                 messageId: 1
             });
         });
@@ -170,6 +171,7 @@ describeWithSilencedConsole('Effect Processor Tests', ['warn', 'error'], () => {
             await processChoiceEffect(mockCtx, mockSession, effect);
 
             expect(mockSession.pending.deletePrevious).toBe(true);
+            expect(mockSession.pending.validator).toBe(null);
             expect(mockCtx.reply).toHaveBeenCalledWith('Pick:', expect.any(Object));
         });
     });

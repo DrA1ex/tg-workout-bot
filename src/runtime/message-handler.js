@@ -12,7 +12,8 @@ export async function handleStringInput(ctx, session, text) {
     const {validator} = session.pending;
     if (validator && !validator(text)) {
         const {_} = await getUserLanguage(ctx.from?.id || 0);
-        return ctx.reply(_('runtime.invalidInput'));
+        await ctx.reply(_('runtime.invalidInput'));
+        return {action: 'wait'};
     }
 
     session.pending = null;
@@ -23,10 +24,17 @@ export async function handleStringInput(ctx, session, text) {
  * Handle text message when expecting choice input
  */
 export async function handleChoiceInput(ctx, session, text) {
-    const {allowCustom} = session.pending;
+    const {allowCustom, validator} = session.pending;
     if (!allowCustom) {
         const {_} = await getUserLanguage(ctx.from?.id || 0);
         await ctx.reply(_('runtime.selectWithButton'));
+        return {action: 'wait'};
+    }
+
+    // Validate custom input if validator is provided
+    if (validator && !validator(text)) {
+        const {_} = await getUserLanguage(ctx.from?.id || 0);
+        await ctx.reply(_('runtime.invalidInput'));
         return {action: 'wait'};
     }
 

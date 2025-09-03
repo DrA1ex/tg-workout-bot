@@ -69,7 +69,8 @@ export async function processChoiceEffect(ctx, session, value) {
         type: "choice",
         options,
         allowCustom: !!value.allowCustom,
-        deletePrevious: !!value.deletePrevious
+        deletePrevious: !!value.deletePrevious,
+        validator: value.validator || null
     };
 
     try {

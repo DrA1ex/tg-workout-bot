@@ -3,6 +3,29 @@ import {getCurrentDateInTimezone} from "../utils/timezone.js";
 import {formatDate, getUserLanguage} from "../i18n/index.js";
 import {ExerciseDAO, UserDAO, WorkoutDAO} from "../dao/index.js";
 
+// Validation functions
+function validatePositiveInteger(txt) {
+    const num = parseInt(txt.trim());
+    return !isNaN(num) && num > 0 && txt.trim() === num.toString();
+}
+
+function validatePositiveFloat(txt) {
+    if (!txt || txt.trim() === '') return true; // Allow empty for skip
+    const num = parseFloat(txt.trim());
+    return !isNaN(num) && num >= 0 && txt.trim() === num.toString();
+}
+
+function validateRepsOrTime(txt) {
+    const input = txt.trim();
+    if (input.endsWith("s") || input.endsWith("с")) {
+        const num = parseFloat(input.slice(0, -1));
+        return !isNaN(num) && num > 0 && input.slice(0, -1) === num.toString();
+    } else {
+        const num = parseFloat(input);
+        return !isNaN(num) && num > 0 && input === num.toString();
+    }
+}
+
 function* requestStringWorkoutFiled(state, label, validator = undefined, skip = false) {
     const {_} = yield getUserLanguage(state.telegramId);
 
@@ -79,10 +102,10 @@ function* addSingleWorkout(state, workoutDate, timezone, language) {
     }
 
     // Enter new data
-    const sets = yield* requestStringWorkoutFiled(state, _('addWorkout.enterSets'), txt => !isNaN(parseInt(txt)));
-    const weightInput = yield* requestStringWorkoutFiled(state, _('addWorkout.enterWeight'), txt => !isNaN(parseFloat(txt)), true);
+    const sets = yield* requestStringWorkoutFiled(state, _('addWorkout.enterSets'), validatePositiveInteger);
+    const weightInput = yield* requestStringWorkoutFiled(state, _('addWorkout.enterWeight'), validatePositiveFloat, true);
 
-    const repsInput = yield* requestStringWorkoutFiled(state, _('addWorkout.enterRepsOrTime'));
+    const repsInput = yield* requestStringWorkoutFiled(state, _('addWorkout.enterRepsOrTime'), validateRepsOrTime);
     let isTime = false;
     let repsOrTime = repsInput.trim();
     if (repsOrTime.endsWith("s") || repsOrTime.endsWith("с")) {

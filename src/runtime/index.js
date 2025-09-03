@@ -46,8 +46,13 @@ export async function handleTextMessage(ctx, text) {
     }
 
     const result = await processTextMessage(ctx, session, text);
-    if (result?.action === 'proceed') {
-        return _proceed(ctx, session, result.input);
+    switch (result?.action) {
+        case 'proceed':
+            return _proceed(ctx, session, result.input);
+        case 'cancel':
+            return cancelFlowForUser(userId);
+        case 'wait':
+            return; // Do nothing
     }
 }
 
@@ -72,7 +77,7 @@ export async function handleCallbackQuery(ctx) {
     }
 
     if (result && result.action === 'cancel') {
-        deleteSession(userId);
+        cancelFlowForUser(userId);
     }
 }
 
