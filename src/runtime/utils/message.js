@@ -46,20 +46,16 @@ export async function deleteMessage(ctx, chatId, messageId) {
  */
 export async function clearPendingMessage(ctx, session) {
     const messageId = session.pending?.messageId;
-    if (!messageId) return;
-
-    try {
+    if (messageId) {
         if (session.pending.deletePrevious) {
-            await deleteMessage(ctx, ctx.chat.id, messageId);
+            await deleteMessage(ctx, ctx.chat.id, messageId).catch(skipError);
         } else {
-            await clearMessageKeyboard(ctx, ctx.chat.id, messageId);
+            await clearMessageKeyboard(ctx, ctx.chat.id, messageId).catch(skipError);
         }
-    } catch (e) {
-        console.warn("[runtime] Error clearing previous message:", e);
-    } finally {
-        if (session.pending) {
-            session.pending.messageId = null;
-            session.pending.deletePrevious = null;
-        }
+    }
+
+    if (session.pending) {
+        session.pending.messageId = null;
+        session.pending.deletePrevious = null;
     }
 }

@@ -75,7 +75,8 @@ export default {
         enterSearch: 'Введите название для поиска:',
         nothingFound: 'Ничего не найдено.',
         selectFromFound: 'Выберите упражнение:',
-        selectFromAll: 'Выберите упражнение из списка:'
+        selectFromAll: 'Выберите упражнение из списка:',
+        tryAgain: 'Попробовать снова',
     },
 
     // Delete workout flow

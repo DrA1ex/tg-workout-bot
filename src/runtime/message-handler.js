@@ -3,12 +3,9 @@
  */
 
 import {getUserLanguage} from "../i18n/index.js";
-import {clearMessageKeyboard} from "./utils/message.js";
+import {clearPendingMessage} from "./utils/message.js";
 
-/**
- * Handle text message when expecting string input
- */
-export async function handleStringInput(ctx, session, text) {
+async function handleTextInput(ctx, session, text) {
     const {validator} = session.pending;
     if (validator && !validator(text)) {
         const {_} = await getUserLanguage(ctx.from?.id || 0);
@@ -16,7 +13,15 @@ export async function handleStringInput(ctx, session, text) {
         return {action: 'wait'};
     }
 
+    await clearPendingMessage(ctx, session);
     session.pending = null;
+}
+
+/**
+ * Handle text message when expecting string input
+ */
+export async function handleStringInput(ctx, session, text) {
+    await handleTextInput(ctx, session, text);
     return {action: 'proceed', input: text};
 }
 
@@ -31,19 +36,7 @@ export async function handleChoiceInput(ctx, session, text) {
         return {action: 'wait'};
     }
 
-    // Validate custom input if validator is provided
-    if (validator && !validator(text)) {
-        const {_} = await getUserLanguage(ctx.from?.id || 0);
-        await ctx.reply(_('runtime.invalidInput'));
-        return {action: 'wait'};
-    }
-
-    // Remove buttons directly, since the context has a different message
-    if (session.pending.messageId) {
-        await clearMessageKeyboard(ctx, session.ctx.chat.id, session.pending.messageId);
-    }
-
-    session.pending = null;
+    await handleTextInput(ctx, session, text);
     return {action: 'proceed', input: text};
 }
 

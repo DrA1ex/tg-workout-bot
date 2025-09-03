@@ -12,7 +12,7 @@ export function* addExercise(state) {
         global: _('addExercise.addExisting'),
         browse: _('addExercise.browseAll'),
         cancel: _('buttons.cancel')
-    }, _('addExercise.selectOption'));
+    }, _('addExercise.selectOption'), {deletePrevious: true});
 
     if (action === "create") return yield* addNewExercise(state);
     if (action === "global") return yield* addExistingExercise(state);
@@ -27,46 +27,68 @@ function* addNewExercise(state) {
 function* addExistingExercise(state) {
     const {_} = yield getUserLanguage(state.telegramId);
 
-    const search = yield requestString(state, _('addExercise.enterSearch'), {cancellable: true});
-    if (!search) return yield cancelled(state);
+    while (true) {
+        const search = yield requestString(state, _('addExercise.enterSearch'), {
+            cancellable: true,
+            deletePrevious: true
+        });
+        if (!search) return yield cancelled(state);
 
-    // Search in global database using DAO
-    const found = yield ExerciseDAO.searchGlobalExercises(search, 10);
+        // Search in global database using DAO
+        const found = yield ExerciseDAO.searchGlobalExercises(search, 10);
 
-    if (!found.length) {
-        yield response(state, _('addExercise.nothingFound'));
-        return;
+        if (!found.length) {
+            // Ask if user wants to try again
+            const tryAgain = yield requestChoice(state, {
+                retry: _('addExercise.tryAgain'),
+                cancel: _('buttons.cancel')
+            }, _('addExercise.nothingFound'));
+
+            if (tryAgain === "cancel") return yield cancelled(state);
+            if (tryAgain === "retry") continue; // Try another search
+        }
+
+        // Build set of already added exercises to mark with a star
+        const existing = new Set((yield ExerciseDAO.getUserExercises(state.telegramId))
+            .map(ex => typeof ex === 'string' ? ex : ex.name));
+
+        const options = found.reduce((acc, ex, id) => {
+            const label = existing.has(ex.name) ? `★ ${ex.name}` : ex.name;
+            acc[id] = label;
+            return acc;
+        }, {
+            retry: _('addExercise.tryAgain'),
+            cancel: _('buttons.cancel')
+        });
+
+        const selected = yield requestChoice(state, options, _('addExercise.selectFromFound'), {deletePrevious: true});
+
+        if (selected === "cancel") return yield cancelled(state);
+        if (selected === "retry") continue; // Try another search
+
+        const exercise = found[selected];
+        if (!exercise) continue; // Invalid selection, try again
+
+        if (existing.has(exercise.name)) {
+            // Ask if user wants to try another search
+            const tryAnother = yield requestChoice(state, {
+                retry: _('addExercise.tryAgain'),
+                cancel: _('buttons.cancel')
+            }, _('addExercise.exerciseExists', {name: exercise.name}));
+
+            if (tryAnother === "cancel") return yield cancelled(state);
+            if (tryAnother === "retry") continue; // Try another search
+        }
+
+        // Add to user's list using DAO
+        yield ExerciseDAO.addUserExercise(state.telegramId, {
+            name: exercise.name,
+            notes: exercise.notes || ""
+        });
+
+        yield response(state, _('addExercise.exerciseAdded', {name: exercise.name}));
+        return; // Successfully added, exit the loop
     }
-
-    // Build set of already added exercises to mark with a star
-    const existing = new Set((yield ExerciseDAO.getUserExercises(state.telegramId))
-        .map(ex => typeof ex === 'string' ? ex : ex.name));
-
-    const options = found.reduce((acc, ex, id) => {
-        const label = existing.has(ex.name) ? `★ ${ex.name}` : ex.name;
-        acc[id] = label;
-        return acc;
-    }, {cancel: _('buttons.cancel')});
-
-    const selected = yield requestChoice(state, options, _('addExercise.selectFromFound'), {deletePrevious: true});
-
-    if (selected === "cancel") return yield cancelled(state);
-
-    const exercise = found[selected];
-    if (!exercise) return yield cancelled(state);
-
-    if (existing.has(exercise.name)) {
-        yield response(state, _('addExercise.exerciseExists', {name: exercise.name}));
-        return yield cancelled(state);
-    }
-
-    // Add to user's list using DAO
-    yield ExerciseDAO.addUserExercise(state.telegramId, {
-        name: exercise.name,
-        notes: exercise.notes || ""
-    });
-
-    yield response(state, _('addExercise.exerciseAdded', {name: exercise.name}));
 }
 
 function* addFromAllExercises(state) {

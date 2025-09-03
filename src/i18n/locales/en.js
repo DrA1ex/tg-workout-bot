@@ -75,7 +75,8 @@ export default {
         enterSearch: 'Enter name to search:',
         nothingFound: 'Nothing found.',
         selectFromFound: 'Select exercise:',
-        selectFromAll: 'Select exercise from the list:'
+        selectFromAll: 'Select exercise from the list:',
+        tryAgain: 'Try Again',
     },
 
     // Delete workout flow
