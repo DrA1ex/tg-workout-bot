@@ -1,6 +1,7 @@
-import {response, responseMarkdown} from "../runtime/primitives.js";
+import {responseMarkdown} from "../runtime/primitives.js";
 import {getUserLanguage} from "../i18n/index.js";
 import {ExerciseDAO} from "../dao/index.js";
+import {checkEmptyListAndRespond} from "./common.js";
 
 /**
  * Show user's exercises list with names and notes
@@ -12,8 +13,7 @@ export function* myExercises(state) {
     // Get user's exercises from database
     const exercises = yield ExerciseDAO.getUserExercises(state.telegramId);
 
-    if (!exercises || exercises.length === 0) {
-        yield response(state, _('myExercises.noExercises'));
+    if (yield* checkEmptyListAndRespond(state, exercises, 'myExercises.noExercises', _)) {
         return;
     }
 

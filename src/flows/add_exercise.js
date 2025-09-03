@@ -2,7 +2,7 @@ import {cancelled, requestChoice, requestString, response} from "../runtime/prim
 import {getUserLanguage} from "../i18n/index.js";
 import {ExerciseDAO} from "../dao/index.js";
 import {paginateExercises} from "../utils/pagination.js";
-import {addNewExerciseCommon} from "./common.js";
+import {addNewExerciseCommon, buildExerciseOptions, getUserExercisesSet, checkEmptyListAndRespond} from "./common.js";
 
 export function* addExercise(state) {
     const {_} = yield getUserLanguage(state.telegramId);
@@ -49,14 +49,9 @@ function* addExistingExercise(state) {
         }
 
         // Build set of already added exercises to mark with a star
-        const existing = new Set((yield ExerciseDAO.getUserExercises(state.telegramId))
-            .map(ex => typeof ex === 'string' ? ex : ex.name));
+        const existing = yield* getUserExercisesSet(state.telegramId);
 
-        const options = found.reduce((acc, ex, id) => {
-            const label = existing.has(ex.name) ? `★ ${ex.name}` : ex.name;
-            acc[id] = label;
-            return acc;
-        }, {
+        const options = buildExerciseOptions(found, existing, _, {
             retry: _('addExercise.tryAgain'),
             cancel: _('buttons.cancel')
         });
@@ -95,14 +90,12 @@ function* addFromAllExercises(state) {
     const {_} = yield getUserLanguage(state.telegramId);
 
     // User's current exercises to mark already added
-    const existing = new Set((yield ExerciseDAO.getUserExercises(state.telegramId))
-        .map(ex => typeof ex === 'string' ? ex : ex.name));
+    const existing = yield* getUserExercisesSet(state.telegramId);
 
     // Get all global exercises for pagination
     const allExercises = yield ExerciseDAO.getAllGlobalExercises();
 
-    if (!allExercises.length) {
-        yield response(state, _('addExercise.nothingFound'));
+    if (yield* checkEmptyListAndRespond(state, allExercises, 'addExercise.nothingFound', _)) {
         return yield cancelled(state);
     }
 

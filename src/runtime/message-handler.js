@@ -15,29 +15,29 @@ async function handleTextInput(ctx, session, text) {
 
     await clearPendingMessage(ctx, session);
     session.pending = null;
+
+    return {action: 'proceed', input: text};
 }
 
 /**
  * Handle text message when expecting string input
  */
 export async function handleStringInput(ctx, session, text) {
-    await handleTextInput(ctx, session, text);
-    return {action: 'proceed', input: text};
+    return await handleTextInput(ctx, session, text);
 }
 
 /**
  * Handle text message when expecting choice input
  */
 export async function handleChoiceInput(ctx, session, text) {
-    const {allowCustom, validator} = session.pending;
+    const {allowCustom} = session.pending;
     if (!allowCustom) {
         const {_} = await getUserLanguage(ctx.from?.id || 0);
         await ctx.reply(_('runtime.selectWithButton'));
         return {action: 'wait'};
     }
 
-    await handleTextInput(ctx, session, text);
-    return {action: 'proceed', input: text};
+    return await handleTextInput(ctx, session, text);
 }
 
 /**

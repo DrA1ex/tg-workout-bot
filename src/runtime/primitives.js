@@ -12,12 +12,10 @@ export function requestString(state, prompt, opts = {}) {
  * opts: { allowCustom?: boolean, validator?: fn }
  */
 export function requestChoice(state, options, prompt = null, opts = {}) {
-    // If no prompt provided, we'll need to get it from i18n in the runtime
     return {type: "choice", options, prompt, state, ...opts};
 }
 
 export function requestDate(state, prompt = null) {
-    // If no prompt provided, we'll need to get it from i18n in the runtime
     return {type: "date", prompt, state};
 }
 
@@ -30,6 +28,5 @@ export function responseMarkdown(state, text, extra = null) {
 }
 
 export function cancelled(state, text = null) {
-    // If no text provided, we'll need to get it from i18n in the runtime
     return {type: "cancel", text, state};
 }

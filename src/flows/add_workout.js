@@ -2,30 +2,8 @@ import {cancelled, requestChoice, requestDate, response, responseMarkdown} from 
 import {getCurrentDateInTimezone} from "../utils/timezone.js";
 import {formatDate, getUserLanguage} from "../i18n/index.js";
 import {ExerciseDAO, UserDAO, WorkoutDAO} from "../dao/index.js";
-import {addNewExerciseCommon} from "./common.js";
+import {addNewExerciseCommon, checkEmptyListAndRespond, validators,} from "./common.js";
 
-// Validation functions
-function validatePositiveInteger(txt) {
-    const num = parseInt(txt.trim());
-    return !isNaN(num) && num > 0 && txt.trim() === num.toString();
-}
-
-function validatePositiveFloat(txt) {
-    if (!txt || txt.trim() === '') return true; // Allow empty for skip
-    const num = parseFloat(txt.trim());
-    return !isNaN(num) && num >= 0 && txt.trim() === num.toString();
-}
-
-function validateRepsOrTime(txt) {
-    const input = txt.trim();
-    if (input.endsWith("s") || input.endsWith("с")) {
-        const num = parseFloat(input.slice(0, -1));
-        return !isNaN(num) && num > 0 && input.slice(0, -1) === num.toString();
-    } else {
-        const num = parseFloat(input);
-        return !isNaN(num) && num > 0 && input === num.toString();
-    }
-}
 
 function* requestStringWorkoutFiled(state, label, validator = undefined, skip = false) {
     const {_} = yield getUserLanguage(state.telegramId);
@@ -52,8 +30,7 @@ function* addSingleWorkout(state, workoutDate, timezone, language) {
     const exercises = yield ExerciseDAO.getUserExercises(state.telegramId);
     const exerciseNames = exercises.map(e => (typeof e === "string" ? e : e.name));
 
-    if (!exerciseNames.length) {
-        yield response(state, _('addWorkout.noExercises'));
+    if (yield* checkEmptyListAndRespond(state, exerciseNames, 'addWorkout.noExercises', _)) {
         return false;
     }
 
@@ -67,13 +44,13 @@ function* addSingleWorkout(state, workoutDate, timezone, language) {
 
     const exKey = yield requestChoice(state, exOptions, _('addWorkout.selectExercise'));
     if (exKey === "cancel") return yield cancelled(state);
-    
+
     let exercise;
     if (exKey === "new") {
         // User wants to add a new exercise
         exercise = yield* addNewExerciseCommon(state);
         if (!exercise) return yield cancelled(state);
-        
+
         // Refresh the exercise list after adding new one
         const updatedExercises = yield ExerciseDAO.getUserExercises(state.telegramId);
         exerciseNames.length = 0; // Clear array
@@ -119,10 +96,10 @@ function* addSingleWorkout(state, workoutDate, timezone, language) {
     }
 
     // Enter new data
-    const sets = yield* requestStringWorkoutFiled(state, _('addWorkout.enterSets'), validatePositiveInteger);
-    const weightInput = yield* requestStringWorkoutFiled(state, _('addWorkout.enterWeight'), validatePositiveFloat, true);
+    const sets = yield* requestStringWorkoutFiled(state, _('addWorkout.enterSets'), validators.positiveInteger);
+    const weightInput = yield* requestStringWorkoutFiled(state, _('addWorkout.enterWeight'), validators.positiveFloat, true);
 
-    const repsInput = yield* requestStringWorkoutFiled(state, _('addWorkout.enterRepsOrTime'), validateRepsOrTime);
+    const repsInput = yield* requestStringWorkoutFiled(state, _('addWorkout.enterRepsOrTime'), validators.repsOrTime);
     let isTime = false;
     let repsOrTime = repsInput.trim();
     if (repsOrTime.endsWith("s") || repsOrTime.endsWith("с")) {

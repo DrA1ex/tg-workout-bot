@@ -1,19 +1,19 @@
 import {cancelled, response} from "../runtime/primitives.js";
 import {formatDate, getUserLanguage} from "../i18n/index.js";
 import {paginateDates} from "../utils/pagination.js";
-import {UserDAO, WorkoutDAO} from "../dao/index.js";
+import {WorkoutDAO} from "../dao/index.js";
+import {getUserAndTimezone, checkEmptyListAndRespond} from "./common.js";
 
 export function* viewWorkouts(state) {
     const {_, language} = yield getUserLanguage(state.telegramId);
 
-    const user = yield UserDAO.findByTelegramId(state.telegramId);
-    const timezone = user?.timezone || 'UTC';
+    const {timezone} = yield* getUserAndTimezone(state);
 
     // 1. Get list of dates grouped by date in user's timezone
     const allDates = yield WorkoutDAO.getDatesWithWorkouts(state.telegramId, timezone);
 
-    if (!allDates.length) {
-        return yield response(state, _('viewWorkout.noWorkouts'));
+    if (yield* checkEmptyListAndRespond(state, allDates, 'viewWorkout.noWorkouts', _)) {
+        return;
     }
 
     // 2. Use pagination utility to select date

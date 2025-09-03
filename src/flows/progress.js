@@ -1,8 +1,9 @@
-import {cancelled, response, responseMarkdown} from "../runtime/primitives.js";
+import {cancelled, responseMarkdown} from "../runtime/primitives.js";
 import QuickChart from "quickchart-js";
 import {formatDate, getUserLanguage} from "../i18n/index.js";
 import {getAndSelectExercise} from "../utils/exercise_selector.js";
-import {UserDAO, WorkoutDAO} from "../dao/index.js";
+import {WorkoutDAO} from "../dao/index.js";
+import {getUserAndTimezone, checkEmptyListAndRespond} from "./common.js";
 
 function _dt(row, language = 'ru', timezone = 'UTC') {
     return formatDate(new Date(row.get("date")), language, timezone);
@@ -13,8 +14,7 @@ const Colors = ["#2563eb", "#ef4444", "#10b981", "#f97316", "#7c3aed", "#06b6d4"
 export function* showProgress(state) {
     const {_, language} = yield getUserLanguage(state.telegramId);
 
-    const user = yield UserDAO.findByTelegramId(state.telegramId);
-    const timezone = user?.timezone || 'UTC';
+    const {timezone} = yield* getUserAndTimezone(state);
 
     // Use utility to get and select exercise
     const selectedEx = yield* getAndSelectExercise(state, _('progress.selectExercise'), _);
@@ -25,8 +25,7 @@ export function* showProgress(state) {
     // Get only needed records from database
     const rows = yield WorkoutDAO.getWorkoutsByExercise(state.telegramId, selectedEx);
 
-    if (!rows.length) {
-        yield response(state, _('progress.noDataForExercise'));
+    if (yield* checkEmptyListAndRespond(state, rows, 'progress.noDataForExercise', _)) {
         return;
     }
 

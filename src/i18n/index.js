@@ -4,9 +4,10 @@ import {formatDateInTimezone} from "../utils/timezone.js";
 import {UserDAO} from "../dao/index.js";
 
 /**
- * Get user's language preference
- * @param {number} telegramId - Telegram user ID
- * @returns {Promise<*>} Language code (en/ru)
+ * Get user's language preference and a localizer function
+ * @param {number|string} telegramId - Telegram user ID
+ * @returns {Promise<{_: (key: string, params?: Object) => string, language: string}>} 
+ *          Resolves to an object with a localizer function (_) and the user's language code (en/ru)
  */
 export async function getUserLanguage(telegramId) {
     let language;
@@ -55,15 +56,6 @@ export function t(language, key, params = {}) {
     });
 
     return text;
-}
-
-/**
- * Create a localization function bound to a specific language
- * @param {string} language - Language code
- * @returns {function} Localization function
- */
-export function createLocalizer(language) {
-    return (key, params = {}) => t(key, language, params);
 }
 
 /**

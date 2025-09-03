@@ -34,6 +34,12 @@ export function getTimezoneOffset(timezone) {
             return '+00:00';
         }
 
+        // Check if it's in our known timezones list
+        const found = TIMEZONES.find(tz => tz.name === timezone);
+        if (found) {
+            return found.offset;
+        }
+
         // For unknown format return Unknown
         return 'Unknown';
     } catch (error) {
@@ -68,17 +74,22 @@ export function validateTimezone(timezone) {
         return false;
     }
 
+    if (timezone === 'UTC') {
+        return true;
+    }
+
     // Check UTC offset format (e.g., +03:00, -05:00)
     const offsetRegex = /^[+-](0[0-9]|1[0-2]):[0-5][0-9]$/;
+    if (offsetRegex.test(timezone)) {
+        return true;
+    }
 
-    // Check UTC format (e.g., UTC)
-    const utcRegex = /^UTC$/i;
-
-    return offsetRegex.test(timezone) || utcRegex.test(timezone);
+    // Check if it's in our known timezones list (IANA format)
+    return TIMEZONES.some(tz => tz.name === timezone);
 }
 
 export function* timezoneSettings(state) {
-    const {_, language} = yield getUserLanguage(state.telegramId);
+    const {_} = yield getUserLanguage(state.telegramId);
 
     // Get current user timezone
     const user = yield UserDAO.findByTelegramId(state.telegramId);
@@ -90,8 +101,7 @@ export function* timezoneSettings(state) {
 
     // Create timezone selection options
     const timezoneOptions = TIMEZONES.reduce((acc, tz, idx) => {
-        const displayName = `${tz.name} (${tz.offset})`;
-        acc[idx] = displayName;
+        acc[idx] = `${tz.name} (${tz.offset})`;
         return acc;
     }, {
         custom: _('timezone.custom'),
@@ -113,9 +123,8 @@ export function* timezoneSettings(state) {
 
         const customTimezone = yield requestString(state, _('timezone.enterCustomPrompt'), {
             validator: (input) => {
-                if (!input || input.trim().length === 0) {
-                    return false;
-                }
+                if (!input || input.trim().length === 0) return false;
+
                 return validateTimezone(input.trim());
             }
         });
@@ -134,12 +143,27 @@ export function* timezoneSettings(state) {
         selectedOffset = selectedIANA.offset; // For display use original offset
     }
 
-    // Update user timezone (always in UTC offset format)
+    // Update user timezone
+    // For IANA timezones, convert to UTC offset for storage
+    // For UTC offsets, save as is (+03:00)
+    // For UTC, save as UTC
+    let timezoneToSave;
+
+    // If user entered IANA timezone, convert to UTC offset for storage
+    if (TIMEZONES.some(tz => tz.name === selectedTimezone)) {
+        timezoneToSave = convertIANAToUTCOffset(selectedTimezone); // Save +03:00 instead of Europe/Moscow
+    } else if (selectedTimezone === 'UTC') {
+        timezoneToSave = 'UTC';
+    } else {
+        // For UTC offsets, save as is
+        timezoneToSave = selectedTimezone;
+    }
+
     if (user) {
-        yield UserDAO.updateTimezone(state.telegramId, selectedTimezone);
+        yield UserDAO.updateTimezone(state.telegramId, timezoneToSave);
     } else {
         // Create user if doesn't exist
-        yield UserDAO.findOrCreate(state.telegramId, {timezone: selectedTimezone});
+        yield UserDAO.findOrCreate(state.telegramId, {timezone: timezoneToSave});
     }
 
     yield responseMarkdown(state, _('timezone.updated', {timezone: selectedTimezone, offset: selectedOffset}));
