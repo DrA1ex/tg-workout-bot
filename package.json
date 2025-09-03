@@ -6,7 +6,8 @@
     "start": "node src/index.js",
     "test": "node --experimental-vm-modules node_modules/.bin/jest",
     "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
-    "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage"
+    "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
+    "migrate": "node src/db/migrate-cli.js"
   },
   "dependencies": {
     "@jest/globals": "^30.1.2",

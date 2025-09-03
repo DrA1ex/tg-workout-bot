@@ -1,7 +1,7 @@
 // src/db/index.js
 import {Sequelize} from 'sequelize';
 import initModels from './models.js';
-import {migrateTimezone} from './migrate.js';
+import {runPendingMigrations} from './migrator.js';
 
 const storage = process.env.SQLITE_FILE || "./db.sqlite";
 
@@ -18,6 +18,6 @@ export async function ensureDb() {
     // Create tables if needed
     await sequelize.sync();
     
-    // Run timezone migration
-    await migrateTimezone();
+    // Run pending migrations
+    await runPendingMigrations();
 }
