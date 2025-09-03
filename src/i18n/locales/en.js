@@ -32,6 +32,7 @@ export default {
         selectedDate: 'Selected date: *{{date}}*',
         noExercises: 'You have no exercises. Please add one first.',
         selectExercise: 'Select exercise:',
+        addNewExercise: '➕ Add New Exercise',
         selectedExercise: 'Selected exercise: *{{exercise}}*',
         reuseLastSet: 'Use parameters from last workout?\n{{lastSet}}',
         useLastValues: 'Use previous',

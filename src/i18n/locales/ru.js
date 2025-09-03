@@ -32,6 +32,7 @@ export default {
         selectedDate: 'Выбрана дата: *{{date}}*',
         noExercises: 'У вас нет упражнений. Добавьте новое сначала.',
         selectExercise: 'Выберите упражнение:',
+        addNewExercise: '➕ Добавить новое упражнение',
         selectedExercise: 'Выбрано упражнение: *{{exercise}}*',
         reuseLastSet: 'Использовать параметры последней тренировки?\n{{lastSet}}',
         useLastValues: 'Использовать прошлые',

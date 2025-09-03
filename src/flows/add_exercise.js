@@ -2,6 +2,7 @@ import {cancelled, requestChoice, requestString, response} from "../runtime/prim
 import {getUserLanguage} from "../i18n/index.js";
 import {ExerciseDAO} from "../dao/index.js";
 import {paginateExercises} from "../utils/pagination.js";
+import {addNewExerciseCommon} from "./common.js";
 
 export function* addExercise(state) {
     const {_} = yield getUserLanguage(state.telegramId);
@@ -20,22 +21,7 @@ export function* addExercise(state) {
 }
 
 function* addNewExercise(state) {
-    const {_} = yield getUserLanguage(state.telegramId);
-
-    const name = yield requestString(state, _('addExercise.enterName'));
-    const notes = yield requestChoice(state,
-        {__skip: _('buttons.skip')},
-        _('addExercise.enterNote'),
-        {allowCustom: true}
-    );
-
-    // Save to database using DAO
-    yield ExerciseDAO.addUserExercise(state.telegramId, {
-        name,
-        notes: notes === "__skip" ? "" : notes
-    });
-
-    yield response(state, _('addExercise.exerciseAdded', {name}));
+    return yield* addNewExerciseCommon(state);
 }
 
 function* addExistingExercise(state) {

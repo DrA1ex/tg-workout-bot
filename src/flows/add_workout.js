@@ -2,6 +2,7 @@ import {cancelled, requestChoice, requestDate, response, responseMarkdown} from 
 import {getCurrentDateInTimezone} from "../utils/timezone.js";
 import {formatDate, getUserLanguage} from "../i18n/index.js";
 import {ExerciseDAO, UserDAO, WorkoutDAO} from "../dao/index.js";
+import {addNewExerciseCommon} from "./common.js";
 
 // Validation functions
 function validatePositiveInteger(txt) {
@@ -59,11 +60,27 @@ function* addSingleWorkout(state, workoutDate, timezone, language) {
     const exOptions = exerciseNames.reduce((acc, ex, idx) => {
         acc[idx] = ex;
         return acc;
-    }, {cancel: _('buttons.cancel')});
+    }, {
+        new: _('addWorkout.addNewExercise'),
+        cancel: _('buttons.cancel')
+    });
 
     const exKey = yield requestChoice(state, exOptions, _('addWorkout.selectExercise'));
     if (exKey === "cancel") return yield cancelled(state);
-    const exercise = exerciseNames[exKey];
+    
+    let exercise;
+    if (exKey === "new") {
+        // User wants to add a new exercise
+        exercise = yield* addNewExerciseCommon(state);
+        if (!exercise) return yield cancelled(state);
+        
+        // Refresh the exercise list after adding new one
+        const updatedExercises = yield ExerciseDAO.getUserExercises(state.telegramId);
+        exerciseNames.length = 0; // Clear array
+        exerciseNames.push(...updatedExercises.map(e => typeof e === "string" ? e : e.name));
+    } else {
+        exercise = exerciseNames[exKey];
+    }
 
     yield responseMarkdown(state, _('addWorkout.selectedExercise', {exercise}));
 
