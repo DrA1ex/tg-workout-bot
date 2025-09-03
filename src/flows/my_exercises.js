@@ -19,11 +19,11 @@ export function* myExercises(state) {
 
     // Format exercises list
     let message = _('myExercises.exerciseList') + '\n\n';
-    
+
     exercises.forEach(exercise => {
         const name = typeof exercise === 'string' ? exercise : exercise.name;
         const notes = typeof exercise === 'object' && exercise.notes ? exercise.notes : '';
-        
+
         if (notes) {
             message += _('myExercises.exerciseItemWithNotes', {name, notes}) + '\n';
         } else {

@@ -1,14 +1,14 @@
 import {jest} from '@jest/globals';
-import { describeWithSilencedConsole } from '../mocks/console-mocks.js';
+import {describeWithSilencedConsole} from '../mocks/console-mocks.js';
 import {
-    getUserId,
-    isPromise,
-    skipError,
-    getSession,
-    setSession,
     deleteSession,
+    getAllSessions,
+    getSession,
+    getUserId,
     hasSession,
-    getAllSessions
+    isPromise,
+    setSession,
+    skipError
 } from '../../src/runtime/session-manager.js';
 
 describeWithSilencedConsole('Session Manager Tests', ['warn'], () => {

@@ -1,4 +1,4 @@
-import {response, cancelled} from "../runtime/primitives.js";
+import {cancelled, response} from "../runtime/primitives.js";
 import {formatDate, getUserLanguage} from "../i18n/index.js";
 import {paginateDates} from "../utils/pagination.js";
 import {UserDAO, WorkoutDAO} from "../dao/index.js";
@@ -18,12 +18,12 @@ export function* viewWorkouts(state) {
 
     // 2. Use pagination utility to select date
     const selectedDate = yield* paginateDates(
-        state, 
-        allDates, 
-        _('viewWorkout.datesWithWorkouts'), 
-        language, 
-        timezone, 
-        formatDate, 
+        state,
+        allDates,
+        _('viewWorkout.datesWithWorkouts'),
+        language,
+        timezone,
+        formatDate,
         _
     );
 

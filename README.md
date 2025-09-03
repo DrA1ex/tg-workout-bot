@@ -1,11 +1,15 @@
 # TG Workout Bot
 
-TG Workout Bot is an interactive Telegram bot for tracking bodybuilding, fitness, or other exercise routines. Designed for a smooth user experience, it leverages Telegram's rich interface features to make logging and viewing workouts intuitive and fast.
+TG Workout Bot is an interactive Telegram bot for tracking bodybuilding, fitness, or other exercise routines. Designed
+for a smooth user experience, it leverages Telegram's rich interface features to make logging and viewing workouts
+intuitive and fast.
 
 ## Features
 
-- **Main Menu Keyboard:** Instantly access core actions (Add Workout, Add Exercise, View Progress, etc.) from a persistent Telegram button menu.
-- **Step-by-Step Flows:** Each bot action guides you through simple steps—selecting dates, choosing exercises, entering details—using Telegram messages and inline buttons.
+- **Main Menu Keyboard:** Instantly access core actions (Add Workout, Add Exercise, View Progress, etc.) from a
+  persistent Telegram button menu.
+- **Step-by-Step Flows:** Each bot action guides you through simple steps—selecting dates, choosing exercises, entering
+  details—using Telegram messages and inline buttons.
 - **Inline Calendar Picker:** Select workout dates using a visual calendar embedded directly in the chat.
 - **Customizable Exercises:** Build your own exercise list and select from it when logging workouts.
 - **Progress Review:** View summaries and progress for each exercise, with easy selection via buttons.
@@ -26,13 +30,14 @@ TG Workout Bot is an interactive Telegram bot for tracking bodybuilding, fitness
    ```
 
 3. **Configuration:**
-   - Create a `.env` file in the root directory:
-     ```
-     BOT_TOKEN=your_telegram_bot_token
-     ```
+    - Create a `.env` file in the root directory:
+      ```
+      BOT_TOKEN=your_telegram_bot_token
+      ```
 
 4. **Database:**
-   - The project uses `sqlite3` for storage, and will automatically create a `db.sqlite` file in the project directory when started. No additional setup is required.
+    - The project uses `sqlite3` for storage, and will automatically create a `db.sqlite` file in the project directory
+      when started. No additional setup is required.
 
 5. **Run the bot:**
    ```bash
@@ -51,17 +56,18 @@ TG Workout Bot is an interactive Telegram bot for tracking bodybuilding, fitness
 - `src/index.js` – Bot entry and main menu handler
 - `src/flows/` – User interaction flows for all main features
 - `src/runtime/` – Runtime and effect processing layer
-  - `runtime/index.js` – Flow runner: advances generator, routes results, manages session life cycle
-  - `runtime/flow-handler.js` – Flow utilities: interruption signal, cleanup, error handling, processing of generator values
-  - `runtime/effect-processor.js` – Processes effects yielded by flows:
-    - Supported effect types: `response`, `response_markdown`, `string`, `choice`, `date`, `cancel`
-    - Returns `{type: 'wait'}` for effects that expect user input (`string`, `choice`, `date`)
-    - Returns `{type: 'cancel'}` for `cancel` (via `processEffect`)
-    - Returns `{type: 'continue'}` for other immediate effects and unknown types
-  - `runtime/message-handler.js` – Handles incoming text based on session state (`string`, `choice`, `date`)
-  - `runtime/callback-handler.js` – Handles inline button callbacks, including calendar events
-  - `runtime/calendar-handler.js` – Day/month/cancel processing for the inline calendar
-  - `runtime/session-manager.js` – In‑memory session store and helpers (`skipError`, `getSession`, etc.)
+    - `runtime/index.js` – Flow runner: advances generator, routes results, manages session life cycle
+    - `runtime/flow-handler.js` – Flow utilities: interruption signal, cleanup, error handling, processing of generator
+      values
+    - `runtime/effect-processor.js` – Processes effects yielded by flows:
+        - Supported effect types: `response`, `response_markdown`, `string`, `choice`, `date`, `cancel`
+        - Returns `{type: 'wait'}` for effects that expect user input (`string`, `choice`, `date`)
+        - Returns `{type: 'cancel'}` for `cancel` (via `processEffect`)
+        - Returns `{type: 'continue'}` for other immediate effects and unknown types
+    - `runtime/message-handler.js` – Handles incoming text based on session state (`string`, `choice`, `date`)
+    - `runtime/callback-handler.js` – Handles inline button callbacks, including calendar events
+    - `runtime/calendar-handler.js` – Day/month/cancel processing for the inline calendar
+    - `runtime/session-manager.js` – In‑memory session store and helpers (`skipError`, `getSession`, etc.)
 - `src/modules/calendar.js` – Inline calendar markup generator
 - `src/i18n/` – Language support and translation lookup
 - `src/dao/`, `src/db/` – Persistence and migrations
@@ -80,9 +86,11 @@ Effect outcomes drive the runner (`runtime/index.js`):
 - `{type: 'cancel'}` – runtime cleans up and ends the session
 - `{type: 'continue'}` – runtime proceeds to the next generator step
 
-Unknown or malformed effects are treated as `{type: 'continue'}` (the flow keeps going). Flows that need to wait for user input must yield one of the waiting effects (`string`, `choice`, `date`).
+Unknown or malformed effects are treated as `{type: 'continue'}` (the flow keeps going). Flows that need to wait for
+user input must yield one of the waiting effects (`string`, `choice`, `date`).
 
-Inline calendar interactions are handled by `runtime/callback-handler.js` + `runtime/calendar-handler.js` and update the message markup, selected date, or cancel accordingly.
+Inline calendar interactions are handled by `runtime/callback-handler.js` + `runtime/calendar-handler.js` and update the
+message markup, selected date, or cancel accordingly.
 
 ## License
 
@@ -103,8 +111,8 @@ npm start
 
 - Test runner: Jest (see `jest.config.js`)
 - Tests live under `__tests__/runtime/` and use light mocks from `__tests__/mocks/`
-  - Telegram context/session mocks: `__tests__/mocks/telegram-mocks.js`
-  - Console silencing helpers: `__tests__/mocks/console-mocks.js`
+    - Telegram context/session mocks: `__tests__/mocks/telegram-mocks.js`
+    - Console silencing helpers: `__tests__/mocks/console-mocks.js`
 
 Run the full test suite:
 
@@ -114,7 +122,8 @@ npm test
 
 ### Database migrations
 
-The project uses a simple, versioned migration system built on top of Sequelize with SQLite. Migrations are plain JS files in `src/db/migrations/` named with an incremental version prefix:
+The project uses a simple, versioned migration system built on top of Sequelize with SQLite. Migrations are plain JS
+files in `src/db/migrations/` named with an incremental version prefix:
 
 - `src/db/migrations/0001_timezone_column.js`
 

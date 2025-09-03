@@ -1,9 +1,9 @@
 import {jest} from '@jest/globals';
-import { describeWithSilencedConsole } from '../mocks/console-mocks.js';
+import {describeWithSilencedConsole} from '../mocks/console-mocks.js';
 import {
-    handleStringInput,
     handleChoiceInput,
     handleDateInput,
+    handleStringInput,
     handleUnexpectedInput,
     processTextMessage
 } from '../../src/runtime/message-handler.js';

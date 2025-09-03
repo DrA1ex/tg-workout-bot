@@ -1,9 +1,8 @@
-import { jest } from '@jest/globals';
 import os from 'os';
 import path from 'path';
-import { mkdtemp, rm } from 'fs/promises';
-import { spawn } from 'child_process';
-import { describeWithSilencedConsole } from '../mocks/console-mocks.js';
+import {mkdtemp, rm} from 'fs/promises';
+import {spawn} from 'child_process';
+import {describeWithSilencedConsole} from '../mocks/console-mocks.js';
 
 describeWithSilencedConsole('Database Migrations', ['warn', 'error', 'log'], () => {
     let tempDir;
@@ -18,15 +17,16 @@ describeWithSilencedConsole('Database Migrations', ['warn', 'error', 'log'], () 
     afterAll(async () => {
         // Cleanup temporary files
         try {
-            await rm(tempDir, { recursive: true, force: true });
-        } catch {}
+            await rm(tempDir, {recursive: true, force: true});
+        } catch {
+        }
         delete process.env.SQLITE_FILE;
     });
 
     it('applies pending migrations and records versions', async () => {
         // Import after setting env to bind sequelize to our temp db
-        const { sequelize } = await import('../../src/db/index.js');
-        const { runPendingMigrations } = await import('../../src/db/migrator.js');
+        const {sequelize} = await import('../../src/db/index.js');
+        const {runPendingMigrations} = await import('../../src/db/migrator.js');
 
         await sequelize.authenticate();
         await sequelize.sync();
@@ -55,7 +55,7 @@ describeWithSilencedConsole('Database Migrations', ['warn', 'error', 'log'], () 
 
         await new Promise((resolve, reject) => {
             const child = spawn(process.execPath, [cliPath], {
-                env: { ...process.env, SQLITE_FILE: dbFile },
+                env: {...process.env, SQLITE_FILE: dbFile},
                 stdio: 'ignore'
             });
             child.on('exit', (code) => {
@@ -65,7 +65,7 @@ describeWithSilencedConsole('Database Migrations', ['warn', 'error', 'log'], () 
         });
 
         // Verify migration table exists
-        const { sequelize } = await import('../../src/db/index.js');
+        const {sequelize} = await import('../../src/db/index.js');
         const [rows] = await sequelize.query('SELECT version FROM migrations');
         expect(rows.length).toBeGreaterThanOrEqual(1);
     });

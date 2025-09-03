@@ -1,4 +1,4 @@
-import {requestChoice, cancelled} from "../runtime/primitives.js";
+import {cancelled, requestChoice} from "../runtime/primitives.js";
 import {WorkoutDAO} from "../dao/index.js";
 
 /**

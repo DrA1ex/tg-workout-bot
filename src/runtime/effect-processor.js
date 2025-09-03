@@ -5,26 +5,8 @@
 import {Markup} from "telegraf";
 import {generateCalendar} from "../modules/calendar.js";
 import {getUserLanguage} from "../i18n/index.js";
-import {skipError} from "./session-manager.js";
+import {clearPendingMessage} from './utils/message.js';
 
-/**
- * Clear existing keyboards before processing new effects
- */
-export async function clearExistingKeyboards(ctx, session) {
-    if (session.pending?.messageId) {
-        try {
-            await ctx.telegram.editMessageReplyMarkup(
-                ctx.chat.id,
-                session.pending.messageId,
-                null,
-                {inline_keyboard: []}
-            ).catch(skipError);
-            session.pending.messageId = null;
-        } catch (e) {
-            console.warn("[runtime] Error clearing keyboards:", e);
-        }
-    }
-}
 
 /**
  * Process response effect
@@ -57,7 +39,8 @@ export async function processStringEffect(ctx, session, value) {
     session.pending = {
         type: "string",
         validator: value.validator || null,
-        cancellable: value.cancellable ?? false
+        cancellable: value.cancellable ?? false,
+        deletePrevious: !!value.deletePrevious
     };
 
     try {
@@ -80,19 +63,22 @@ export async function processStringEffect(ctx, session, value) {
 export async function processChoiceEffect(ctx, session, value) {
     const {_} = await getUserLanguage(ctx.from?.id || 0);
 
-    const options = { ...(value.options || {}) };
+    const options = {...(value.options || {})};
 
     session.pending = {
         type: "choice",
         options,
         allowCustom: !!value.allowCustom,
+        deletePrevious: !!value.deletePrevious
     };
 
     try {
         const keyboard = Object.entries(value.options || {}).map(
             ([key, label]) => [Markup.button.callback(label, String(key))]
         );
-        const msg = await ctx.reply(value.prompt || _('runtime.selectOption'), Markup.inlineKeyboard(keyboard));
+        const markup = Markup.inlineKeyboard(keyboard);
+        const msg = await ctx.reply(value.prompt || _('runtime.selectOption'), markup);
+
         session.pending.messageId = msg.message_id;
     } catch (e) {
         console.error(e);
@@ -147,9 +133,6 @@ export async function processCancelEffect(ctx, session, userId, value) {
  * Process all effects
  */
 export async function processEffect(ctx, session, userId, value) {
-    // Clear any existing keyboards before processing new effects
-    await clearExistingKeyboards(ctx, session);
-
     switch (value?.type) {
         case "response":
             await processResponseEffect(ctx, value);

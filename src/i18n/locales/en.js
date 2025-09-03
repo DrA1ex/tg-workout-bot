@@ -65,14 +65,16 @@ export default {
     addExercise: {
         selectOption: 'Select option:',
         addNew: 'Add New',
-        addExisting: 'Add from Database',
+        addExisting: 'Find by name',
+        browseAll: 'Browse All',
         enterName: 'Enter new exercise name:',
         enterNote: 'Enter note',
         exerciseExists: 'Exercise "{{name}}" already exists in your list.',
         exerciseAdded: 'Added exercise: {{name}}',
         enterSearch: 'Enter name to search:',
         nothingFound: 'Nothing found.',
-        selectFromFound: 'Select exercise:'
+        selectFromFound: 'Select exercise:',
+        selectFromAll: 'Select exercise from the list:'
     },
 
     // Delete workout flow

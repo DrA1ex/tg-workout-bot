@@ -1,6 +1,6 @@
-import {requestChoice, response, cancelled} from "../runtime/primitives.js";
+import {cancelled, requestChoice, response} from "../runtime/primitives.js";
 import {startFlow} from "../runtime/index.js";
-import {getUserLanguage, formatDate} from "../i18n/index.js";
+import {formatDate, getUserLanguage} from "../i18n/index.js";
 import {paginateDates} from "../utils/pagination.js";
 import {UserDAO, WorkoutDAO} from "../dao/index.js";
 
@@ -19,12 +19,12 @@ export function* deleteWorkout(state) {
 
     // 2. Use pagination utility to select date
     const selectedDate = yield* paginateDates(
-        state, 
-        allDates, 
-        _('deleteWorkout.selectDate'), 
-        language, 
-        timezone, 
-        formatDate, 
+        state,
+        allDates,
+        _('deleteWorkout.selectDate'),
+        language,
+        timezone,
+        formatDate,
         _
     );
 

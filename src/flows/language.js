@@ -1,4 +1,4 @@
-import {requestChoice, response, cancelled} from "../runtime/primitives.js";
+import {cancelled, requestChoice, response} from "../runtime/primitives.js";
 import {createMainKeyboard, getUserLanguage, setUserLanguage, t} from "../i18n/index.js";
 
 

@@ -1,7 +1,7 @@
-import {requestChoice, response, cancelled, responseMarkdown, requestDate} from "../runtime/primitives.js";
+import {cancelled, requestChoice, requestDate, response, responseMarkdown} from "../runtime/primitives.js";
 import {getCurrentDateInTimezone} from "../utils/timezone.js";
-import {getUserLanguage, formatDate} from "../i18n/index.js";
-import {UserDAO, WorkoutDAO, ExerciseDAO} from "../dao/index.js";
+import {formatDate, getUserLanguage} from "../i18n/index.js";
+import {ExerciseDAO, UserDAO, WorkoutDAO} from "../dao/index.js";
 
 function* requestStringWorkoutFiled(state, label, validator = undefined, skip = false) {
     const {_} = yield getUserLanguage(state.telegramId);

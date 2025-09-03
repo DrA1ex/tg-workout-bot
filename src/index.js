@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
 import {Telegraf} from "telegraf";
-import {startFlow, handleTextMessage, handleCallbackQuery} from "./runtime/index.js";
+import {handleCallbackQuery, handleTextMessage, startFlow} from "./runtime/index.js";
 
 import {addExercise} from "./flows/add_exercise.js";
 import {addWorkout} from "./flows/add_workout.js";

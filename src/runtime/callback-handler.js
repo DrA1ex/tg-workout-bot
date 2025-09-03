@@ -5,6 +5,7 @@
 import {getUserLanguage} from "../i18n/index.js";
 import {skipError} from "./session-manager.js";
 import {processCalendarEvent} from "./calendar-handler.js";
+import {cleanupPendingState} from "./flow-handler.js";
 
 /**
  * Handle choice callback
@@ -16,11 +17,10 @@ export async function handleChoiceCallback(ctx, session, data) {
         return ctx.reply(_('runtime.unexpectedChoice'));
     }
 
-    session.pending = null;
-    await ctx.editMessageReplyMarkup({inline_keyboard: []}).catch(skipError);
+    await cleanupPendingState(session);
     await ctx.answerCbQuery().catch(skipError);
 
-    return { action: 'proceed', input: data };
+    return {action: 'proceed', input: data};
 }
 
 /**
@@ -28,11 +28,11 @@ export async function handleChoiceCallback(ctx, session, data) {
  */
 export async function handleStringCallback(ctx, session, data) {
     if (data === "cancel") {
-        session.pending = null;
+        await cleanupPendingState(session);
         await ctx.answerCbQuery().catch(skipError);
-        return { action: 'proceed', input: null };
+        return {action: 'proceed', input: null};
     }
-    
+
     return false; // Not a string callback
 }
 
@@ -45,14 +45,14 @@ export async function processCallbackQuery(ctx, session, data) {
         const result = await processCalendarEvent(ctx, session, data);
         if (result) {
             if (result.type === 'cancelled') {
-                return { action: 'cancel' };
+                return {action: 'cancel'};
             }
             if (result.type === 'day_selected') {
-                session.pending = null;
-                return { action: 'proceed', input: result.date };
+                await cleanupPendingState(session);
+                return {action: 'proceed', input: result.date};
             }
             if (result.type === 'month_updated') {
-                return { action: 'wait' };
+                return {action: 'wait'};
             }
         }
     }
@@ -72,5 +72,5 @@ export async function processCallbackQuery(ctx, session, data) {
 
     // In other cases - just answer the callback so the spinner doesn't hang
     await ctx.answerCbQuery().catch(skipError);
-    return { action: 'wait' };
+    return {action: 'wait'};
 }

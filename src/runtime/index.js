@@ -3,20 +3,10 @@
  */
 
 import {getUserLanguage} from "../i18n/index.js";
-import {
-    getUserId,
-    getSession,
-    setSession,
-    deleteSession,
-    hasSession
-} from "./session-manager.js";
-import {
-    signalFlowInterruption,
-    cleanupSession
-} from "./flow-handler.js";
+import {deleteSession, getSession, getUserId, hasSession, setSession} from "./session-manager.js";
+import {cleanupPendingState, processGeneratorValue, signalFlowInterruption} from "./flow-handler.js";
 import {processTextMessage} from "./message-handler.js";
 import {processCallbackQuery} from "./callback-handler.js";
-import {processGeneratorValue} from "./flow-handler.js";
 
 /**
  * Start a new flow scenario
@@ -32,7 +22,7 @@ export async function startFlow(ctx, generatorFn, initialState = {}) {
     if (hasSession(userId)) {
         const oldSession = getSession(userId);
         await signalFlowInterruption(oldSession);
-        await cleanupSession(oldSession);
+        await cleanupPendingState(oldSession);
         deleteSession(userId);
     }
 
@@ -93,7 +83,7 @@ export function cancelFlowForUser(ctx) {
     const userId = getUserId(ctx);
     if (hasSession(userId)) {
         const session = getSession(userId);
-        cleanupSession(session).catch(console.warn);
+        cleanupPendingState(session).catch(console.warn);
         deleteSession(userId);
     }
 }
@@ -122,7 +112,7 @@ async function _proceed(ctx, session, input) {
         next = gen.next(input);
     } catch (err) {
         console.error("[runtime] unhandled generator error:", err);
-        await cleanupSession(session);
+        await cleanupPendingState(session);
         deleteSession(userId);
         await ctx.reply(_('runtime.flowError')).catch(console.warn);
         return;
@@ -148,7 +138,7 @@ async function _proceed(ctx, session, input) {
                     continue;
                 } catch (err2) {
                     console.error("[runtime] generator threw while handling promise rejection:", err2);
-                    await cleanupSession(session);
+                    await cleanupPendingState(session);
                     deleteSession(userId);
                     await ctx.reply(_('runtime.operationError')).catch(console.warn);
                     return;
@@ -164,7 +154,7 @@ async function _proceed(ctx, session, input) {
         }
 
         if (result.action === 'cancel') {
-            await cleanupSession(session);
+            await cleanupPendingState(session);
             deleteSession(userId);
             return;
         }
@@ -175,7 +165,7 @@ async function _proceed(ctx, session, input) {
                 continue;
             } catch (err2) {
                 console.error("[runtime] generator threw while handling function error:", err2);
-                await cleanupSession(session);
+                await cleanupPendingState(session);
                 deleteSession(userId);
                 return;
             }

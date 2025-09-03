@@ -96,15 +96,7 @@ export async function handleCalendarCancel(ctx, session, data) {
     }
 
     // Try to remove inline keyboard (so buttons don't remain clickable)
-    try {
-        await ctx.editMessageReplyMarkup({inline_keyboard: []});
-    } catch (err) {
-        const desc = err?.description || err?.message || "";
-        // Ignore "message is not modified"
-        if (!desc.includes("message is not modified")) {
-            console.error("[runtime] editMessageReplyMarkup error on calendar cancel:", err);
-        }
-    }
+    await ctx.editMessageReplyMarkup({inline_keyboard: []}).catch(skipError);
 
     // Cancel session and notify user
     const {_} = await getUserLanguage(ctx.from?.id || 0);

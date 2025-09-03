@@ -53,7 +53,7 @@ export class UserDAO {
             if (!user) {
                 throw new Error(`User with Telegram ID ${telegramId} not found`);
             }
-            
+
             Object.assign(user, updates);
             return await user.save();
         } catch (error) {

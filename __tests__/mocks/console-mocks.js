@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import {jest} from '@jest/globals';
 
 /**
  * Temporarily silence console methods to avoid noisy test output.

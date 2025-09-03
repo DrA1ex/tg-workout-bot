@@ -1,4 +1,4 @@
-import {requestChoice, cancelled} from "../runtime/primitives.js";
+import {cancelled, requestChoice} from "../runtime/primitives.js";
 
 /**
  * Universal pagination utility for displaying lists with pagination
@@ -31,7 +31,7 @@ export function* paginateItems(state, items, title, formatItem, perPage = 10, _)
         if ((page + 1) * perPage < items.length) options["next"] = _('buttons.next');
         options["cancel"] = _('buttons.cancel');
 
-        const choice = yield requestChoice(state, options, title);
+        const choice = yield requestChoice(state, options, title, {deletePrevious: true});
 
         if (choice === "cancel") return yield cancelled(state);
         if (choice === "prev") {
@@ -62,4 +62,26 @@ export function* paginateItems(state, items, title, formatItem, perPage = 10, _)
 export function* paginateDates(state, dates, title, language, timezone, formatDate, _) {
     const formatDateItem = (date) => formatDate(new Date(date), language, timezone);
     return yield* paginateItems(state, dates, title, formatDateItem, 10, _);
+}
+
+/**
+ * Paginate exercises with support for marking already added ones
+ * @param {object} state - Flow state
+ * @param {Array} exercises - Array of exercise objects
+ * @param {Set} existingExercises - Set of already added exercise names
+ * @param {string} title - Title for the pagination
+ * @param {function} _ - Localization function
+ * @param {number} perPage - Items per page (default: 10)
+ * @returns {object} Selected exercise or null if cancelled
+ */
+export function* paginateExercises(state, exercises, existingExercises, title, _, perPage = 10) {
+    if (!exercises.length) {
+        return null;
+    }
+
+    const formatExerciseItem = (exercise) => {
+        return existingExercises.has(exercise.name) ? `★ ${exercise.name}` : exercise.name;
+    };
+
+    return yield* paginateItems(state, exercises, title, formatExerciseItem, perPage, _);
 }

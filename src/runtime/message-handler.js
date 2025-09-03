@@ -3,7 +3,7 @@
  */
 
 import {getUserLanguage} from "../i18n/index.js";
-import {skipError} from "./session-manager.js";
+import {clearMessageKeyboard} from "./utils/message.js";
 
 /**
  * Handle text message when expecting string input
@@ -32,12 +32,7 @@ export async function handleChoiceInput(ctx, session, text) {
 
     // Remove buttons directly, since the context has a different message
     if (session.pending.messageId) {
-        await ctx.telegram.editMessageReplyMarkup(
-            session.ctx.chat.id,
-            session.pending.messageId,
-            null,
-            {inline_keyboard: []}
-        ).catch(skipError);
+        await clearMessageKeyboard(ctx, session.ctx.chat.id, session.pending.messageId);
     }
 
     session.pending = null;

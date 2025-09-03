@@ -1,5 +1,5 @@
 import {models} from "../db/index.js";
-import {createDateGroupAttribute, createDateFilterClause} from "../utils/timezone.js";
+import {createDateFilterClause, createDateGroupAttribute} from "../utils/timezone.js";
 
 /**
  * Data Access Object for Workout operations
@@ -14,7 +14,7 @@ export class WorkoutDAO {
     static async getDatesWithWorkouts(telegramId, timezone) {
         try {
             const q = models.Workout.sequelize;
-            
+
             const dates = await models.Workout.findAll({
                 attributes: [
                     createDateGroupAttribute(q, 'date', 'd', timezone)
@@ -41,7 +41,7 @@ export class WorkoutDAO {
     static async getWorkoutsByDate(telegramId, date, timezone) {
         try {
             const q = models.Workout.sequelize;
-            
+
             return await models.Workout.findAll({
                 where: {
                     telegramId,
@@ -85,7 +85,7 @@ export class WorkoutDAO {
                 attributes: ["exercise"],
                 group: ["exercise"]
             });
-            
+
             return exercises.map(ex => ex.exercise);
         } catch (error) {
             console.error('Error getting unique exercises:', error);

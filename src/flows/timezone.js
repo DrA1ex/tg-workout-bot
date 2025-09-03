@@ -1,10 +1,4 @@
-import {
-    requestChoice,
-    response,
-    cancelled,
-    responseMarkdown,
-    requestString
-} from "../runtime/primitives.js";
+import {cancelled, requestChoice, requestString, response, responseMarkdown} from "../runtime/primitives.js";
 import {getUserLanguage} from "../i18n/index.js";
 import {UserDAO} from "../dao/index.js";
 
@@ -34,12 +28,12 @@ export function getTimezoneOffset(timezone) {
         if (timezone.match(/^[+-](0[0-9]|1[0-2]):[0-5][0-9]$/)) {
             return timezone;
         }
-        
+
         // For UTC return +00:00
         if (timezone.toUpperCase() === 'UTC') {
             return '+00:00';
         }
-        
+
         // For unknown format return Unknown
         return 'Unknown';
     } catch (error) {
@@ -58,7 +52,7 @@ function convertIANAToUTCOffset(ianaTimezone) {
     if (found) {
         return found.offset;
     }
-    
+
     // If not found, return UTC
     console.warn(`Unknown IANA timezone: ${ianaTimezone}, using UTC`);
     return '+00:00';
@@ -73,13 +67,13 @@ export function validateTimezone(timezone) {
     if (!timezone || typeof timezone !== 'string') {
         return false;
     }
-    
+
     // Check UTC offset format (e.g., +03:00, -05:00)
     const offsetRegex = /^[+-](0[0-9]|1[0-2]):[0-5][0-9]$/;
-    
+
     // Check UTC format (e.g., UTC)
     const utcRegex = /^UTC$/i;
-    
+
     return offsetRegex.test(timezone) || utcRegex.test(timezone);
 }
 
@@ -139,7 +133,7 @@ export function* timezoneSettings(state) {
         selectedTimezone = convertIANAToUTCOffset(selectedIANA.name); // Save UTC offset
         selectedOffset = selectedIANA.offset; // For display use original offset
     }
-    
+
     // Update user timezone (always in UTC offset format)
     if (user) {
         yield UserDAO.updateTimezone(state.telegramId, selectedTimezone);

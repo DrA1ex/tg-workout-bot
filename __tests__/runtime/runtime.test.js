@@ -1,19 +1,14 @@
 import {jest} from '@jest/globals';
-import { describeWithSilencedConsole } from '../mocks/console-mocks.js';
+import {describeWithSilencedConsole} from '../mocks/console-mocks.js';
 import {
-    startFlow,
-    handleTextMessage,
-    handleCallbackQuery,
     cancelFlowForUser,
-    hasActiveFlowForUser
+    handleCallbackQuery,
+    handleTextMessage,
+    hasActiveFlowForUser,
+    startFlow
 } from '../../src/runtime/index.js';
-import {
-    getSession,
-    setSession,
-    deleteSession,
-    hasSession
-} from '../../src/runtime/session-manager.js';
-import {createMockContext, createMockSession, createMockGenerator} from '../mocks/telegram-mocks.js';
+import {deleteSession, getSession, hasSession, setSession} from '../../src/runtime/session-manager.js';
+import {createMockContext, createMockGenerator, createMockSession} from '../mocks/telegram-mocks.js';
 
 describe('Runtime Tests', () => {
     let mockCtx;

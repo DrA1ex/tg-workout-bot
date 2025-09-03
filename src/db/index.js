@@ -17,7 +17,7 @@ export async function ensureDb() {
     await sequelize.authenticate();
     // Create tables if needed
     await sequelize.sync();
-    
+
     // Run pending migrations
     await runPendingMigrations();
 }

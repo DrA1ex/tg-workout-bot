@@ -1,4 +1,5 @@
 import {models} from "../db/index.js";
+import {Op} from "sequelize";
 
 /**
  * Data Access Object for Exercise operations
@@ -15,7 +16,7 @@ export class ExerciseDAO {
             if (!user || !user.exercises) {
                 return [];
             }
-            
+
             return JSON.parse(user.exercises);
         } catch (error) {
             console.error('Error getting user exercises:', error);
@@ -32,24 +33,24 @@ export class ExerciseDAO {
     static async addUserExercise(telegramId, exercise) {
         try {
             const exercises = await this.getUserExercises(telegramId);
-            
+
             // Check if exercise already exists
-            const exists = exercises.some(ex => 
+            const exists = exercises.some(ex =>
                 (typeof ex === 'string' && ex === exercise.name) ||
                 (typeof ex === 'object' && ex.name === exercise.name)
             );
-            
+
             if (exists) {
                 throw new Error(`Exercise "${exercise.name}" already exists`);
             }
-            
+
             exercises.push(exercise);
-            
+
             await models.User.update(
                 {exercises: JSON.stringify(exercises)},
                 {where: {telegramId}}
             );
-            
+
             return exercises;
         } catch (error) {
             console.error('Error adding user exercise:', error);
@@ -68,7 +69,7 @@ export class ExerciseDAO {
             return await models.GlobalExercise.findAll({
                 where: {
                     name: {
-                        [models.GlobalExercise.sequelize.Op.like]: `%${searchTerm}%`
+                        [Op.like]: `%${searchTerm}%`
                     }
                 },
                 limit,
@@ -93,6 +94,27 @@ export class ExerciseDAO {
             });
         } catch (error) {
             console.error('Error getting all global exercises:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get a page plus indicator if next page exists (fetch limit+1 rows)
+     * @param {number} offset
+     * @param {number} limit
+     * @returns {Promise<{items:Array, hasNext:boolean}>}
+     */
+    static async getGlobalExercisesPageWithNext(offset = 0, limit = 10) {
+        try {
+            const rows = await models.GlobalExercise.findAll({
+                offset,
+                limit: limit + 1,
+                order: [['name', 'ASC']]
+            });
+            const hasNext = rows.length > limit;
+            return {items: hasNext ? rows.slice(0, limit) : rows, hasNext};
+        } catch (error) {
+            console.error('Error getting global exercises page with next:', error);
             throw error;
         }
     }
