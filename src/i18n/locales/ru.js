@@ -170,5 +170,10 @@ export default {
         enterText: 'Введите текст:',
         selectOption: 'Выберите вариант:',
         selectDate: 'Выберите дату:'
+    },
+
+    // Common labels
+    common: {
+        today: 'Сегодня'
     }
 };

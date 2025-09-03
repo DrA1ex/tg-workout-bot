@@ -31,8 +31,9 @@ export default function initModels(sequelize) {
         const repsOrTime = this.isTime ?
                            t(language, 'workout.time', {time: this.repsOrTime}) :
                            t(language, 'workout.reps', {count: this.repsOrTime});
+        const notes = this.notes ? `:\n    - ${this.notes}` : '';
 
-        return `${date}: ${exercise}, ${sets}, ${weight}${repsOrTime}`;
+        return `${date}: ${exercise}, ${sets}, ${weight}${repsOrTime}${notes}`;
     };
 
     const GlobalExercise = sequelize.define('GlobalExercise', {

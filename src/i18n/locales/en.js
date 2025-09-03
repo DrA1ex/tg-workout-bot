@@ -170,5 +170,10 @@ export default {
         enterText: 'Enter text:',
         selectOption: 'Select option:',
         selectDate: 'Select date:'
+    },
+
+    // Common labels
+    common: {
+        today: 'Today'
     }
 };

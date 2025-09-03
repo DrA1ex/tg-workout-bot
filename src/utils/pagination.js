@@ -60,7 +60,18 @@ export function* paginateItems(state, items, title, formatItem, perPage = 10, _)
  * @returns {string} Selected date or null if cancelled
  */
 export function* paginateDates(state, dates, title, language, timezone, formatDate, _) {
-    const formatDateItem = (date) => formatDate(new Date(date), language, timezone);
+    // Get current date in user's timezone to identify "today"
+    const todayString = formatDate(new Date(), language, timezone);
+
+    const formatDateItem = (date) => {
+        const formattedDate = formatDate(new Date(date), language, timezone);
+        if (formattedDate === todayString) {
+            return `🕐 ${_('common.today')}`;
+        }
+
+        return formattedDate;
+    };
+
     return yield* paginateItems(state, dates, title, formatDateItem, 10, _);
 }
 
