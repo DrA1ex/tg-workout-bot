@@ -3,7 +3,7 @@
  */
 
 import {cancelled, requestChoice, requestString, response} from "../runtime/primitives.js";
-import {getUserLanguage} from "../i18n/index.js";
+import {getUserLanguage, setUserLanguage} from "../i18n/index.js";
 import {ExerciseDAO, UserDAO} from "../dao/index.js";
 
 /**
@@ -128,3 +128,123 @@ export const validators = {
         }
     }
 };
+
+/**
+ * Common function to select language
+ * @param {Object} state - Flow state
+ * @returns {Generator} Selected language code or null if cancelled
+ */
+export function* selectLanguageCommon(state) {
+    const {_} = yield getUserLanguage(state.telegramId);
+
+    // Dynamically get available languages from locales
+    const {locales} = yield import("../i18n/locales/index.js");
+    const availableLanguages = Object.keys(locales);
+    
+    // Build language options dynamically
+    const languageOptions = {};
+    availableLanguages.forEach(lang => {
+        languageOptions[lang] = _(`language.${lang}`);
+    });
+    languageOptions.cancel = _('buttons.cancel');
+
+    const languageChoice = yield requestChoice(
+        state,
+        languageOptions,
+        _('language.select')
+    );
+
+    if (languageChoice === 'cancel') {
+        return yield cancelled(state);
+    }
+
+    // Set the new language
+    yield setUserLanguage(state.telegramId, languageChoice);
+    
+    // Return language choice without sending confirmation message
+    return languageChoice;
+}
+
+/**
+ * Common function to select timezone
+ * @param {Object} state - Flow state
+ * @returns {Generator} Selected timezone or null if cancelled
+ */
+// Single comprehensive timezone list with display names and offsets
+// Sorted by UTC offset from +14:00 to -12:00
+export const timezones = {
+    'Asia/Kamchatka': { display: '+12:00 (Kamchatka, Anadyr, Magadan)', offset: '+12:00' },
+    'Asia/Vladivostok': { display: '+11:00 (Vladivostok, Sakhalin, Magadan)', offset: '+11:00' },
+    'Australia/Sydney': { display: '+10:00 (Sydney, Melbourne, Brisbane)', offset: '+10:00' },
+    'Asia/Tokyo': { display: '+09:00 (Tokyo, Seoul, Pyongyang)', offset: '+09:00' },
+    'Asia/Shanghai': { display: '+08:00 (Beijing, Singapore, Hong Kong)', offset: '+08:00' },
+    'Asia/Bangkok': { display: '+07:00 (Bangkok, Jakarta, Ho Chi Minh)', offset: '+07:00' },
+    'Asia/Almaty': { display: '+06:00 (Almaty, Dhaka, Omsk)', offset: '+06:00' },
+    'Asia/Kolkata': { display: '+05:30 (Mumbai, Delhi, Kolkata)', offset: '+05:30' },
+    'Asia/Yekaterinburg': { display: '+05:00 (Yekaterinburg, Tashkent, Samarkand)', offset: '+05:00' },
+    'Asia/Dubai': { display: '+04:00 (Dubai, Baku, Tbilisi)', offset: '+04:00' },
+    'Europe/Moscow': { display: '+03:00 (Moscow, Istanbul, Riyadh)', offset: '+03:00' },
+    'Europe/Berlin': { display: '+01:00 (Berlin, Paris, Rome)', offset: '+01:00' },
+    'Europe/Paris': { display: '+01:00 (Paris, Berlin, Rome)', offset: '+01:00' },
+    'Europe/London': { display: '+00:00 (London, Lisbon, Dublin)', offset: '+00:00' },
+    'UTC': { display: 'UTC (Greenwich, Accra, Casablanca)', offset: 'UTC' },
+    'America/Sao_Paulo': { display: '-03:00 (Sao Paulo, Buenos Aires, Brasilia)', offset: '-03:00' },
+    'America/Santiago': { display: '-04:00 (Santiago, Caracas, La Paz)', offset: '-04:00' },
+    'America/New_York': { display: '-05:00 (New York, Toronto, Havana)', offset: '-05:00' },
+    'America/Chicago': { display: '-06:00 (Chicago, Mexico City, Winnipeg)', offset: '-06:00' },
+    'America/Denver': { display: '-07:00 (Denver, Phoenix, Calgary)', offset: '-07:00' },
+    'America/Anchorage': { display: '-09:00 (Anchorage, Juneau, Fairbanks)', offset: '-09:00' },
+    'Pacific/Honolulu': { display: '-10:00 (Honolulu, Papeete, Rarotonga)', offset: '-10:00' }
+};
+
+export function* selectTimezoneCommon(state) {
+    const {_} = yield getUserLanguage(state.telegramId);
+
+    // Build options for display with custom option
+    const timezoneOptions = {};
+    Object.entries(timezones).forEach(([key, value]) => {
+        timezoneOptions[key] = value.display;
+    });
+    timezoneOptions.custom = _('timezone.custom');
+    timezoneOptions.cancel = _('buttons.cancel');
+
+    const timezoneKey = yield requestChoice(state, timezoneOptions, _('timezone.select'));
+
+    if (timezoneKey === "cancel") return yield cancelled(state);
+
+    let timezoneToSave;
+    let selectedTimezone;
+
+    if (timezoneKey === "custom") {
+        // User wants to enter custom timezone - ask directly for UTC offset
+        const customOffset = yield requestString(state, _('timezone.enterOffsetPrompt'));
+        
+        if (!customOffset) return yield cancelled(state);
+        
+        // Validate custom offset format
+        const offsetRegex = /^[+-](0[0-9]|1[0-2]):[0-5][0-9]$/;
+        if (!offsetRegex.test(customOffset)) {
+            yield response(state, _('timezone.invalidFormat'));
+            return yield cancelled(state);
+        }
+        
+        timezoneToSave = customOffset;
+        selectedTimezone = customOffset;
+    } else {
+        // User selected from predefined list
+        timezoneToSave = timezones[timezoneKey].offset;
+        selectedTimezone = timezoneKey;
+    }
+
+    // Update user timezone
+    const user = yield UserDAO.findByTelegramId(state.telegramId);
+    if (user) {
+        yield UserDAO.updateTimezone(state.telegramId, timezoneToSave);
+    } else {
+        // Create user if doesn't exist
+        yield UserDAO.findOrCreate(state.telegramId, {timezone: timezoneToSave});
+    }
+
+    // Return both the timezone key and offset for proper display
+    return { timezoneKey: selectedTimezone, offset: timezoneToSave };
+}

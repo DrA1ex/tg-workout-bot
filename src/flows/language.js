@@ -1,31 +1,16 @@
-import {cancelled, requestChoice, response} from "../runtime/primitives.js";
-import {createMainKeyboard, getUserLanguage, setUserLanguage, t} from "../i18n/index.js";
-
+import {response} from "../runtime/primitives.js";
+import {createMainKeyboard, t} from "../i18n/index.js";
+import {selectLanguageCommon} from "./common.js";
 
 /**
  * Language selection flow
  * @param {object} state - Flow state
  */
 export function* selectLanguage(state) {
-    const {_} = yield getUserLanguage(state.telegramId);
+    const languageChoice = yield* selectLanguageCommon(state);
 
-    const choice = yield requestChoice(
-        state,
-        {
-            ru: _('language.russian'),
-            en: _('language.english'),
-            cancel: _('buttons.cancel')
-        },
-        _('language.select')
-    );
-
-    if (choice === 'cancel') {
-        return yield cancelled(state);
+    if (languageChoice) {
+        // Show main keyboard with new language
+        yield response(state, t(languageChoice, 'language.changed'), createMainKeyboard(languageChoice));
     }
-
-    // Set the new language
-    yield setUserLanguage(state.telegramId, choice);
-    yield response(state, t(choice, 'language.changed'), createMainKeyboard(choice));
-
-
 }

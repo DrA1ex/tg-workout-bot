@@ -21,8 +21,10 @@ describe('Runtime Integration Tests', () => {
             // Start flow
             await startFlow(mockCtx, generatorFn, {step: 1});
 
-            // Should not crash
-            expect(generatorFn).toHaveBeenCalledWith({step: 1});
+            expect(generatorFn).toHaveBeenCalledWith({
+                step: 1,
+                telegramLanguageCode: 'en'
+            });
         });
 
         it('should handle flow interruption and restart', async () => {

@@ -5,7 +5,6 @@
 import {Markup} from "telegraf";
 import {generateCalendar} from "../modules/calendar.js";
 import {getUserLanguage} from "../i18n/index.js";
-import {clearPendingMessage} from './utils/message.js';
 
 
 /**

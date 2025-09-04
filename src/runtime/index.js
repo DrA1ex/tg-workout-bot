@@ -26,8 +26,14 @@ export async function startFlow(ctx, generatorFn, initialState = {}) {
         deleteSession(userId);
     }
 
-    const gen = generatorFn({...initialState});
-    const session = {gen, state: {...initialState}, pending: null, ctx};
+    // Add Telegram language information to initial state
+    const enhancedInitialState = {
+        ...initialState,
+        telegramLanguageCode: ctx.from?.language_code || 'en'
+    };
+
+    const gen = generatorFn(enhancedInitialState);
+    const session = {gen, state: enhancedInitialState, pending: null, ctx};
     setSession(userId, session);
 
     await _proceed(ctx, session, undefined);

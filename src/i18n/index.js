@@ -26,6 +26,33 @@ export async function getUserLanguage(telegramId) {
 }
 
 /**
+ * Get user's language from Telegram API (without saving to database)
+ * @param {string} telegramLanguageCode - Language code from ctx.from.language_code
+ * @returns {string} Best matching language code from our supported locales
+ */
+export function detectUserLanguage(telegramLanguageCode) {
+    if (!telegramLanguageCode) {
+        return 'en'; // Default fallback
+    }
+
+    // Direct match
+    if (locales[telegramLanguageCode]) {
+        return telegramLanguageCode;
+    }
+
+    // Handle language variants (e.g., 'en-US' -> 'en', 'ru-RU' -> 'ru')
+    const baseLanguage = telegramLanguageCode.split('-')[0];
+    if (locales[baseLanguage]) {
+        return baseLanguage;
+    }
+
+    // Fallback to English for unsupported languages
+    return 'en';
+}
+
+
+
+/**
  * Set user's preferred language
  * @param {number} telegramId - Telegram user ID
  * @param {string} language - Language code (en/ru)

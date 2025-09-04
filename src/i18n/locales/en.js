@@ -6,6 +6,25 @@ export default {
         actionCancelled: 'Action cancelled'
     },
 
+    // Welcome flow for new users
+    welcome: {
+        greeting: '👋 Welcome to the workout tracking bot!',
+        description: '🏋️‍♂️ I will help you:\n\n' +
+                    '📊 • Track your workout progress\n' +
+                    '💪 • Keep an exercise diary\n' +
+                    '📈 • Analyze your results\n' +
+                    '🎯 • Achieve your fitness goals\n\n' +
+                    '🚀 Let\'s set up the bot for you!',
+        setupRequired: '⚙️ To get started, we need to configure a few settings.',
+        selectLanguage: '🌍 Select your language:',
+        languageSet: '✅ Language set to: {{language}}',
+        selectTimezone: '🕐 Now select your timezone:',
+        enterTimezoneOffset: 'Select UTC offset:',
+        selectTimezoneOffset: 'Select your timezone:',
+        setupComplete: '🎉 Great! Setup is complete.',
+        readyToUse: '🎯 Now you can use all bot features!'
+    },
+
     // Main keyboard buttons
     buttons: {
         addWorkout: 'Add Workout',
@@ -138,8 +157,10 @@ export default {
     // Language selection
     language: {
         select: 'Select language:',
-        russian: '🇷🇺 Русский',
-        english: '🇺🇸 English',
+        ru: '🇷🇺 Русский',
+        en: '🇺🇸 English',
+        de: '🇩🇪 Deutsch',
+        fr: '🇫🇷 Français',
         changed: 'Language changed to English'
     },
 
@@ -152,6 +173,8 @@ export default {
         custom: 'Enter custom timezone',
         enterCustom: 'Enter your timezone (e.g., Europe/Moscow, +03:00, UTC):',
         enterCustomPrompt: 'Enter timezone:',
+        enterOffset: 'Enter UTC offset in format +HH:MM or -HH:MM:',
+        enterOffsetPrompt: 'Enter UTC offset in format +HH:MM or -HH:MM (e.g., +03:00, -05:00):',
         invalidFormat: 'Invalid timezone format. Please use format like Europe/Moscow, +03:00, or UTC.'
     },
 

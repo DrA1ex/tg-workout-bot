@@ -35,8 +35,10 @@ describe('Runtime Simple Tests', () => {
 
             await startFlow(mockCtx, generatorFn, initialState);
 
-            // Should not crash
-            expect(generatorFn).toHaveBeenCalledWith(initialState);
+            expect(generatorFn).toHaveBeenCalledWith({
+                ...initialState,
+                telegramLanguageCode: 'en'
+            });
         });
 
         it('should handle missing user ID gracefully', async () => {
