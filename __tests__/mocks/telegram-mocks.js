@@ -3,9 +3,9 @@ import {jest} from '@jest/globals';
 /**
  * Mock Telegram context for testing
  */
-export function createMockContext(userId = 12345, chatId = 67890) {
+export function createMockContext(userId = 12345, chatId = 67890, languageCode = 'en') {
     const mockCtx = {
-        from: {id: userId},
+        from: {id: userId, language_code: languageCode},
         chat: {id: chatId},
         reply: jest.fn().mockResolvedValue({message_id: 1}),
         answerCbQuery: jest.fn().mockResolvedValue(undefined),

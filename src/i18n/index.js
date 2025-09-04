@@ -35,13 +35,16 @@ export function detectUserLanguage(telegramLanguageCode) {
         return 'en'; // Default fallback
     }
 
-    // Direct match
-    if (locales[telegramLanguageCode]) {
-        return telegramLanguageCode;
+    // Normalize to lowercase for case-insensitive comparison
+    const normalizedCode = telegramLanguageCode.toLowerCase();
+
+    // Direct match (case-insensitive)
+    if (locales[normalizedCode]) {
+        return normalizedCode;
     }
 
     // Handle language variants (e.g., 'en-US' -> 'en', 'ru-RU' -> 'ru')
-    const baseLanguage = telegramLanguageCode.split('-')[0];
+    const baseLanguage = normalizedCode.split('-')[0];
     if (locales[baseLanguage]) {
         return baseLanguage;
     }
@@ -74,8 +77,20 @@ export async function setUserLanguage(telegramId, language) {
  * @returns {string} Localized text
  */
 export function t(language, key, params = {}) {
-    const locale = locales[language] || locales.en;
-    let text = key.split('.').reduce((obj, k) => obj?.[k], locale) || key;
+    // Try to get text from requested language first
+    let locale = locales[language];
+    let text = key.split('.').reduce((obj, k) => obj?.[k], locale);
+    
+    // If not found in requested language, fallback to English
+    if (!text && language !== 'en') {
+        locale = locales.en;
+        text = key.split('.').reduce((obj, k) => obj?.[k], locale);
+    }
+    
+    // If still not found, use key as fallback
+    if (!text) {
+        text = key;
+    }
 
     // Simple parameter interpolation
     Object.keys(params).forEach(param => {

@@ -52,6 +52,71 @@ describe('Runtime Simple Tests', () => {
             // Should not crash
             expect(generatorFn).toHaveBeenCalled();
         });
+
+        it('should extract and preserve language_code from Telegram context', async () => {
+            // Create context with Russian language
+            const russianCtx = createMockContext(12345, 67890, 'ru');
+            const generatorFn = jest.fn().mockReturnValue({
+                next: jest.fn().mockReturnValue({done: true, value: undefined})
+            });
+            const initialState = {customField: 'test'};
+
+            await startFlow(russianCtx, generatorFn, initialState);
+
+            // Should pass language_code to generator function
+            expect(generatorFn).toHaveBeenCalledWith({
+                ...initialState,
+                telegramLanguageCode: 'ru'
+            });
+        });
+
+        it('should handle missing language_code gracefully with default fallback', async () => {
+            // Create context without language_code
+            const ctxWithoutLanguage = {
+                ...mockCtx,
+                from: {id: 12345} // No language_code field
+            };
+            const generatorFn = jest.fn().mockReturnValue({
+                next: jest.fn().mockReturnValue({done: true, value: undefined})
+            });
+            const initialState = {test: 'value'};
+
+            await startFlow(ctxWithoutLanguage, generatorFn, initialState);
+
+            // Should use default 'en' language
+            expect(generatorFn).toHaveBeenCalledWith({
+                ...initialState,
+                telegramLanguageCode: 'en'
+            });
+        });
+
+        it('should handle complex language codes correctly', async () => {
+            // Test with complex language codes like 'en-US', 'ru-RU'
+            const testCases = [
+                {code: 'en-US', expected: 'en-US'},
+                {code: 'ru-RU', expected: 'ru-RU'},
+                {code: 'de-DE', expected: 'de-DE'},
+                {code: 'fr-CA', expected: 'fr-CA'}
+            ];
+
+            for (const {code, expected} of testCases) {
+                const complexLangCtx = createMockContext(12345, 67890, code);
+                const generatorFn = jest.fn().mockReturnValue({
+                    next: jest.fn().mockReturnValue({done: true, value: undefined})
+                });
+
+                await startFlow(complexLangCtx, generatorFn, {});
+
+                // startFlow should pass language_code as-is, extraction happens in detectUserLanguage
+                expect(generatorFn).toHaveBeenCalledWith({
+                    telegramLanguageCode: expected
+                });
+
+                // Clean up for next iteration
+                const {deleteSession} = await import('../../src/runtime/session-manager.js');
+                deleteSession('12345');
+            }
+        });
     });
 
     describe('handleTextMessage', () => {

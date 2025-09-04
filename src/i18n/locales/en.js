@@ -19,10 +19,7 @@ export default {
         selectLanguage: '🌍 Select your language:',
         languageSet: '✅ Language set to: {{language}}',
         selectTimezone: '🕐 Now select your timezone:',
-        enterTimezoneOffset: 'Select UTC offset:',
-        selectTimezoneOffset: 'Select your timezone:',
-        setupComplete: '🎉 Great! Setup is complete.',
-        readyToUse: '🎯 Now you can use all bot features!'
+        setupComplete: '🎉 Great! Setup is complete.'
     },
 
     // Main keyboard buttons
@@ -169,11 +166,7 @@ export default {
         select: 'Select timezone:',
         current: 'Current timezone: *{{timezone}}* ({{offset}})',
         updated: 'Timezone updated to: *{{timezone}}* ({{offset}})',
-        selectPrompt: 'Select your timezone:',
         custom: 'Enter custom timezone',
-        enterCustom: 'Enter your timezone (e.g., Europe/Moscow, +03:00, UTC):',
-        enterCustomPrompt: 'Enter timezone:',
-        enterOffset: 'Enter UTC offset in format +HH:MM or -HH:MM:',
         enterOffsetPrompt: 'Enter UTC offset in format +HH:MM or -HH:MM (e.g., +03:00, -05:00):',
         invalidFormat: 'Invalid timezone format. Please use format like Europe/Moscow, +03:00, or UTC.'
     },
