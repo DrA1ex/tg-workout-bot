@@ -37,20 +37,6 @@ export function convertToUserTimezone(utcDate, timezone) {
 }
 
 /**
- * Get current date in user's timezone
- * @param {string} timezone - User's timezone (UTC offset format)
- * @returns {Date} Current date in user's timezone
- */
-export function getCurrentDateInTimezone(timezone) {
-    if (!timezone || timezone === 'UTC') {
-        return new Date();
-    }
-
-    const now = new Date();
-    return convertToUserTimezone(now, timezone);
-}
-
-/**
  * Format date in user's timezone
  * @param {Date} date - Date to format
  * @param {string} timezone - User's timezone (UTC offset format)

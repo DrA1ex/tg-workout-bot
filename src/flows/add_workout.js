@@ -1,5 +1,4 @@
 import {cancelled, requestChoice, requestDate, response, responseMarkdown} from "../runtime/primitives.js";
-import {getCurrentDateInTimezone} from "../utils/timezone.js";
 import {formatDate, getUserLanguage} from "../i18n/index.js";
 import {ExerciseDAO, UserDAO, WorkoutDAO} from "../dao/index.js";
 import {addNewExerciseCommon, checkEmptyListAndRespond, validators,} from "./common.js";
@@ -140,7 +139,7 @@ export function* addWorkout(state) {
 
     if (dateChoice === "cancel") return yield cancelled(state);
 
-    let workoutDate = getCurrentDateInTimezone(timezone);
+    let workoutDate = new Date();
     if (dateChoice === "pick") {
         workoutDate = yield requestDate(state, _('addWorkout.pickDate'));
     }
