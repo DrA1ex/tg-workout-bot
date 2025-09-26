@@ -60,7 +60,7 @@ export function* showProgress(state) {
         type: "line",
         data: {labels: dates, datasets},
         options: {
-            title: {display: true, text: `${selectedEx} Progress`},
+            title: {display: true, text: selectedEx},
             scales: {
                 xAxes: [{type: "category"}],
                 yAxes: [{beginAtZero: true}]
