@@ -118,10 +118,10 @@ export default {
         selectExercise: 'Выберите упражнение:',
         selectedExercise: 'Выбрано: *{{exercise}}*',
         noDataForExercise: 'Нет данных для выбранного упражнения.',
-        setsLabel: '{{exercise}} Подходов',
-        weightLabel: '{{exercise}} Вес (кг)',
-        repsLabel: '{{exercise}} Повторения',
-        timeLabel: '{{exercise}} Время (сек)',
+        setsLabel: 'Подходов',
+        weightLabel: 'Вес (кг)',
+        repsLabel: 'Повторения',
+        timeLabel: 'Время (сек)',
         exerciseLabel: "Данные для *{{exercise}}*:"
     },
 

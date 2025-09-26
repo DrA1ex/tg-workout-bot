@@ -118,10 +118,10 @@ export default {
         selectExercise: 'Select exercise:',
         selectedExercise: 'Selected: *{{exercise}}*',
         noDataForExercise: 'No data for selected exercise.',
-        setsLabel: '{{exercise}} Sets',
-        weightLabel: '{{exercise}} Weight (kg)',
-        repsLabel: '{{exercise}} Reps',
-        timeLabel: '{{exercise}} Time (sec)',
+        setsLabel: 'Sets',
+        weightLabel: 'Weight (kg)',
+        repsLabel: 'Reps',
+        timeLabel: 'Time (sec)',
         exerciseLabel: "Data for *{{exercise}}*:"
     },
 

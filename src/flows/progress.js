@@ -3,7 +3,7 @@ import QuickChart from "quickchart-js";
 import {formatDate, getUserLanguage} from "../i18n/index.js";
 import {getAndSelectExercise} from "../utils/exercise_selector.js";
 import {WorkoutDAO} from "../dao/index.js";
-import {getUserAndTimezone, checkEmptyListAndRespond} from "./common.js";
+import {checkEmptyListAndRespond, getUserAndTimezone} from "./common.js";
 
 function _dt(row, language = 'ru', timezone = 'UTC') {
     return formatDate(new Date(row.get("date")), language, timezone);
@@ -36,19 +36,19 @@ export function* showProgress(state) {
 
     const datasets = [
         {
-            label: _('progress.setsLabel', {exercise: selectedEx}),
+            label: _('progress.setsLabel'),
             data: getData("sets"),
             borderColor: Colors[0],
             fill: false
         },
         {
-            label: rows[0].isTime ? _('progress.timeLabel', {exercise: selectedEx}) : _('progress.repsLabel', {exercise: selectedEx}),
+            label: rows[0].isTime ? _('progress.timeLabel') : _('progress.repsLabel'),
             data: getData("repsOrTime"),
             borderColor: Colors[2],
             fill: false,
         },
         ...(isTime ? [] : [{
-            label: _('progress.weightLabel', {exercise: selectedEx}),
+            label: _('progress.weightLabel'),
             data: getData("weight"),
             borderColor: Colors[1],
             fill: false
