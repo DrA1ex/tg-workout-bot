@@ -12,6 +12,7 @@
   "dependencies": {
     "@jest/globals": "^30.1.2",
     "dotenv": "^17.2.1",
+    "jszip": "^3.10.1",
     "quickchart-js": "^3.1.0",
     "sequelize": "^6.32.1",
     "sqlite3": "^5.1.6",

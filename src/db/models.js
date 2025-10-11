@@ -40,9 +40,14 @@ export default function initModels(sequelize) {
         name: {type: DataTypes.STRING, primaryKey: true}
     }, {tableName: 'global_exercises', timestamps: false});
 
+    const SystemSettings = sequelize.define('SystemSettings', {
+        key: {type: DataTypes.STRING, allowNull: false, primaryKey: true},
+        value: {type: DataTypes.JSONB, allowNull: false},
+    }, {tableName: 'system_settings', timestamps: false});
+
     // associations
     User.hasMany(Workout, {foreignKey: 'telegramId', sourceKey: 'telegramId'});
     Workout.belongsTo(User, {foreignKey: 'telegramId', targetKey: 'telegramId'});
 
-    return {User, Workout, GlobalExercise};
+    return {User, Workout, GlobalExercise, SystemSettings};
 }

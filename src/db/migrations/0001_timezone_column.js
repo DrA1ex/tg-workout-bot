@@ -11,5 +11,3 @@ export async function up(sequelize) {
         UPDATE users SET timezone = 'UTC' WHERE timezone IS NULL;
     `);
 }
-
-

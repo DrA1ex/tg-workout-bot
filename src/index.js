@@ -1,6 +1,13 @@
 import * as dotenv from "dotenv";
 import {Telegraf} from "telegraf";
+import * as tg from "telegraf/filters";
+
 import {handleCallbackQuery, handleTextMessage, startFlow} from "./runtime/index.js";
+
+import {ensureDb} from "./db/index.js";
+import {SystemDAO, UserDAO} from "./dao/index.js";
+import {createMainKeyboard, getUserLanguage, t} from "./i18n/index.js";
+import * as BackupUtils from "./utils/backup.js";
 
 import {addExercise} from "./flows/add_exercise.js";
 import {addWorkout} from "./flows/add_workout.js";
@@ -9,21 +16,21 @@ import {showProgress} from "./flows/progress.js";
 import {selectLanguage} from "./flows/language.js";
 import {timezoneSettings} from "./flows/timezone.js";
 import {welcomeFlow} from "./flows/welcome.js";
-import * as tg from "telegraf/filters";
 import {viewWorkouts} from "./flows/view_workout.js";
-import {createMainKeyboard, getUserLanguage, t} from "./i18n/index.js";
 import {myExercises} from "./flows/my_exercises.js";
-import {UserDAO} from "./dao/index.js";
 
 dotenv.config();
+
+await ensureDb();
+
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 bot.start(async (ctx) => {
     const userId = ctx.from.id;
-    
+
     // Check if user exists and has language/timezone set
     const user = await UserDAO.findByTelegramId(userId);
-    
+
     if (!user || !user.language || !user.timezone) {
         // New user or incomplete setup - start welcome flow
         await startFlow(ctx, welcomeFlow, {telegramId: userId});
@@ -75,3 +82,6 @@ console.log(t('en', 'bot.launched'));
 
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
+
+const backupCheckInterval = await SystemDAO.getParameter("backup_check_interval", 15 * 60 * 1000);
+setInterval(() => BackupUtils.doBackup(bot), backupCheckInterval);
