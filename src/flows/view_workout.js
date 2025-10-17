@@ -39,7 +39,7 @@ export function* viewWorkouts(state) {
 
     let message = _('viewWorkout.workoutsOnDate', {date: formatDate(new Date(selectedDate), language, timezone)});
     rows.forEach(w => {
-        message += `\n${w.formatString(language, timezone)}`;
+        message += `\n - ${w.formatStringWithoutDate(language)}`;
     });
 
     yield response(state, message);

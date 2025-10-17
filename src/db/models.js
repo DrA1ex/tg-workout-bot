@@ -21,10 +21,7 @@ export default function initModels(sequelize) {
         notes: {type: DataTypes.TEXT}
     }, {tableName: 'workouts', timestamps: false});
 
-    Workout.prototype.formatString = function (language = 'en', timezone = 'UTC') {
-        // Import formatDate here to avoid circular dependency
-
-        const date = formatDate(new Date(this.date), language, timezone);
+    Workout.prototype._formatWorkoutContent = function (language = 'en') {
         const exercise = this.exercise;
         const sets = t(language, 'workout.sets', {count: this.sets});
         const weight = this.weight ? t(language, 'workout.weight', {weight: this.weight}) + ', ' : '';
@@ -33,7 +30,18 @@ export default function initModels(sequelize) {
                            t(language, 'workout.reps', {count: this.repsOrTime});
         const notes = this.notes ? `:\n    - ${this.notes}` : '';
 
-        return `${date}: ${exercise}, ${sets}, ${weight}${repsOrTime}${notes}`;
+        return `${exercise}, ${sets}, ${weight}${repsOrTime}${notes}`;
+    };
+
+    Workout.prototype.formatString = function (language = 'en', timezone = 'UTC') {
+        const date = formatDate(new Date(this.date), language, timezone);
+        const content = this._formatWorkoutContent(language);
+
+        return `${date}: ${content}`;
+    };
+
+    Workout.prototype.formatStringWithoutDate = function (language = 'en') {
+        return this._formatWorkoutContent(language);
     };
 
     const GlobalExercise = sequelize.define('GlobalExercise', {
