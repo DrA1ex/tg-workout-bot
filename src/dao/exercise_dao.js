@@ -17,7 +17,9 @@ export class ExerciseDAO {
                 return [];
             }
 
-            return JSON.parse(user.exercises);
+            const result = JSON.parse(user.exercises);
+            result.sort((a, b) => a.name.localeCompare(b.name));
+            return result;
         } catch (error) {
             console.error('Error getting user exercises:', error);
             return [];
