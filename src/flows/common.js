@@ -4,7 +4,7 @@
 
 import {cancelled, requestChoice, requestString, response} from "../runtime/primitives.js";
 import {getUserLanguage, setUserLanguage} from "../i18n/index.js";
-import {ExerciseDAO, UserDAO} from "../dao/index.js";
+import {AlreadyExistsError, ExerciseDAO, UserDAO} from "../dao/index.js";
 
 /**
  * Common function to add a new exercise
@@ -26,10 +26,16 @@ export function* addNewExerciseCommon(state) {
     if (notes === '__cancel') return yield cancelled(state);
 
     // Save to database using DAO
-    yield ExerciseDAO.addUserExercise(state.telegramId, {
-        name,
-        notes: notes === "__skip" ? "" : notes
-    });
+    try {
+        yield ExerciseDAO.addUserExercise(state.telegramId, {
+            name,
+            notes: notes === "__skip" ? "" : notes
+        });
+    } catch (error) {
+        if (error instanceof AlreadyExistsError) {
+            return yield response(state, _('addExercise.exerciseExists', {name}));
+        }
+    }
 
     yield response(state, _('addExercise.exerciseAdded', {name}));
     return name;
@@ -140,7 +146,7 @@ export function* selectLanguageCommon(state) {
     // Dynamically get available languages from locales
     const {locales} = yield import("../i18n/locales/index.js");
     const availableLanguages = Object.keys(locales);
-    
+
     // Build language options dynamically
     const languageOptions = {};
     availableLanguages.forEach(lang => {
@@ -160,7 +166,7 @@ export function* selectLanguageCommon(state) {
 
     // Set the new language
     yield setUserLanguage(state.telegramId, languageChoice);
-    
+
     // Return language choice without sending confirmation message
     return languageChoice;
 }
@@ -173,28 +179,28 @@ export function* selectLanguageCommon(state) {
 // Single comprehensive timezone list with display names and offsets
 // Sorted by UTC offset from +14:00 to -12:00
 export const timezones = {
-    'Asia/Kamchatka': { display: '+12:00 (Kamchatka, Anadyr, Magadan)', offset: '+12:00' },
-    'Asia/Vladivostok': { display: '+11:00 (Vladivostok, Sakhalin, Magadan)', offset: '+11:00' },
-    'Australia/Sydney': { display: '+10:00 (Sydney, Melbourne, Brisbane)', offset: '+10:00' },
-    'Asia/Tokyo': { display: '+09:00 (Tokyo, Seoul, Pyongyang)', offset: '+09:00' },
-    'Asia/Shanghai': { display: '+08:00 (Beijing, Singapore, Hong Kong)', offset: '+08:00' },
-    'Asia/Bangkok': { display: '+07:00 (Bangkok, Jakarta, Ho Chi Minh)', offset: '+07:00' },
-    'Asia/Almaty': { display: '+06:00 (Almaty, Dhaka, Omsk)', offset: '+06:00' },
-    'Asia/Kolkata': { display: '+05:30 (Mumbai, Delhi, Kolkata)', offset: '+05:30' },
-    'Asia/Yekaterinburg': { display: '+05:00 (Yekaterinburg, Tashkent, Samarkand)', offset: '+05:00' },
-    'Asia/Dubai': { display: '+04:00 (Dubai, Baku, Tbilisi)', offset: '+04:00' },
-    'Europe/Moscow': { display: '+03:00 (Moscow, Istanbul, Riyadh)', offset: '+03:00' },
-    'Europe/Berlin': { display: '+01:00 (Berlin, Paris, Rome)', offset: '+01:00' },
-    'Europe/Paris': { display: '+01:00 (Paris, Berlin, Rome)', offset: '+01:00' },
-    'Europe/London': { display: '+00:00 (London, Lisbon, Dublin)', offset: '+00:00' },
-    'UTC': { display: 'UTC (Greenwich, Accra, Casablanca)', offset: 'UTC' },
-    'America/Sao_Paulo': { display: '-03:00 (Sao Paulo, Buenos Aires, Brasilia)', offset: '-03:00' },
-    'America/Santiago': { display: '-04:00 (Santiago, Caracas, La Paz)', offset: '-04:00' },
-    'America/New_York': { display: '-05:00 (New York, Toronto, Havana)', offset: '-05:00' },
-    'America/Chicago': { display: '-06:00 (Chicago, Mexico City, Winnipeg)', offset: '-06:00' },
-    'America/Denver': { display: '-07:00 (Denver, Phoenix, Calgary)', offset: '-07:00' },
-    'America/Anchorage': { display: '-09:00 (Anchorage, Juneau, Fairbanks)', offset: '-09:00' },
-    'Pacific/Honolulu': { display: '-10:00 (Honolulu, Papeete, Rarotonga)', offset: '-10:00' }
+    'Asia/Kamchatka': {display: '+12:00 (Kamchatka, Anadyr, Magadan)', offset: '+12:00'},
+    'Asia/Vladivostok': {display: '+11:00 (Vladivostok, Sakhalin, Magadan)', offset: '+11:00'},
+    'Australia/Sydney': {display: '+10:00 (Sydney, Melbourne, Brisbane)', offset: '+10:00'},
+    'Asia/Tokyo': {display: '+09:00 (Tokyo, Seoul, Pyongyang)', offset: '+09:00'},
+    'Asia/Shanghai': {display: '+08:00 (Beijing, Singapore, Hong Kong)', offset: '+08:00'},
+    'Asia/Bangkok': {display: '+07:00 (Bangkok, Jakarta, Ho Chi Minh)', offset: '+07:00'},
+    'Asia/Almaty': {display: '+06:00 (Almaty, Dhaka, Omsk)', offset: '+06:00'},
+    'Asia/Kolkata': {display: '+05:30 (Mumbai, Delhi, Kolkata)', offset: '+05:30'},
+    'Asia/Yekaterinburg': {display: '+05:00 (Yekaterinburg, Tashkent, Samarkand)', offset: '+05:00'},
+    'Asia/Dubai': {display: '+04:00 (Dubai, Baku, Tbilisi)', offset: '+04:00'},
+    'Europe/Moscow': {display: '+03:00 (Moscow, Istanbul, Riyadh)', offset: '+03:00'},
+    'Europe/Berlin': {display: '+01:00 (Berlin, Paris, Rome)', offset: '+01:00'},
+    'Europe/Paris': {display: '+01:00 (Paris, Berlin, Rome)', offset: '+01:00'},
+    'Europe/London': {display: '+00:00 (London, Lisbon, Dublin)', offset: '+00:00'},
+    'UTC': {display: 'UTC (Greenwich, Accra, Casablanca)', offset: 'UTC'},
+    'America/Sao_Paulo': {display: '-03:00 (Sao Paulo, Buenos Aires, Brasilia)', offset: '-03:00'},
+    'America/Santiago': {display: '-04:00 (Santiago, Caracas, La Paz)', offset: '-04:00'},
+    'America/New_York': {display: '-05:00 (New York, Toronto, Havana)', offset: '-05:00'},
+    'America/Chicago': {display: '-06:00 (Chicago, Mexico City, Winnipeg)', offset: '-06:00'},
+    'America/Denver': {display: '-07:00 (Denver, Phoenix, Calgary)', offset: '-07:00'},
+    'America/Anchorage': {display: '-09:00 (Anchorage, Juneau, Fairbanks)', offset: '-09:00'},
+    'Pacific/Honolulu': {display: '-10:00 (Honolulu, Papeete, Rarotonga)', offset: '-10:00'}
 };
 
 export function* selectTimezoneCommon(state) {
@@ -218,16 +224,16 @@ export function* selectTimezoneCommon(state) {
     if (timezoneKey === "custom") {
         // User wants to enter custom timezone - ask directly for UTC offset
         const customOffset = yield requestString(state, _('timezone.enterOffsetPrompt'));
-        
+
         if (!customOffset) return yield cancelled(state);
-        
+
         // Validate custom offset format
         const offsetRegex = /^[+-](0[0-9]|1[0-2]):[0-5][0-9]$/;
         if (!offsetRegex.test(customOffset)) {
             yield response(state, _('timezone.invalidFormat'));
             return yield cancelled(state);
         }
-        
+
         timezoneToSave = customOffset;
         selectedTimezone = customOffset;
     } else {
@@ -246,5 +252,5 @@ export function* selectTimezoneCommon(state) {
     }
 
     // Return both the timezone key and offset for proper display
-    return { timezoneKey: selectedTimezone, offset: timezoneToSave };
+    return {timezoneKey: selectedTimezone, offset: timezoneToSave};
 }

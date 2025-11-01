@@ -1,6 +1,8 @@
 import {models} from "../db/index.js";
 import {Op} from "sequelize";
 
+import {AlreadyExistsError} from "./index.js";
+
 /**
  * Data Access Object for Exercise operations
  */
@@ -43,7 +45,7 @@ export class ExerciseDAO {
             );
 
             if (exists) {
-                throw new Error(`Exercise "${exercise.name}" already exists`);
+                throw new AlreadyExistsError(`Exercise "${exercise.name}" already exists`);
             }
 
             exercises.push(exercise);
@@ -53,9 +55,14 @@ export class ExerciseDAO {
                 {where: {telegramId}}
             );
 
+            await this.addGlobalExercise(exercise.name);
+
             return exercises;
         } catch (error) {
-            console.error('Error adding user exercise:', error);
+            if (!(error instanceof AlreadyExistsError)) {
+                console.error('Error adding user exercise:', error);
+            }
+
             throw error;
         }
     }
@@ -128,7 +135,7 @@ export class ExerciseDAO {
      */
     static async addGlobalExercise(name) {
         try {
-            return await models.GlobalExercise.create({name});
+            return await models.GlobalExercise.upsert({name});
         } catch (error) {
             console.error('Error adding global exercise:', error);
             throw error;
