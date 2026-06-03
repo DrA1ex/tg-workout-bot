@@ -86,61 +86,83 @@
             <div id="recent-list" hidden></div>
         </section>
 
-        <section class="screen" id="screen-add" aria-labelledby="nav-add">
-            <form class="panel form-stack" id="workout-form">
-                <div class="empty compact-empty" id="add-empty" hidden data-i18n="empty.exercises">Add your first exercise to start logging workouts.</div>
-                <label>
-                    <span data-i18n="fields.date">Date</span>
-                    <input id="workout-date" name="date" type="date" required>
-                </label>
-                <label>
-                    <span data-i18n="fields.exercise">Exercise</span>
-                    <select id="workout-exercise" name="exercise" required></select>
-                </label>
-                <div class="inline-actions">
-                    <button class="ghost-button" id="use-previous" type="button" data-i18n="actions.usePrevious">Use previous</button>
-                    <button class="ghost-button" data-tab="exercises" type="button" data-i18n="actions.manageExercises">Manage exercises</button>
-                </div>
-                <p class="helper-text" id="previous-hint" data-i18n="add.previousHint">Previous values will appear here.</p>
-                <div class="field-grid">
-                    <label>
-                        <span data-i18n="fields.sets">Sets</span>
+        <section class="screen add-modal-screen" id="screen-add" aria-labelledby="nav-add">
+            <div class="add-sheet" role="dialog" aria-modal="true" aria-labelledby="add-title">
+                <div class="sheet-grabber" aria-hidden="true"></div>
+                <header class="add-screen-header">
+                    <button class="add-header-button" data-tab="dashboard" type="button" aria-label="Close">×</button>
+                    <h1 id="add-title" data-i18n="screens.add">Add workout</h1>
+                    <button class="add-header-button" type="button" aria-label="More">⋯</button>
+                </header>
+                <form class="add-form" id="workout-form">
+                    <div class="empty compact-empty" id="add-empty" hidden data-i18n="empty.exercises">Add your first exercise to start logging workouts.</div>
+                    <section class="quick-entry-panel">
+                        <label class="add-field full-field date-field">
+                            <span data-i18n="fields.date">Date</span>
+                            <div class="field-shell">
+                                <span class="field-icon">▣</span>
+                                <input id="workout-date" name="date" type="date" required>
+                                <span class="field-chevron">⌄</span>
+                            </div>
+                        </label>
+                        <label class="add-field full-field exercise-field">
+                            <span data-i18n="fields.exercise">Exercise</span>
+                            <div class="field-shell">
+                                <span class="field-icon dumbbell-icon">╫</span>
+                                <select id="workout-exercise" name="exercise" required></select>
+                                <button class="clear-field-button" type="button" aria-label="Clear exercise">×</button>
+                                <span class="field-chevron">⌄</span>
+                            </div>
+                        </label>
+                        <button class="previous-row" id="use-previous" type="button">
+                            <span class="previous-icon">↺</span>
+                            <span class="previous-copy">
+                                <strong data-i18n="actions.usePrevious">Use previous</strong>
+                                <small id="previous-summary" data-i18n="add.previousHint">Previous values will appear here.</small>
+                            </span>
+                            <span>›</span>
+                        </button>
+                    </section>
+                    <div class="add-controls">
+                        <label class="add-field compact-control">
+                            <span data-i18n="fields.sets">Sets</span>
+                            <div class="stepper">
+                                <button type="button" data-step-target="workout-sets" data-step="-1">−</button>
+                                <input id="workout-sets" name="sets" type="number" min="1" inputmode="numeric" required>
+                                <button type="button" data-step-target="workout-sets" data-step="1">+</button>
+                            </div>
+                        </label>
+                        <label class="add-field number-control">
+                            <span data-i18n="fields.weight">Weight</span>
+                            <div class="stepper">
+                                <button type="button" data-step-target="workout-weight" data-step="-2.5">−</button>
+                                <input id="workout-weight" name="weight" type="number" min="0" step="0.5" inputmode="decimal">
+                                <button class="unit-button" type="button" data-step-target="workout-weight" data-step="2.5">kg</button>
+                            </div>
+                        </label>
+                    </div>
+                    <label class="add-field number-control reps-control">
+                        <span data-i18n="fields.repsTime">Reps / Time</span>
                         <div class="stepper">
-                            <button type="button" data-step-target="workout-sets" data-step="-1">−</button>
-                            <input id="workout-sets" name="sets" type="number" min="1" inputmode="numeric" required>
-                            <button type="button" data-step-target="workout-sets" data-step="1">+</button>
+                            <button type="button" data-step-target="workout-reps" data-step="-1">−</button>
+                            <input id="workout-reps" name="repsOrTime" type="number" min="1" step="1" inputmode="numeric" required>
+                            <button class="unit-button active" id="mode-reps" type="button" data-mode="reps" data-i18n="fields.reps">Reps</button>
+                            <button class="unit-button hidden-mode" id="mode-time" type="button" data-mode="time" data-i18n="fields.time">Time</button>
                         </div>
                     </label>
-                    <label>
-                        <span data-i18n="fields.weight">Weight</span>
-                        <div class="stepper">
-                            <button type="button" data-step-target="workout-weight" data-step="-2.5">−</button>
-                            <input id="workout-weight" name="weight" type="number" min="0" step="0.5" inputmode="decimal">
-                            <button type="button" data-step-target="workout-weight" data-step="2.5">+</button>
+                    <label class="add-field notes-field">
+                        <span data-i18n="fields.notes">Notes</span>
+                        <div class="notes-shell">
+                            <textarea id="workout-notes" name="notes" rows="4" maxlength="200" placeholder="Add a note (optional)"></textarea>
+                            <small><span id="notes-count">0</span>/200</small>
                         </div>
                     </label>
-                </div>
-                <label>
-                    <span data-i18n="fields.repsTime">Reps / Time</span>
-                    <div class="segmented">
-                        <button class="active" id="mode-reps" type="button" data-mode="reps" data-i18n="fields.reps">Reps</button>
-                        <button id="mode-time" type="button" data-mode="time" data-i18n="fields.time">Time</button>
+                    <p class="helper-text" id="previous-hint" data-i18n="add.previousHint">Previous values will appear here.</p>
+                    <div class="sticky-form-actions">
+                        <button class="primary-button save-button" type="submit" data-save-mode="finish">Save</button>
                     </div>
-                    <div class="stepper">
-                        <button type="button" data-step-target="workout-reps" data-step="-1">−</button>
-                        <input id="workout-reps" name="repsOrTime" type="number" min="1" step="1" inputmode="numeric" required>
-                        <button type="button" data-step-target="workout-reps" data-step="1">+</button>
-                    </div>
-                </label>
-                <label>
-                    <span data-i18n="fields.notes">Notes</span>
-                    <textarea id="workout-notes" name="notes" rows="3"></textarea>
-                </label>
-                <div class="sticky-form-actions">
-                    <button class="ghost-button" type="submit" data-save-mode="finish" data-i18n="actions.saveFinish">Save & finish</button>
-                    <button class="primary-button" type="submit" data-save-mode="next" data-i18n="actions.saveAddNext">Save & add next</button>
-                </div>
-            </form>
+                </form>
+            </div>
         </section>
 
         <section class="screen" id="screen-history" aria-labelledby="nav-history">

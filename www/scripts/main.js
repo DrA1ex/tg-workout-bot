@@ -244,7 +244,7 @@ function showToast(key) {
 
 function setAddMode(mode) {
     state.mode = mode;
-    $$(".segmented button").forEach(item => item.classList.toggle("active", item.dataset.mode === mode));
+    $$(".reps-control [data-mode]").forEach(item => item.classList.toggle("active", item.dataset.mode === mode));
 }
 
 function setEditMode(mode) {
@@ -454,10 +454,15 @@ function drawChart(points, metric) {
 
 function setTab(tab) {
     state.tab = tab;
+    document.body.dataset.tab = tab;
     $$(".screen").forEach(screen => screen.classList.toggle("active", screen.id === `screen-${tab}`));
     $$(".bottom-nav button").forEach(button => button.classList.toggle("active", button.dataset.tab === tab));
     $("#screen-title").textContent = t(`screens.${tab}`);
     $("#screen-subtitle").textContent = tab === "dashboard" && state.dashboard ? todaySubtitle(state.dashboard) : "";
+    if (tab === "add") {
+        window.scrollTo({top: 0, behavior: "instant"});
+        loadPreviousWorkoutValues();
+    }
 }
 
 async function refreshAll() {
@@ -475,14 +480,38 @@ async function refreshAll() {
     renderHistory();
     await loadProgress();
     applyI18n();
+    if (state.tab === "add") {
+        loadPreviousWorkoutValues();
+    }
 }
 
 function clearWorkoutInputs() {
-    $("#workout-sets").value = "";
+    $("#workout-sets").value = "3";
     $("#workout-weight").value = "";
-    $("#workout-reps").value = "";
+    $("#workout-reps").value = "12";
     $("#workout-notes").value = "";
+    $("#notes-count").textContent = "0";
     $("#previous-hint").textContent = t("add.previousHint");
+    $("#previous-summary").textContent = t("add.previousHint");
+}
+
+function loadPreviousWorkoutValues() {
+    const selected = $("#workout-exercise").value;
+    const previous = state.dashboard?.recent?.find(row => row.exercise === selected);
+    if (!previous) {
+        if (!$("#workout-sets").value) $("#workout-sets").value = "3";
+        if (!$("#workout-reps").value) $("#workout-reps").value = "12";
+        $("#previous-hint").textContent = selected ? t("add.noPrevious") : t("add.previousHint");
+        $("#previous-summary").textContent = selected ? t("add.noPrevious") : t("add.previousHint");
+        return;
+    }
+
+    $("#workout-sets").value = previous.sets || "3";
+    $("#workout-weight").value = previous.weight || "";
+    $("#workout-reps").value = previous.repsOrTime || "12";
+    setAddMode(previous.isTime ? "time" : "reps");
+    $("#previous-hint").textContent = interpolate(t("add.previousLoaded"), {details: workoutDetail(previous)});
+    $("#previous-summary").textContent = workoutDetail(previous);
 }
 
 function adjustNumberInput(input, delta) {
@@ -521,9 +550,18 @@ function bindEvents() {
         applyTheme();
     });
 
-    $$(".segmented button").forEach(button => button.addEventListener("click", () => {
+    $$(".reps-control [data-mode]").forEach(button => button.addEventListener("click", () => {
         setAddMode(button.dataset.mode);
     }));
+
+    $("#workout-notes").addEventListener("input", event => {
+        $("#notes-count").textContent = String(event.target.value.length);
+    });
+
+    $(".clear-field-button").addEventListener("click", () => {
+        $("#workout-exercise").value = "";
+        loadPreviousWorkoutValues();
+    });
 
     $("#workout-form").addEventListener("submit", async event => {
         event.preventDefault();
@@ -622,19 +660,11 @@ function bindEvents() {
     });
 
     $("#use-previous").addEventListener("click", () => {
-        const selected = $("#workout-exercise").value;
-        const previous = state.dashboard?.recent?.find(row => row.exercise === selected);
-        if (!previous) return;
-        $("#workout-sets").value = previous.sets || "";
-        $("#workout-weight").value = previous.weight || "";
-        $("#workout-reps").value = previous.repsOrTime || "";
-        setAddMode(previous.isTime ? "time" : "reps");
-        $("#previous-hint").textContent = interpolate(t("add.previousLoaded"), {details: workoutDetail(previous)});
+        loadPreviousWorkoutValues();
     });
 
     $("#workout-exercise").addEventListener("change", () => {
-        const previous = state.dashboard?.recent?.find(row => row.exercise === $("#workout-exercise").value);
-        $("#previous-hint").textContent = previous ? workoutDetail(previous) : t("add.noPrevious");
+        loadPreviousWorkoutValues();
     });
 
     document.addEventListener("click", event => {
@@ -700,6 +730,7 @@ function bindEvents() {
 }
 
 $("#workout-date").value = todayInputValue();
+document.body.dataset.tab = state.tab;
 configureAuth({applyTheme, refreshAll});
 setUnauthorizedHandler(showAuthScreen);
 bindEvents();
