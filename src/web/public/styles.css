@@ -98,6 +98,7 @@ h2 {
 }
 
 .icon-button,
+.row-action,
 .bottom-nav button {
     border: 0;
     background: transparent;
@@ -113,6 +114,12 @@ h2 {
     border-radius: 8px;
     background: var(--surface);
     box-shadow: var(--shadow);
+}
+
+.icon-button.compact {
+    width: 36px;
+    height: 36px;
+    box-shadow: none;
 }
 
 .screen {
@@ -243,6 +250,30 @@ label span {
     text-align: center;
 }
 
+.row-actions {
+    display: flex;
+    align-items: start;
+    gap: 6px;
+}
+
+.row-action {
+    display: grid;
+    place-items: center;
+    min-width: 36px;
+    height: 34px;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-soft);
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 850;
+}
+
+.row-action.danger {
+    color: var(--danger);
+}
+
 .panel {
     padding: 14px;
 }
@@ -317,6 +348,68 @@ textarea {
     background: var(--primary);
     color: var(--primary-ink);
     font-weight: 850;
+}
+
+.danger-button {
+    min-height: 52px;
+    border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--line));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+    color: var(--danger);
+    font-weight: 850;
+}
+
+.toast {
+    position: fixed;
+    right: 16px;
+    bottom: 86px;
+    left: 16px;
+    z-index: 20;
+    display: none;
+    width: min(calc(100% - 32px), 488px);
+    margin: 0 auto;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.toast.visible {
+    display: block;
+}
+
+.modal {
+    width: min(calc(100% - 24px), 500px);
+    max-height: calc(100dvh - 28px);
+    margin: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+}
+
+.modal::backdrop {
+    background: rgba(7, 13, 21, .48);
+    backdrop-filter: blur(8px);
+}
+
+.modal-heading,
+.modal-actions {
+    display: grid;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-heading {
+    grid-template-columns: 1fr auto;
+}
+
+.modal-actions {
+    grid-template-columns: 1fr 1fr;
 }
 
 .day-group {

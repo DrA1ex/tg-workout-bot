@@ -80,6 +80,32 @@ function workoutPayload(row, language, timezone) {
     };
 }
 
+function parseWorkoutId(pathname) {
+    const match = pathname.match(/^\/api\/workouts\/(\d+)$/);
+    return match ? Number.parseInt(match[1], 10) : null;
+}
+
+function parseWorkoutBody(body, fallbackDate = new Date()) {
+    const exercise = String(body.exercise || "").trim();
+    const date = body.date ? new Date(`${body.date}T12:00:00Z`) : fallbackDate;
+    const sets = Number.parseInt(body.sets, 10);
+    const repsOrTime = Number.parseFloat(body.repsOrTime);
+
+    if (!exercise) throw new Error("Exercise is required");
+    if (!Number.isFinite(sets) || sets <= 0) throw new Error("Sets must be a positive number");
+    if (!Number.isFinite(repsOrTime) || repsOrTime <= 0) throw new Error("Reps or time must be a positive number");
+
+    return {
+        date: date.toISOString(),
+        exercise,
+        sets,
+        weight: body.weight === "" || body.weight == null ? null : Number.parseFloat(body.weight),
+        repsOrTime,
+        isTime: Boolean(body.isTime),
+        notes: String(body.notes || "").trim(),
+    };
+}
+
 function weekStartUtc(date) {
     const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
     const day = d.getUTCDay() || 7;
@@ -229,6 +255,7 @@ async function getProgress(user, exercise) {
 
 async function handleApi(req, res, url) {
     const user = await resolveUser(url);
+    const workoutId = parseWorkoutId(url.pathname);
 
     if (req.method === "GET" && url.pathname === "/api/bootstrap") {
         const exercises = (await ExerciseDAO.getUserExercises(user.telegramId)).map(normalizeExercise);
@@ -271,22 +298,46 @@ async function handleApi(req, res, url) {
 
     if (req.method === "POST" && url.pathname === "/api/workouts") {
         const body = await parseBody(req);
-        const exercise = String(body.exercise || "").trim();
-        const date = body.date ? new Date(`${body.date}T12:00:00Z`) : new Date();
-        if (!exercise) return sendJson(res, 400, {error: "Exercise is required"});
+        let workoutData;
+        try {
+            workoutData = parseWorkoutBody(body);
+        } catch (error) {
+            return sendJson(res, 400, {error: error.message});
+        }
 
         const workout = await WorkoutDAO.create({
             telegramId: user.telegramId,
-            date: date.toISOString(),
-            exercise,
-            sets: Number.parseInt(body.sets, 10),
-            weight: body.weight === "" || body.weight == null ? null : Number.parseFloat(body.weight),
-            repsOrTime: Number.parseFloat(body.repsOrTime),
-            isTime: Boolean(body.isTime),
-            notes: String(body.notes || "").trim(),
+            ...workoutData,
         });
 
         return sendJson(res, 201, workoutPayload(workout, user.language || "en", user.timezone || "UTC"));
+    }
+
+    if (req.method === "PATCH" && workoutId) {
+        const workout = await models.Workout.findOne({
+            where: {id: workoutId, telegramId: user.telegramId},
+        });
+        if (!workout) return sendJson(res, 404, {error: "Workout not found"});
+
+        const body = await parseBody(req);
+        let workoutData;
+        try {
+            workoutData = parseWorkoutBody(body, new Date(workout.date));
+        } catch (error) {
+            return sendJson(res, 400, {error: error.message});
+        }
+
+        Object.assign(workout, workoutData);
+        await workout.save();
+
+        return sendJson(res, 200, workoutPayload(workout, user.language || "en", user.timezone || "UTC"));
+    }
+
+    if (req.method === "DELETE" && workoutId) {
+        const deleted = await WorkoutDAO.deleteById(workoutId, user.telegramId);
+        if (!deleted) return sendJson(res, 404, {error: "Workout not found"});
+
+        return sendJson(res, 200, {deleted: true});
     }
 
     if (req.method === "GET" && url.pathname === "/api/progress") {

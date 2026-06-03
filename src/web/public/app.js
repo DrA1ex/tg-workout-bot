@@ -7,6 +7,7 @@ const state = {
     tab: "dashboard",
     mode: "reps",
     theme: localStorage.getItem("theme") || "system",
+    editMode: "reps",
 };
 
 const i18n = {
@@ -37,6 +38,9 @@ const i18n = {
         "actions.saveAddNext": "Save & add next",
         "actions.addExercise": "Add exercise",
         "actions.saveSettings": "Save settings",
+        "actions.edit": "Edit",
+        "actions.delete": "Delete",
+        "actions.save": "Save",
         "fields.date": "Date",
         "fields.exercise": "Exercise",
         "fields.sets": "Sets",
@@ -56,6 +60,9 @@ const i18n = {
         "settings.system": "System",
         "settings.light": "Light",
         "settings.dark": "Dark",
+        "edit.title": "Edit workout",
+        "toast.saved": "Workout saved.",
+        "toast.deleted": "Workout deleted.",
         "empty.today": "No workouts today yet.",
         "empty.recent": "No workouts logged yet.",
         "empty.exercises": "Add your first exercise to start logging workouts.",
@@ -89,6 +96,9 @@ const i18n = {
         "actions.saveAddNext": "Сохранить и дальше",
         "actions.addExercise": "Добавить упражнение",
         "actions.saveSettings": "Сохранить",
+        "actions.edit": "Изменить",
+        "actions.delete": "Удалить",
+        "actions.save": "Сохранить",
         "fields.date": "Дата",
         "fields.exercise": "Упражнение",
         "fields.sets": "Подходы",
@@ -108,6 +118,9 @@ const i18n = {
         "settings.system": "Системная",
         "settings.light": "Светлая",
         "settings.dark": "Темная",
+        "edit.title": "Изменить тренировку",
+        "toast.saved": "Тренировка сохранена.",
+        "toast.deleted": "Тренировка удалена.",
         "empty.today": "Сегодня тренировок пока нет.",
         "empty.recent": "Тренировок пока нет.",
         "empty.exercises": "Добавьте первое упражнение.",
@@ -141,6 +154,9 @@ const i18n = {
         "actions.saveAddNext": "Speichern & weiter",
         "actions.addExercise": "Übung hinzufügen",
         "actions.saveSettings": "Einstellungen speichern",
+        "actions.edit": "Bearbeiten",
+        "actions.delete": "Löschen",
+        "actions.save": "Speichern",
         "fields.date": "Datum",
         "fields.exercise": "Übung",
         "fields.sets": "Sätze",
@@ -160,6 +176,9 @@ const i18n = {
         "settings.system": "System",
         "settings.light": "Hell",
         "settings.dark": "Dunkel",
+        "edit.title": "Workout bearbeiten",
+        "toast.saved": "Workout gespeichert.",
+        "toast.deleted": "Workout gelöscht.",
         "empty.today": "Heute noch keine Workouts.",
         "empty.recent": "Noch keine Workouts.",
         "empty.exercises": "Füge deine erste Übung hinzu.",
@@ -193,6 +212,9 @@ const i18n = {
         "actions.saveAddNext": "Enregistrer puis ajouter",
         "actions.addExercise": "Ajouter exercice",
         "actions.saveSettings": "Enregistrer",
+        "actions.edit": "Modifier",
+        "actions.delete": "Supprimer",
+        "actions.save": "Enregistrer",
         "fields.date": "Date",
         "fields.exercise": "Exercice",
         "fields.sets": "Séries",
@@ -212,6 +234,9 @@ const i18n = {
         "settings.system": "Système",
         "settings.light": "Clair",
         "settings.dark": "Sombre",
+        "edit.title": "Modifier la séance",
+        "toast.saved": "Séance enregistrée.",
+        "toast.deleted": "Séance supprimée.",
         "empty.today": "Aucune séance aujourd'hui.",
         "empty.recent": "Aucune séance enregistrée.",
         "empty.exercises": "Ajoutez votre premier exercice.",
@@ -270,12 +295,16 @@ function workoutRow(workout) {
     ].filter(Boolean).join(" · ");
 
     return `
-        <article class="workout-row">
+        <article class="workout-row" data-workout-id="${workout.id}">
             <div>
                 <h3>${escapeHtml(workout.exercise)}</h3>
                 <p>${escapeHtml(detail)}${workout.notes ? ` · ${escapeHtml(workout.notes)}` : ""}</p>
             </div>
-            <span class="pill">${escapeHtml(workout.dateLabel || "")}</span>
+            <div class="row-actions">
+                <span class="pill">${escapeHtml(workout.dateLabel || "")}</span>
+                <button class="row-action" type="button" data-edit-workout="${workout.id}" aria-label="${t("actions.edit")}">✎</button>
+                <button class="row-action danger" type="button" data-delete-workout="${workout.id}" aria-label="${t("actions.delete")}">×</button>
+            </div>
         </article>
     `;
 }
@@ -308,6 +337,7 @@ function renderDashboard() {
 function renderExercises() {
     const options = state.exercises.map(ex => `<option value="${escapeHtml(ex.name)}">${escapeHtml(ex.name)}</option>`).join("");
     $("#workout-exercise").innerHTML = options;
+    $("#edit-exercise").innerHTML = options;
     $("#progress-exercise").innerHTML = options;
     $("#exercise-list").innerHTML = state.exercises.length
         ? state.exercises.map(ex => `
@@ -320,6 +350,74 @@ function renderExercises() {
             </article>
         `).join("")
         : `<div class="empty">${t("empty.exercises")}</div>`;
+}
+
+function allWorkouts() {
+    const history = state.history?.groups?.flatMap(group => group.workouts) || [];
+    const byId = new Map(history.map(workout => [workout.id, workout]));
+    (state.dashboard?.recent || []).forEach(workout => byId.set(workout.id, workout));
+    (state.dashboard?.today?.workouts || []).forEach(workout => byId.set(workout.id, workout));
+    return [...byId.values()];
+}
+
+function findWorkout(id) {
+    return allWorkouts().find(workout => String(workout.id) === String(id));
+}
+
+function workoutDateInputValue(workout) {
+    const date = new Date(workout.date);
+    const offset = date.getTimezoneOffset();
+    return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 10);
+}
+
+function showToast(key) {
+    const toast = $("#toast");
+    toast.textContent = t(key);
+    toast.classList.add("visible");
+    window.clearTimeout(showToast.timeout);
+    showToast.timeout = window.setTimeout(() => toast.classList.remove("visible"), 2400);
+}
+
+function setEditMode(mode) {
+    state.editMode = mode;
+    $$("#edit-mode button").forEach(item => item.classList.toggle("active", item.dataset.mode === mode));
+}
+
+function openEditDialog(workout) {
+    $("#edit-id").value = workout.id;
+    $("#edit-date").value = workoutDateInputValue(workout);
+    $("#edit-exercise").value = workout.exercise;
+    $("#edit-sets").value = workout.sets || "";
+    $("#edit-weight").value = workout.weight || "";
+    $("#edit-reps").value = workout.repsOrTime || "";
+    $("#edit-notes").value = workout.notes || "";
+    setEditMode(workout.isTime ? "time" : "reps");
+    $("#edit-dialog").showModal();
+}
+
+async function deleteWorkout(id) {
+    await api(`workouts/${id}`, {method: "DELETE"});
+    await refreshAll();
+    showToast("toast.deleted");
+}
+
+async function saveEditedWorkout() {
+    const id = $("#edit-id").value;
+    await api(`workouts/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+            date: $("#edit-date").value,
+            exercise: $("#edit-exercise").value,
+            sets: $("#edit-sets").value,
+            weight: $("#edit-weight").value,
+            repsOrTime: $("#edit-reps").value,
+            isTime: state.editMode === "time",
+            notes: $("#edit-notes").value,
+        }),
+    });
+    $("#edit-dialog").close();
+    await refreshAll();
+    showToast("toast.saved");
 }
 
 function renderHistory() {
@@ -487,6 +585,32 @@ function bindEvents() {
         $("#workout-reps").value = previous.repsOrTime || "";
         state.mode = previous.isTime ? "time" : "reps";
         $$(".segmented button").forEach(item => item.classList.toggle("active", item.dataset.mode === state.mode));
+    });
+
+    $$("#edit-mode button").forEach(button => button.addEventListener("click", () => setEditMode(button.dataset.mode)));
+    $("#edit-close").addEventListener("click", () => $("#edit-dialog").close());
+    $("#edit-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        await saveEditedWorkout();
+    });
+    $("#edit-delete").addEventListener("click", async () => {
+        const id = $("#edit-id").value;
+        $("#edit-dialog").close();
+        await deleteWorkout(id);
+    });
+
+    document.addEventListener("click", async event => {
+        const editButton = event.target.closest("[data-edit-workout]");
+        if (editButton) {
+            const workout = findWorkout(editButton.dataset.editWorkout);
+            if (workout) openEditDialog(workout);
+            return;
+        }
+
+        const deleteButton = event.target.closest("[data-delete-workout]");
+        if (deleteButton) {
+            await deleteWorkout(deleteButton.dataset.deleteWorkout);
+        }
     });
 }
 
