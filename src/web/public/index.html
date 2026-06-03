@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Workout Log</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="app-shell">
+    <header class="top-bar">
+        <div>
+            <p class="eyebrow" data-i18n="app.kicker">Workout Log</p>
+            <h1 id="screen-title">Today</h1>
+        </div>
+        <div class="top-actions">
+            <button class="icon-button" data-tab="settings" type="button" aria-label="Settings">⚙</button>
+            <button class="icon-button" id="theme-toggle" type="button" aria-label="Toggle theme">
+                <span id="theme-icon">◐</span>
+            </button>
+        </div>
+    </header>
+    <main>
+        <section class="screen active" id="screen-dashboard" aria-labelledby="nav-dashboard">
+            <div class="summary-grid">
+                <article class="metric-card primary">
+                    <span data-i18n="dashboard.weeklyStreak">Weekly streak</span>
+                    <strong id="weekly-streak">0</strong>
+                    <small data-i18n="dashboard.weeks">weeks</small>
+                </article>
+                <article class="metric-card">
+                    <span data-i18n="dashboard.volume">Volume</span>
+                    <strong id="weekly-volume">0</strong>
+                    <small data-i18n="dashboard.thisWeek">this week</small>
+                </article>
+                <article class="metric-card">
+                    <span data-i18n="dashboard.workouts">Workouts</span>
+                    <strong id="weekly-workouts">0</strong>
+                    <small data-i18n="dashboard.thisWeek">this week</small>
+                </article>
+                <article class="metric-card">
+                    <span data-i18n="dashboard.exercises">Exercises</span>
+                    <strong id="weekly-exercises">0</strong>
+                    <small data-i18n="dashboard.thisWeek">this week</small>
+                </article>
+            </div>
+
+            <div class="section-heading">
+                <h2 data-i18n="dashboard.today">Today</h2>
+                <button class="text-button" data-action="quick-add" type="button" data-i18n="actions.addWorkout">Add workout</button>
+            </div>
+            <div class="list" id="today-list"></div>
+
+            <div class="section-heading">
+                <h2 data-i18n="dashboard.recent">Recent</h2>
+            </div>
+            <div class="list" id="recent-list"></div>
+        </section>
+
+        <section class="screen" id="screen-add" aria-labelledby="nav-add">
+            <form class="panel form-stack" id="workout-form">
+                <label>
+                    <span data-i18n="fields.date">Date</span>
+                    <input id="workout-date" name="date" type="date" required>
+                </label>
+                <label>
+                    <span data-i18n="fields.exercise">Exercise</span>
+                    <select id="workout-exercise" name="exercise" required></select>
+                </label>
+                <div class="inline-actions">
+                    <button class="ghost-button" id="use-previous" type="button" data-i18n="actions.usePrevious">Use previous</button>
+                    <button class="ghost-button" data-tab="exercises" type="button" data-i18n="actions.manageExercises">Manage exercises</button>
+                </div>
+                <div class="field-grid">
+                    <label>
+                        <span data-i18n="fields.sets">Sets</span>
+                        <input id="workout-sets" name="sets" type="number" min="1" inputmode="numeric" required>
+                    </label>
+                    <label>
+                        <span data-i18n="fields.weight">Weight</span>
+                        <input id="workout-weight" name="weight" type="number" min="0" step="0.5" inputmode="decimal">
+                    </label>
+                </div>
+                <label>
+                    <span data-i18n="fields.repsTime">Reps / Time</span>
+                    <div class="segmented">
+                        <button class="active" id="mode-reps" type="button" data-mode="reps" data-i18n="fields.reps">Reps</button>
+                        <button id="mode-time" type="button" data-mode="time" data-i18n="fields.time">Time</button>
+                    </div>
+                    <input id="workout-reps" name="repsOrTime" type="number" min="1" step="1" inputmode="numeric" required>
+                </label>
+                <label>
+                    <span data-i18n="fields.notes">Notes</span>
+                    <textarea id="workout-notes" name="notes" rows="3"></textarea>
+                </label>
+                <button class="primary-button" type="submit" data-i18n="actions.saveAddNext">Save & add next</button>
+            </form>
+        </section>
+
+        <section class="screen" id="screen-history" aria-labelledby="nav-history">
+            <div class="list grouped" id="history-list"></div>
+        </section>
+
+        <section class="screen" id="screen-progress" aria-labelledby="nav-progress">
+            <div class="panel form-stack">
+                <label>
+                    <span data-i18n="fields.exercise">Exercise</span>
+                    <select id="progress-exercise"></select>
+                </label>
+                <div class="chart-wrap">
+                    <svg id="progress-chart" viewBox="0 0 320 180" role="img" aria-label="Progress chart"></svg>
+                </div>
+                <div class="summary-grid compact">
+                    <article class="metric-card">
+                        <span data-i18n="progress.best">Best</span>
+                        <strong id="progress-best">0</strong>
+                        <small data-i18n="progress.volume">volume</small>
+                    </article>
+                    <article class="metric-card">
+                        <span data-i18n="progress.latest">Latest</span>
+                        <strong id="progress-latest">0</strong>
+                        <small data-i18n="fields.weight">Weight</small>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="screen" id="screen-exercises" aria-labelledby="nav-exercises">
+            <form class="panel form-stack" id="exercise-form">
+                <label>
+                    <span data-i18n="fields.name">Name</span>
+                    <input id="exercise-name" name="name" type="text" autocomplete="off" required>
+                </label>
+                <label>
+                    <span data-i18n="fields.notes">Notes</span>
+                    <input id="exercise-notes" name="notes" type="text" autocomplete="off">
+                </label>
+                <button class="primary-button" type="submit" data-i18n="actions.addExercise">Add exercise</button>
+            </form>
+            <div class="section-heading">
+                <h2 data-i18n="exercises.mine">My exercises</h2>
+            </div>
+            <div class="list" id="exercise-list"></div>
+        </section>
+
+        <section class="screen" id="screen-settings" aria-labelledby="nav-settings">
+            <form class="panel form-stack" id="settings-form">
+                <label>
+                    <span data-i18n="settings.language">Language</span>
+                    <select id="language-select">
+                        <option value="en">English</option>
+                        <option value="ru">Русский</option>
+                        <option value="de">Deutsch</option>
+                        <option value="fr">Français</option>
+                    </select>
+                </label>
+                <label>
+                    <span data-i18n="settings.timezone">Timezone</span>
+                    <input id="timezone-input" type="text" placeholder="+05:00">
+                </label>
+                <label>
+                    <span data-i18n="settings.theme">Theme</span>
+                    <select id="theme-select">
+                        <option value="system" data-i18n="settings.system">System</option>
+                        <option value="light" data-i18n="settings.light">Light</option>
+                        <option value="dark" data-i18n="settings.dark">Dark</option>
+                    </select>
+                </label>
+                <button class="primary-button" type="submit" data-i18n="actions.saveSettings">Save settings</button>
+            </form>
+        </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Main navigation">
+        <button class="active" id="nav-dashboard" data-tab="dashboard" type="button"><span>⌂</span><small data-i18n="nav.today">Today</small></button>
+        <button id="nav-add" data-tab="add" type="button"><span>＋</span><small data-i18n="nav.add">Add</small></button>
+        <button id="nav-history" data-tab="history" type="button"><span>▤</span><small data-i18n="nav.history">History</small></button>
+        <button id="nav-progress" data-tab="progress" type="button"><span>⌁</span><small data-i18n="nav.progress">Progress</small></button>
+        <button id="nav-exercises" data-tab="exercises" type="button"><span>◎</span><small data-i18n="nav.exercises">Exercises</small></button>
+    </nav>
+</div>
+<script src="/app.js" type="module"></script>
+</body>
+</html>
