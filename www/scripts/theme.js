@@ -2,10 +2,13 @@ import {$} from "./dom.js";
 import {state} from "./state.js";
 
 export function applyTheme() {
-    const selected = state.theme;
+    const selected = ["system", "light", "dark"].includes(state.theme) ? state.theme : "system";
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const resolved = selected === "system" ? (prefersDark ? "dark" : "light") : selected;
+    state.theme = selected;
     document.documentElement.dataset.theme = resolved;
-    $("#theme-icon").textContent = resolved === "dark" ? "☾" : "☼";
-    $("#theme-select").value = selected;
+    const icon = $("#theme-icon");
+    const select = $("#theme-select");
+    if (icon) icon.textContent = resolved === "dark" ? "☾" : "☼";
+    if (select) select.value = selected;
 }
