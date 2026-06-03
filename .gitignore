@@ -6,3 +6,4 @@ coverage/
 dist/
 
 db.sqlite
+.env

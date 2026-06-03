@@ -6,6 +6,7 @@ export function getWebConfig(env = process.env) {
         sessionCookieName: env.WEB_SESSION_COOKIE || "tg_workout_session",
         botUsername: String(env.WEB_BOT_USERNAME || "").replace(/^@/, ""),
         devAuthEnabled: env.WEB_DEV_AUTH === "true",
+        devAuthTelegramId: String(env.WEB_DEV_AUTH_TELEGRAM_ID || "").trim(),
         cookieSecure: env.WEB_COOKIE_SECURE === "true" || env.NODE_ENV === "production",
         sessionSecret: env.WEB_SESSION_SECRET || env.BOT_TOKEN,
         botToken: env.BOT_TOKEN,

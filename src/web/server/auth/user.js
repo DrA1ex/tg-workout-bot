@@ -17,6 +17,7 @@ export async function resolveUser(req, url, config) {
     if (sessionUser) return sessionUser;
 
     if (!config.devAuthEnabled) throw new AuthError("Web session is required");
+    if (config.devAuthTelegramId) throw new AuthError("Web session is required");
 
     const telegramId = url.searchParams.get("telegramId") || process.env.WEB_TELEGRAM_ID;
     if (telegramId) {
