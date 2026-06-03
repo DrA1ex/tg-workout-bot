@@ -21,71 +21,69 @@
 
 <div class="app-shell" hidden>
     <header class="top-bar">
-        <div>
-            <p class="eyebrow" data-i18n="app.kicker">Workout Log</p>
-            <h1 id="screen-title">Today</h1>
-        </div>
+        <button class="top-icon menu-button" type="button" aria-label="Menu">☰</button>
         <div class="top-actions">
-            <button class="icon-button" data-tab="settings" type="button" aria-label="Settings">⚙</button>
-            <button class="icon-button" id="theme-toggle" type="button" aria-label="Toggle theme">
-                <span id="theme-icon">◐</span>
-            </button>
+            <button class="top-icon" type="button" aria-label="Language">◎</button>
+            <div class="theme-switch">
+                <button class="top-icon compact" id="theme-toggle" type="button" aria-label="Toggle theme">
+                    <span id="theme-icon">☼</span>
+                </button>
+                <span class="moon-icon">☾</span>
+            </div>
         </div>
     </header>
+    <section class="page-heading">
+        <div>
+            <h1 id="screen-title">Today</h1>
+            <p id="screen-subtitle"></p>
+        </div>
+        <button class="calendar-button" type="button" aria-label="Calendar">▣</button>
+    </section>
     <main>
         <section class="toast" id="toast" aria-live="polite"></section>
 
         <section class="screen active" id="screen-dashboard" aria-labelledby="nav-dashboard">
-            <div class="summary-grid">
-                <article class="metric-card primary">
-                    <span data-i18n="dashboard.weeklyStreak">Weekly streak</span>
+            <section class="dashboard-card workout-log-card">
+                <div class="workout-log-heading">
+                    <h2 data-i18n="app.kicker">Workout Log</h2>
+                    <button class="primary-button compact-action" data-action="quick-add" type="button">
+                        <span>＋</span>
+                        <span data-i18n="actions.addWorkout">Add workout</span>
+                    </button>
+                </div>
+                <div class="dashboard-workout-list" id="today-list"></div>
+            </section>
+
+            <button class="history-link-card" data-tab="history" type="button">
+                <span>View full history</span>
+                <span>›</span>
+            </button>
+
+            <section class="week-section">
+                <h2>This week</h2>
+                <div class="week-strip" id="activity-strip"></div>
+            </section>
+
+            <div class="dashboard-stat-grid">
+                <article class="dashboard-stat-card">
+                    <span class="stat-icon">▣</span>
+                    <strong id="weekly-workouts">0</strong>
+                    <small data-i18n="dashboard.workouts">Workouts</small>
+                </article>
+                <article class="dashboard-stat-card">
+                    <span class="stat-icon bars">▌</span>
+                    <strong><span id="weekly-volume">0</span> <em>kg</em></strong>
+                    <small>Total volume</small>
+                </article>
+                <article class="dashboard-stat-card">
+                    <span class="stat-icon fire">♨</span>
                     <strong id="weekly-streak">0</strong>
-                    <small data-i18n="dashboard.weeks">weeks</small>
-                </article>
-                <article class="metric-card">
-                    <span data-i18n="dashboard.volume">Volume</span>
-                    <strong id="weekly-volume">0</strong>
-                    <small data-i18n="dashboard.thisWeek">this week</small>
-                </article>
-                <article class="metric-card">
-                    <span data-i18n="dashboard.trainingDays">Training days</span>
-                    <strong id="weekly-days">0</strong>
-                    <small data-i18n="dashboard.thisWeek">this week</small>
-                </article>
-                <article class="metric-card">
-                    <span data-i18n="dashboard.exercises">Exercises</span>
-                    <strong id="weekly-exercises">0</strong>
-                    <small data-i18n="dashboard.thisWeek">this week</small>
+                    <small>Day streak</small>
                 </article>
             </div>
-
-            <section class="panel dashboard-panel" id="last-session-panel">
-                <div>
-                    <span class="panel-label" data-i18n="dashboard.lastSession">Last session</span>
-                    <strong id="last-session-title">-</strong>
-                    <p id="last-session-detail"></p>
-                </div>
-                <button class="text-button" data-tab="history" type="button" data-i18n="nav.history">History</button>
-            </section>
-
-            <section class="panel dashboard-panel activity-panel">
-                <div class="activity-heading">
-                    <span class="panel-label" data-i18n="dashboard.activity">Activity</span>
-                    <small data-i18n="dashboard.lastWeeks">last 8 weeks</small>
-                </div>
-                <div class="activity-strip" id="activity-strip"></div>
-            </section>
-
-            <div class="section-heading">
-                <h2 data-i18n="dashboard.today">Today</h2>
-                <button class="text-button" data-action="quick-add" type="button" data-i18n="actions.addWorkout">Add workout</button>
-            </div>
-            <div class="list" id="today-list"></div>
-
-            <div class="section-heading">
-                <h2 data-i18n="dashboard.recent">Recent</h2>
-            </div>
-            <div class="list" id="recent-list"></div>
+            <span id="weekly-days" hidden>0</span>
+            <span id="weekly-exercises" hidden>0</span>
+            <div id="recent-list" hidden></div>
         </section>
 
         <section class="screen" id="screen-add" aria-labelledby="nav-add">
@@ -331,11 +329,11 @@
     </dialog>
 
     <nav class="bottom-nav" aria-label="Main navigation">
-        <button class="active" id="nav-dashboard" data-tab="dashboard" type="button"><span>⌂</span><small data-i18n="nav.today">Today</small></button>
+        <button class="active" id="nav-dashboard" data-tab="dashboard" type="button"><span>▦</span><small>Dashboard</small></button>
+        <button id="nav-history" data-tab="history" type="button"><span>▣</span><small data-i18n="nav.history">History</small></button>
         <button id="nav-add" data-tab="add" type="button"><span>＋</span><small data-i18n="nav.add">Add</small></button>
-        <button id="nav-history" data-tab="history" type="button"><span>▤</span><small data-i18n="nav.history">History</small></button>
         <button id="nav-progress" data-tab="progress" type="button"><span>⌁</span><small data-i18n="nav.progress">Progress</small></button>
-        <button id="nav-exercises" data-tab="exercises" type="button"><span>◎</span><small data-i18n="nav.exercises">Exercises</small></button>
+        <button id="nav-settings" data-tab="settings" type="button"><span>⚙</span><small>Settings</small></button>
     </nav>
 </div>
 <script src="/assets/app.js" defer></script>

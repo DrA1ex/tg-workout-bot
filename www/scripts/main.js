@@ -23,6 +23,47 @@ function workoutRow(workout) {
     `;
 }
 
+function dashboardWorkoutRow(workout) {
+    const volume = workoutVolume(workout);
+
+    return `
+        <article class="dashboard-workout-row" data-workout-id="${workout.id}">
+            <div class="workout-check">✓</div>
+            <div class="dashboard-workout-body">
+                <div class="dashboard-workout-main">
+                    <div>
+                        <h3>${escapeHtml(workout.exercise)}</h3>
+                        <p>${escapeHtml(workoutTimeLabel(workout))}</p>
+                    </div>
+                    <button class="kebab-button" type="button" data-edit-workout="${workout.id}" aria-label="${t("actions.edit")}">⋮</button>
+                </div>
+                <div class="dashboard-workout-stats">
+                    <div>
+                        <span class="metric-icon">╫</span>
+                        <strong>${workout.sets || 0}</strong>
+                        <small>sets</small>
+                    </div>
+                    <div>
+                        <span class="metric-icon">▱</span>
+                        <strong>${formatMetricNumber(workout.weight || 0)}</strong>
+                        <small>kg</small>
+                    </div>
+                    <div>
+                        <span class="metric-icon">◴</span>
+                        <strong>${formatMetricNumber(workout.repsOrTime || 0)}</strong>
+                        <small>${workout.isTime ? "sec" : "reps"}</small>
+                    </div>
+                </div>
+                <div class="volume-pill">
+                    <span class="volume-icon">▥</span>
+                    <span>Volume</span>
+                    <strong>${volume.toLocaleString()} kg</strong>
+                </div>
+            </div>
+        </article>
+    `;
+}
+
 function workoutDetail(workout) {
     return [
         `${workout.sets || 0} sets`,
@@ -31,36 +72,80 @@ function workoutDetail(workout) {
     ].filter(Boolean).join(" · ");
 }
 
+function workoutVolume(workout) {
+    if (workout.isTime || !workout.weight || !workout.repsOrTime || !workout.sets) return 0;
+    return Math.round(workout.weight * workout.repsOrTime * workout.sets);
+}
+
+function workoutTimeLabel(workout) {
+    if (!workout.date) return workout.dateLabel || "";
+    return new Date(workout.date).toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
+}
+
+function formatMetricNumber(value) {
+    const numeric = Number(value || 0);
+    return Number.isInteger(numeric) ? String(numeric) : String(Number(numeric.toFixed(1)));
+}
+
 function renderList(target, items, emptyKey) {
     target.innerHTML = items.length
         ? items.map(workoutRow).join("")
         : `<div class="empty">${t(emptyKey)}</div>`;
 }
 
+function renderDashboardList(target, items) {
+    target.innerHTML = items.length
+        ? items.map(dashboardWorkoutRow).join("")
+        : `<div class="dashboard-empty">${t("empty.today")}</div>`;
+}
+
 function renderDashboard() {
     const data = state.dashboard;
     $("#weekly-streak").textContent = data.stats.weeklyStreak;
     $("#weekly-volume").textContent = data.stats.weeklyVolume.toLocaleString();
+    $("#weekly-workouts").textContent = data.stats.weeklyWorkouts;
     $("#weekly-days").textContent = data.stats.weeklyDays;
     $("#weekly-exercises").textContent = data.stats.weeklyExercises;
+    $("#screen-subtitle").textContent = todaySubtitle(data);
     renderLastSession(data.lastSession);
-    renderActivity(data.activity || []);
-    renderList($("#today-list"), data.today.workouts, "empty.today");
+    renderActivity();
+    renderDashboardList($("#today-list"), data.today.workouts);
     renderList($("#recent-list"), data.recent, "empty.recent");
 }
 
+function todaySubtitle(data) {
+    const source = data.today.workouts[0]?.date ? new Date(data.today.workouts[0].date) : new Date();
+    return source.toLocaleDateString("en", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    }) + " • " + source.toLocaleDateString("en", {weekday: "long"});
+}
+
 function renderLastSession(workout) {
+    if (!$("#last-session-title")) return;
     $("#last-session-title").textContent = workout?.exercise || t("dashboard.noLastSession");
     $("#last-session-detail").textContent = workout ? `${workout.dateLabel} · ${workoutDetail(workout)}` : "";
 }
 
-function renderActivity(activity) {
-    $("#activity-strip").innerHTML = activity.map(week => {
-        const height = 8 + Math.min(week.activeDays, 7) * 8;
+function renderActivity() {
+    const now = new Date();
+    const monday = new Date(now);
+    const day = monday.getDay() || 7;
+    monday.setDate(monday.getDate() - day + 1);
+    const activeDates = new Set((state.history?.groups || []).map(group => group.date));
+    const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+    $("#activity-strip").innerHTML = labels.map((label, index) => {
+        const date = new Date(monday);
+        date.setDate(monday.getDate() + index);
+        const key = date.toISOString().slice(0, 10);
+        const isToday = date.toDateString() === now.toDateString();
+        const isActive = activeDates.has(key);
         return `
-            <div class="activity-week" title="${escapeHtml(week.label)}">
-                <div class="activity-bar ${week.hasWorkout ? "active" : ""} ${week.isCurrent ? "current" : ""}" style="height:${height}px"></div>
-                <small>${escapeHtml(week.activeDays)}</small>
+            <div class="week-day ${isActive ? "done" : ""} ${isToday ? "today" : ""}">
+                <span>${label}</span>
+                <strong>${isActive ? "✓" : date.getDate()}</strong>
             </div>
         `;
     }).join("");
@@ -372,6 +457,7 @@ function setTab(tab) {
     $$(".screen").forEach(screen => screen.classList.toggle("active", screen.id === `screen-${tab}`));
     $$(".bottom-nav button").forEach(button => button.classList.toggle("active", button.dataset.tab === tab));
     $("#screen-title").textContent = t(`screens.${tab}`);
+    $("#screen-subtitle").textContent = tab === "dashboard" && state.dashboard ? todaySubtitle(state.dashboard) : "";
 }
 
 async function refreshAll() {
