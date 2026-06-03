@@ -9,7 +9,8 @@ import {createWebServer} from "./web/server/server.js";
 dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const publicDir = path.join(__dirname, "web", "public");
+const rootDir = path.resolve(__dirname, "..");
+const publicDir = path.join(rootDir, "dist");
 const config = getWebConfig();
 
 await ensureDb();

@@ -1,0 +1,18 @@
+export const state = {
+    user: null,
+    exercises: [],
+    globalExercises: [],
+    exerciseScope: "mine",
+    exerciseSearch: "",
+    dashboard: null,
+    history: null,
+    progress: null,
+    progressMetric: "weight",
+    progressPeriod: "all",
+    tab: "dashboard",
+    mode: "reps",
+    saveMode: "next",
+    theme: localStorage.getItem("theme") || "system",
+    editMode: "reps",
+    authConfig: null,
+};
