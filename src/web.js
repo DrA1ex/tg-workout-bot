@@ -119,6 +119,10 @@ function addDays(date, days) {
     return d;
 }
 
+function addWeeks(date, weeks) {
+    return addDays(date, weeks * 7);
+}
+
 function dateOnly(date) {
     return date.toISOString().slice(0, 10);
 }
@@ -126,6 +130,11 @@ function dateOnly(date) {
 function volumeFor(row) {
     if (row.isTime || !row.weight || !row.repsOrTime || !row.sets) return 0;
     return row.sets * row.weight * row.repsOrTime;
+}
+
+function shortWeekLabel(date) {
+    const end = addDays(date, 6);
+    return `${date.toISOString().slice(5, 10)}..${end.toISOString().slice(5, 10)}`;
 }
 
 async function getRecentWorkouts(telegramId, language, timezone, limit = 8) {
@@ -163,6 +172,7 @@ async function getDashboard(user) {
     });
     const workoutDates = dateRows.map(row => row.get("d"));
     const workoutWeeks = new Set(workoutDates.map(value => dateOnly(weekStartUtc(new Date(`${value}T00:00:00Z`)))));
+    const workoutDatesSet = new Set(workoutDates);
 
     let weeklyStreak = 0;
     let cursor = workoutDates.length
@@ -176,6 +186,23 @@ async function getDashboard(user) {
     const recent = await getRecentWorkouts(user.telegramId, language, timezone);
     const weeklyVolume = weekRows.reduce((sum, row) => sum + volumeFor(row), 0);
     const exerciseCount = new Set(weekRows.map(row => row.exercise)).size;
+    const weeklyDays = new Set(weekRows.map(row => dateOnly(new Date(row.date)))).size;
+    const activityAnchor = workoutDates.length
+        ? weekStartUtc(new Date(`${workoutDates[0]}T00:00:00Z`))
+        : currentWeekStart;
+    const activity = Array.from({length: 8}, (_, index) => {
+        const start = addWeeks(activityAnchor, index - 7);
+        const days = Array.from({length: 7}, (_unused, dayIndex) => dateOnly(addDays(start, dayIndex)));
+        const activeDays = days.filter(day => workoutDatesSet.has(day)).length;
+
+        return {
+            week: dateOnly(start),
+            label: shortWeekLabel(start),
+            activeDays,
+            hasWorkout: activeDays > 0,
+            isCurrent: dateOnly(start) === dateOnly(currentWeekStart),
+        };
+    });
 
     return {
         profile: {
@@ -193,7 +220,10 @@ async function getDashboard(user) {
             weeklyVolume: Math.round(weeklyVolume),
             weeklyWorkouts: weekRows.length,
             weeklyExercises: exerciseCount,
+            weeklyDays,
         },
+        activity,
+        lastSession: recent[0] || null,
         recent,
     };
 }

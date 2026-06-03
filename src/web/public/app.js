@@ -6,6 +6,7 @@ const state = {
     progress: null,
     tab: "dashboard",
     mode: "reps",
+    saveMode: "next",
     theme: localStorage.getItem("theme") || "system",
     editMode: "reps",
 };
@@ -28,14 +29,20 @@ const i18n = {
         "dashboard.weeks": "weeks",
         "dashboard.volume": "Volume",
         "dashboard.workouts": "Workouts",
+        "dashboard.trainingDays": "Training days",
         "dashboard.exercises": "Exercises",
         "dashboard.thisWeek": "this week",
+        "dashboard.lastSession": "Last session",
+        "dashboard.activity": "Activity",
+        "dashboard.lastWeeks": "last 8 weeks",
+        "dashboard.noLastSession": "No sessions yet",
         "dashboard.today": "Today",
         "dashboard.recent": "Recent",
         "actions.addWorkout": "Add workout",
         "actions.usePrevious": "Use previous",
         "actions.manageExercises": "Manage exercises",
         "actions.saveAddNext": "Save & add next",
+        "actions.saveFinish": "Save & finish",
         "actions.addExercise": "Add exercise",
         "actions.saveSettings": "Save settings",
         "actions.edit": "Edit",
@@ -62,7 +69,11 @@ const i18n = {
         "settings.dark": "Dark",
         "edit.title": "Edit workout",
         "toast.saved": "Workout saved.",
+        "toast.added": "Workout added.",
         "toast.deleted": "Workout deleted.",
+        "add.previousHint": "Previous values will appear here.",
+        "add.previousLoaded": "Loaded previous: {{details}}",
+        "add.noPrevious": "No previous values for this exercise.",
         "empty.today": "No workouts today yet.",
         "empty.recent": "No workouts logged yet.",
         "empty.exercises": "Add your first exercise to start logging workouts.",
@@ -86,14 +97,20 @@ const i18n = {
         "dashboard.weeks": "недель",
         "dashboard.volume": "Объем",
         "dashboard.workouts": "Записи",
+        "dashboard.trainingDays": "Дни тренировок",
         "dashboard.exercises": "Упражнения",
         "dashboard.thisWeek": "за неделю",
+        "dashboard.lastSession": "Последняя тренировка",
+        "dashboard.activity": "Активность",
+        "dashboard.lastWeeks": "последние 8 недель",
+        "dashboard.noLastSession": "Тренировок пока нет",
         "dashboard.today": "Сегодня",
         "dashboard.recent": "Недавние",
         "actions.addWorkout": "Добавить",
         "actions.usePrevious": "Повторить прошлое",
         "actions.manageExercises": "Упражнения",
         "actions.saveAddNext": "Сохранить и дальше",
+        "actions.saveFinish": "Сохранить и закончить",
         "actions.addExercise": "Добавить упражнение",
         "actions.saveSettings": "Сохранить",
         "actions.edit": "Изменить",
@@ -120,7 +137,11 @@ const i18n = {
         "settings.dark": "Темная",
         "edit.title": "Изменить тренировку",
         "toast.saved": "Тренировка сохранена.",
+        "toast.added": "Тренировка добавлена.",
         "toast.deleted": "Тренировка удалена.",
+        "add.previousHint": "Здесь появятся прошлые значения.",
+        "add.previousLoaded": "Подставлено прошлое: {{details}}",
+        "add.noPrevious": "Для этого упражнения прошлых значений нет.",
         "empty.today": "Сегодня тренировок пока нет.",
         "empty.recent": "Тренировок пока нет.",
         "empty.exercises": "Добавьте первое упражнение.",
@@ -144,14 +165,20 @@ const i18n = {
         "dashboard.weeks": "Wochen",
         "dashboard.volume": "Volumen",
         "dashboard.workouts": "Workouts",
+        "dashboard.trainingDays": "Trainingstage",
         "dashboard.exercises": "Übungen",
         "dashboard.thisWeek": "diese Woche",
+        "dashboard.lastSession": "Letzte Einheit",
+        "dashboard.activity": "Aktivität",
+        "dashboard.lastWeeks": "letzte 8 Wochen",
+        "dashboard.noLastSession": "Noch keine Einheiten",
         "dashboard.today": "Heute",
         "dashboard.recent": "Zuletzt",
         "actions.addWorkout": "Workout hinzufügen",
         "actions.usePrevious": "Vorherige nutzen",
         "actions.manageExercises": "Übungen verwalten",
         "actions.saveAddNext": "Speichern & weiter",
+        "actions.saveFinish": "Speichern & fertig",
         "actions.addExercise": "Übung hinzufügen",
         "actions.saveSettings": "Einstellungen speichern",
         "actions.edit": "Bearbeiten",
@@ -178,7 +205,11 @@ const i18n = {
         "settings.dark": "Dunkel",
         "edit.title": "Workout bearbeiten",
         "toast.saved": "Workout gespeichert.",
+        "toast.added": "Workout hinzugefügt.",
         "toast.deleted": "Workout gelöscht.",
+        "add.previousHint": "Vorherige Werte erscheinen hier.",
+        "add.previousLoaded": "Vorherige geladen: {{details}}",
+        "add.noPrevious": "Keine vorherigen Werte für diese Übung.",
         "empty.today": "Heute noch keine Workouts.",
         "empty.recent": "Noch keine Workouts.",
         "empty.exercises": "Füge deine erste Übung hinzu.",
@@ -202,14 +233,20 @@ const i18n = {
         "dashboard.weeks": "semaines",
         "dashboard.volume": "Volume",
         "dashboard.workouts": "Séances",
+        "dashboard.trainingDays": "Jours actifs",
         "dashboard.exercises": "Exercices",
         "dashboard.thisWeek": "cette semaine",
+        "dashboard.lastSession": "Dernière séance",
+        "dashboard.activity": "Activité",
+        "dashboard.lastWeeks": "8 dernières semaines",
+        "dashboard.noLastSession": "Aucune séance",
         "dashboard.today": "Aujourd'hui",
         "dashboard.recent": "Récent",
         "actions.addWorkout": "Ajouter",
         "actions.usePrevious": "Réutiliser",
         "actions.manageExercises": "Exercices",
         "actions.saveAddNext": "Enregistrer puis ajouter",
+        "actions.saveFinish": "Enregistrer et finir",
         "actions.addExercise": "Ajouter exercice",
         "actions.saveSettings": "Enregistrer",
         "actions.edit": "Modifier",
@@ -236,7 +273,11 @@ const i18n = {
         "settings.dark": "Sombre",
         "edit.title": "Modifier la séance",
         "toast.saved": "Séance enregistrée.",
+        "toast.added": "Séance ajoutée.",
         "toast.deleted": "Séance supprimée.",
+        "add.previousHint": "Les valeurs précédentes apparaîtront ici.",
+        "add.previousLoaded": "Valeurs chargées : {{details}}",
+        "add.noPrevious": "Aucune valeur précédente pour cet exercice.",
         "empty.today": "Aucune séance aujourd'hui.",
         "empty.recent": "Aucune séance enregistrée.",
         "empty.exercises": "Ajoutez votre premier exercice.",
@@ -271,6 +312,10 @@ function t(key) {
     return i18n[lang]?.[key] || i18n.en[key] || key;
 }
 
+function interpolate(text, params = {}) {
+    return Object.entries(params).reduce((result, [key, value]) => result.replaceAll(`{{${key}}}`, value), text);
+}
+
 function applyI18n() {
     $$("[data-i18n]").forEach(node => {
         node.textContent = t(node.dataset.i18n);
@@ -288,11 +333,7 @@ function applyTheme() {
 }
 
 function workoutRow(workout) {
-    const detail = [
-        `${workout.sets || 0} sets`,
-        workout.weight ? `${workout.weight} kg` : null,
-        workout.isTime ? `${workout.repsOrTime} sec` : `${workout.repsOrTime || 0} reps`,
-    ].filter(Boolean).join(" · ");
+    const detail = workoutDetail(workout);
 
     return `
         <article class="workout-row" data-workout-id="${workout.id}">
@@ -307,6 +348,14 @@ function workoutRow(workout) {
             </div>
         </article>
     `;
+}
+
+function workoutDetail(workout) {
+    return [
+        `${workout.sets || 0} sets`,
+        workout.weight ? `${workout.weight} kg` : null,
+        workout.isTime ? `${workout.repsOrTime} sec` : `${workout.repsOrTime || 0} reps`,
+    ].filter(Boolean).join(" · ");
 }
 
 function escapeHtml(value) {
@@ -328,10 +377,29 @@ function renderDashboard() {
     const data = state.dashboard;
     $("#weekly-streak").textContent = data.stats.weeklyStreak;
     $("#weekly-volume").textContent = data.stats.weeklyVolume.toLocaleString();
-    $("#weekly-workouts").textContent = data.stats.weeklyWorkouts;
+    $("#weekly-days").textContent = data.stats.weeklyDays;
     $("#weekly-exercises").textContent = data.stats.weeklyExercises;
+    renderLastSession(data.lastSession);
+    renderActivity(data.activity || []);
     renderList($("#today-list"), data.today.workouts, "empty.today");
     renderList($("#recent-list"), data.recent, "empty.recent");
+}
+
+function renderLastSession(workout) {
+    $("#last-session-title").textContent = workout?.exercise || t("dashboard.noLastSession");
+    $("#last-session-detail").textContent = workout ? `${workout.dateLabel} · ${workoutDetail(workout)}` : "";
+}
+
+function renderActivity(activity) {
+    $("#activity-strip").innerHTML = activity.map(week => {
+        const height = 8 + Math.min(week.activeDays, 7) * 8;
+        return `
+            <div class="activity-week" title="${escapeHtml(week.label)}">
+                <div class="activity-bar ${week.hasWorkout ? "active" : ""} ${week.isCurrent ? "current" : ""}" style="height:${height}px"></div>
+                <small>${escapeHtml(week.activeDays)}</small>
+            </div>
+        `;
+    }).join("");
 }
 
 function renderExercises() {
@@ -339,6 +407,10 @@ function renderExercises() {
     $("#workout-exercise").innerHTML = options;
     $("#edit-exercise").innerHTML = options;
     $("#progress-exercise").innerHTML = options;
+    $("#add-empty").hidden = state.exercises.length > 0;
+    $$("#workout-form input, #workout-form select, #workout-form textarea, #workout-form button[type='submit']").forEach(node => {
+        node.disabled = state.exercises.length === 0;
+    });
     $("#exercise-list").innerHTML = state.exercises.length
         ? state.exercises.map(ex => `
             <article class="workout-row">
@@ -376,6 +448,11 @@ function showToast(key) {
     toast.classList.add("visible");
     window.clearTimeout(showToast.timeout);
     showToast.timeout = window.setTimeout(() => toast.classList.remove("visible"), 2400);
+}
+
+function setAddMode(mode) {
+    state.mode = mode;
+    $$(".segmented button").forEach(item => item.classList.toggle("active", item.dataset.mode === mode));
 }
 
 function setEditMode(mode) {
@@ -480,11 +557,9 @@ function setTab(tab) {
 }
 
 async function refreshAll() {
-    const [bootstrap, dashboard, history] = await Promise.all([
-        api("bootstrap"),
-        api("dashboard"),
-        api("history"),
-    ]);
+    const bootstrap = await api("bootstrap");
+    const dashboard = await api("dashboard");
+    const history = await api("history");
     state.user = bootstrap.user;
     state.exercises = bootstrap.exercises;
     state.dashboard = dashboard;
@@ -497,6 +572,24 @@ async function refreshAll() {
     renderHistory();
     await loadProgress();
     applyI18n();
+}
+
+function clearWorkoutInputs() {
+    $("#workout-sets").value = "";
+    $("#workout-weight").value = "";
+    $("#workout-reps").value = "";
+    $("#workout-notes").value = "";
+    $("#previous-hint").textContent = t("add.previousHint");
+}
+
+function adjustNumberInput(input, delta) {
+    const step = Number.parseFloat(input.step || "1");
+    const min = input.min === "" ? null : Number.parseFloat(input.min);
+    const current = input.value === "" ? (min ?? 0) : Number.parseFloat(input.value);
+    const next = Number.isFinite(current) ? current + delta : (min ?? step);
+    const clamped = min == null ? next : Math.max(min, next);
+    input.value = Number.isInteger(clamped) ? String(clamped) : String(Number(clamped.toFixed(2)));
+    input.dispatchEvent(new Event("change", {bubbles: true}));
 }
 
 async function loadProgress() {
@@ -523,12 +616,12 @@ function bindEvents() {
     });
 
     $$(".segmented button").forEach(button => button.addEventListener("click", () => {
-        state.mode = button.dataset.mode;
-        $$(".segmented button").forEach(item => item.classList.toggle("active", item === button));
+        setAddMode(button.dataset.mode);
     }));
 
     $("#workout-form").addEventListener("submit", async event => {
         event.preventDefault();
+        const saveMode = event.submitter?.dataset.saveMode || "next";
         await api("workouts", {
             method: "POST",
             body: JSON.stringify({
@@ -541,9 +634,15 @@ function bindEvents() {
                 notes: $("#workout-notes").value,
             }),
         });
-        $("#workout-notes").value = "";
+        clearWorkoutInputs();
         await refreshAll();
-        setTab("dashboard");
+        showToast("toast.added");
+        if (saveMode === "finish") {
+            setTab("dashboard");
+        } else {
+            setTab("add");
+            $("#workout-exercise").focus();
+        }
     });
 
     $("#exercise-form").addEventListener("submit", async event => {
@@ -583,8 +682,21 @@ function bindEvents() {
         $("#workout-sets").value = previous.sets || "";
         $("#workout-weight").value = previous.weight || "";
         $("#workout-reps").value = previous.repsOrTime || "";
-        state.mode = previous.isTime ? "time" : "reps";
-        $$(".segmented button").forEach(item => item.classList.toggle("active", item.dataset.mode === state.mode));
+        setAddMode(previous.isTime ? "time" : "reps");
+        $("#previous-hint").textContent = interpolate(t("add.previousLoaded"), {details: workoutDetail(previous)});
+    });
+
+    $("#workout-exercise").addEventListener("change", () => {
+        const previous = state.dashboard?.recent?.find(row => row.exercise === $("#workout-exercise").value);
+        $("#previous-hint").textContent = previous ? workoutDetail(previous) : t("add.noPrevious");
+    });
+
+    document.addEventListener("click", event => {
+        const stepButton = event.target.closest("[data-step-target]");
+        if (!stepButton) return;
+
+        const input = document.getElementById(stepButton.dataset.stepTarget);
+        if (input) adjustNumberInput(input, Number.parseFloat(stepButton.dataset.step));
     });
 
     $$("#edit-mode button").forEach(button => button.addEventListener("click", () => setEditMode(button.dataset.mode)));

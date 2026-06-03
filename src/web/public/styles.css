@@ -58,7 +58,7 @@ button {
     width: min(100%, 520px);
     min-height: 100vh;
     margin: 0 auto;
-    padding: 18px 16px 92px;
+    padding: 18px 16px 108px;
 }
 
 .top-bar {
@@ -187,6 +187,90 @@ label span {
     color: var(--muted);
 }
 
+.dashboard-panel {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.panel-label {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.dashboard-panel strong {
+    display: block;
+    margin-top: 5px;
+    font-size: 18px;
+}
+
+.dashboard-panel p,
+.helper-text {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.activity-panel {
+    display: block;
+}
+
+.activity-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.activity-heading small {
+    color: var(--muted);
+    font-weight: 750;
+}
+
+.activity-strip {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.activity-week {
+    display: grid;
+    align-content: end;
+    gap: 6px;
+    min-height: 64px;
+}
+
+.activity-bar {
+    width: 100%;
+    min-height: 8px;
+    border-radius: 999px;
+    background: var(--surface-soft);
+}
+
+.activity-bar.active {
+    background: var(--success);
+}
+
+.activity-bar.current {
+    outline: 2px solid color-mix(in srgb, var(--primary) 35%, transparent);
+    outline-offset: 2px;
+}
+
+.activity-week small {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 750;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .section-heading {
     display: flex;
     align-items: center;
@@ -278,9 +362,17 @@ label span {
     padding: 14px;
 }
 
+.compact-empty {
+    padding: 12px;
+}
+
 .form-stack {
     display: grid;
     gap: 14px;
+}
+
+#workout-form {
+    padding-bottom: 84px;
 }
 
 label {
@@ -298,6 +390,26 @@ textarea {
     background: var(--surface-soft);
     color: var(--text);
     padding: 11px 12px;
+}
+
+.stepper {
+    display: grid;
+    grid-template-columns: 42px 1fr 42px;
+    gap: 6px;
+}
+
+.stepper input {
+    text-align: center;
+}
+
+.stepper button {
+    min-height: 48px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-soft);
+    color: var(--primary);
+    font-size: 20px;
+    font-weight: 850;
 }
 
 textarea {
@@ -348,6 +460,23 @@ textarea {
     background: var(--primary);
     color: var(--primary-ink);
     font-weight: 850;
+}
+
+.sticky-form-actions {
+    position: sticky;
+    bottom: 74px;
+    z-index: 12;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 2px -4px -84px;
+    padding: 10px 4px 4px;
+    background: linear-gradient(180deg, transparent, var(--surface) 32%);
+}
+
+.sticky-form-actions .ghost-button,
+.sticky-form-actions .primary-button {
+    min-height: 52px;
 }
 
 .danger-button {

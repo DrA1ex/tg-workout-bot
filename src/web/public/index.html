@@ -36,8 +36,8 @@
                     <small data-i18n="dashboard.thisWeek">this week</small>
                 </article>
                 <article class="metric-card">
-                    <span data-i18n="dashboard.workouts">Workouts</span>
-                    <strong id="weekly-workouts">0</strong>
+                    <span data-i18n="dashboard.trainingDays">Training days</span>
+                    <strong id="weekly-days">0</strong>
                     <small data-i18n="dashboard.thisWeek">this week</small>
                 </article>
                 <article class="metric-card">
@@ -46,6 +46,23 @@
                     <small data-i18n="dashboard.thisWeek">this week</small>
                 </article>
             </div>
+
+            <section class="panel dashboard-panel" id="last-session-panel">
+                <div>
+                    <span class="panel-label" data-i18n="dashboard.lastSession">Last session</span>
+                    <strong id="last-session-title">-</strong>
+                    <p id="last-session-detail"></p>
+                </div>
+                <button class="text-button" data-tab="history" type="button" data-i18n="nav.history">History</button>
+            </section>
+
+            <section class="panel dashboard-panel activity-panel">
+                <div class="activity-heading">
+                    <span class="panel-label" data-i18n="dashboard.activity">Activity</span>
+                    <small data-i18n="dashboard.lastWeeks">last 8 weeks</small>
+                </div>
+                <div class="activity-strip" id="activity-strip"></div>
+            </section>
 
             <div class="section-heading">
                 <h2 data-i18n="dashboard.today">Today</h2>
@@ -61,6 +78,7 @@
 
         <section class="screen" id="screen-add" aria-labelledby="nav-add">
             <form class="panel form-stack" id="workout-form">
+                <div class="empty compact-empty" id="add-empty" hidden data-i18n="empty.exercises">Add your first exercise to start logging workouts.</div>
                 <label>
                     <span data-i18n="fields.date">Date</span>
                     <input id="workout-date" name="date" type="date" required>
@@ -73,14 +91,23 @@
                     <button class="ghost-button" id="use-previous" type="button" data-i18n="actions.usePrevious">Use previous</button>
                     <button class="ghost-button" data-tab="exercises" type="button" data-i18n="actions.manageExercises">Manage exercises</button>
                 </div>
+                <p class="helper-text" id="previous-hint" data-i18n="add.previousHint">Previous values will appear here.</p>
                 <div class="field-grid">
                     <label>
                         <span data-i18n="fields.sets">Sets</span>
-                        <input id="workout-sets" name="sets" type="number" min="1" inputmode="numeric" required>
+                        <div class="stepper">
+                            <button type="button" data-step-target="workout-sets" data-step="-1">−</button>
+                            <input id="workout-sets" name="sets" type="number" min="1" inputmode="numeric" required>
+                            <button type="button" data-step-target="workout-sets" data-step="1">+</button>
+                        </div>
                     </label>
                     <label>
                         <span data-i18n="fields.weight">Weight</span>
-                        <input id="workout-weight" name="weight" type="number" min="0" step="0.5" inputmode="decimal">
+                        <div class="stepper">
+                            <button type="button" data-step-target="workout-weight" data-step="-2.5">−</button>
+                            <input id="workout-weight" name="weight" type="number" min="0" step="0.5" inputmode="decimal">
+                            <button type="button" data-step-target="workout-weight" data-step="2.5">+</button>
+                        </div>
                     </label>
                 </div>
                 <label>
@@ -89,13 +116,20 @@
                         <button class="active" id="mode-reps" type="button" data-mode="reps" data-i18n="fields.reps">Reps</button>
                         <button id="mode-time" type="button" data-mode="time" data-i18n="fields.time">Time</button>
                     </div>
-                    <input id="workout-reps" name="repsOrTime" type="number" min="1" step="1" inputmode="numeric" required>
+                    <div class="stepper">
+                        <button type="button" data-step-target="workout-reps" data-step="-1">−</button>
+                        <input id="workout-reps" name="repsOrTime" type="number" min="1" step="1" inputmode="numeric" required>
+                        <button type="button" data-step-target="workout-reps" data-step="1">+</button>
+                    </div>
                 </label>
                 <label>
                     <span data-i18n="fields.notes">Notes</span>
                     <textarea id="workout-notes" name="notes" rows="3"></textarea>
                 </label>
-                <button class="primary-button" type="submit" data-i18n="actions.saveAddNext">Save & add next</button>
+                <div class="sticky-form-actions">
+                    <button class="ghost-button" type="submit" data-save-mode="finish" data-i18n="actions.saveFinish">Save & finish</button>
+                    <button class="primary-button" type="submit" data-save-mode="next" data-i18n="actions.saveAddNext">Save & add next</button>
+                </div>
             </form>
         </section>
 
