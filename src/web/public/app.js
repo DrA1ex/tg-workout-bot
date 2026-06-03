@@ -1,19 +1,38 @@
 const state = {
     user: null,
     exercises: [],
+    globalExercises: [],
+    exerciseScope: "mine",
+    exerciseSearch: "",
     dashboard: null,
     history: null,
     progress: null,
+    progressMetric: "weight",
+    progressPeriod: "all",
     tab: "dashboard",
     mode: "reps",
     saveMode: "next",
     theme: localStorage.getItem("theme") || "system",
     editMode: "reps",
+    authConfig: null,
 };
+
+const telegramWebApp = window.Telegram?.WebApp;
+const telegramInitData = telegramWebApp?.initData || "";
+
+if (telegramWebApp) {
+    telegramWebApp.ready();
+    telegramWebApp.expand();
+}
 
 const i18n = {
     en: {
         "app.kicker": "Workout Log",
+        "auth.title": "Sign in with Telegram",
+        "auth.body": "Your workout data is private. Sign in through Telegram to continue.",
+        "auth.openTelegram": "Open in Telegram",
+        "auth.configMissing": "Telegram login is not configured yet. Set WEB_BOT_USERNAME or open this app from Telegram.",
+        "auth.checking": "Checking Telegram session...",
         "nav.today": "Today",
         "nav.add": "Add",
         "nav.history": "History",
@@ -48,6 +67,9 @@ const i18n = {
         "actions.edit": "Edit",
         "actions.delete": "Delete",
         "actions.save": "Save",
+        "actions.add": "Add",
+        "actions.added": "Added",
+        "actions.logout": "Log out",
         "fields.date": "Date",
         "fields.exercise": "Exercise",
         "fields.sets": "Sets",
@@ -60,7 +82,26 @@ const i18n = {
         "progress.best": "Best",
         "progress.latest": "Latest",
         "progress.volume": "volume",
+        "progress.metric": "Metric",
+        "progress.period": "Period",
+        "progress.weight": "Weight",
+        "progress.volumeMetric": "Volume",
+        "progress.repsTime": "Reps",
+        "progress.value": "value",
+        "progress.sessions": "Sessions",
+        "progress.logged": "logged",
+        "progress.pr": "PR",
+        "progress.bestWeight": "best weight",
+        "progress.recent": "Recent sets",
+        "progress.all": "All",
+        "progress.notEnoughData": "Add more sets to see a trend.",
         "exercises.mine": "My exercises",
+        "exercises.global": "Global",
+        "exercises.search": "Search exercises",
+        "exercises.editTitle": "Edit exercise",
+        "exercises.noMatches": "No matching exercises.",
+        "exercises.noGlobalMatches": "Search or browse global exercises.",
+        "exercises.note": "Note",
         "settings.language": "Language",
         "settings.timezone": "Timezone",
         "settings.theme": "Theme",
@@ -71,6 +112,10 @@ const i18n = {
         "toast.saved": "Workout saved.",
         "toast.added": "Workout added.",
         "toast.deleted": "Workout deleted.",
+        "toast.exerciseSaved": "Exercise saved.",
+        "toast.exerciseDeleted": "Exercise removed.",
+        "toast.exerciseAdded": "Exercise added.",
+        "toast.loggedOut": "Logged out.",
         "add.previousHint": "Previous values will appear here.",
         "add.previousLoaded": "Loaded previous: {{details}}",
         "add.noPrevious": "No previous values for this exercise.",
@@ -82,6 +127,11 @@ const i18n = {
     },
     ru: {
         "app.kicker": "Журнал тренировок",
+        "auth.title": "Войти через Telegram",
+        "auth.body": "Данные тренировок приватны. Войдите через Telegram, чтобы продолжить.",
+        "auth.openTelegram": "Открыть в Telegram",
+        "auth.configMissing": "Telegram-вход пока не настроен. Укажите WEB_BOT_USERNAME или откройте приложение из Telegram.",
+        "auth.checking": "Проверяем Telegram-сессию...",
         "nav.today": "Сегодня",
         "nav.add": "Добавить",
         "nav.history": "История",
@@ -116,6 +166,9 @@ const i18n = {
         "actions.edit": "Изменить",
         "actions.delete": "Удалить",
         "actions.save": "Сохранить",
+        "actions.add": "Добавить",
+        "actions.added": "Добавлено",
+        "actions.logout": "Выйти",
         "fields.date": "Дата",
         "fields.exercise": "Упражнение",
         "fields.sets": "Подходы",
@@ -128,7 +181,26 @@ const i18n = {
         "progress.best": "Лучшее",
         "progress.latest": "Последнее",
         "progress.volume": "объем",
+        "progress.metric": "Метрика",
+        "progress.period": "Период",
+        "progress.weight": "Вес",
+        "progress.volumeMetric": "Объем",
+        "progress.repsTime": "Повторы",
+        "progress.value": "значение",
+        "progress.sessions": "Записи",
+        "progress.logged": "в журнале",
+        "progress.pr": "PR",
+        "progress.bestWeight": "лучший вес",
+        "progress.recent": "Последние подходы",
+        "progress.all": "Все",
+        "progress.notEnoughData": "Добавьте больше записей, чтобы увидеть тренд.",
         "exercises.mine": "Мои упражнения",
+        "exercises.global": "Глобальные",
+        "exercises.search": "Поиск упражнений",
+        "exercises.editTitle": "Изменить упражнение",
+        "exercises.noMatches": "Подходящих упражнений нет.",
+        "exercises.noGlobalMatches": "Ищите или просматривайте глобальные упражнения.",
+        "exercises.note": "Заметка",
         "settings.language": "Язык",
         "settings.timezone": "Часовой пояс",
         "settings.theme": "Тема",
@@ -139,6 +211,10 @@ const i18n = {
         "toast.saved": "Тренировка сохранена.",
         "toast.added": "Тренировка добавлена.",
         "toast.deleted": "Тренировка удалена.",
+        "toast.exerciseSaved": "Упражнение сохранено.",
+        "toast.exerciseDeleted": "Упражнение удалено.",
+        "toast.exerciseAdded": "Упражнение добавлено.",
+        "toast.loggedOut": "Вы вышли.",
         "add.previousHint": "Здесь появятся прошлые значения.",
         "add.previousLoaded": "Подставлено прошлое: {{details}}",
         "add.noPrevious": "Для этого упражнения прошлых значений нет.",
@@ -150,6 +226,11 @@ const i18n = {
     },
     de: {
         "app.kicker": "Workout Log",
+        "auth.title": "Mit Telegram anmelden",
+        "auth.body": "Deine Workout-Daten sind privat. Melde dich über Telegram an, um fortzufahren.",
+        "auth.openTelegram": "In Telegram öffnen",
+        "auth.configMissing": "Telegram Login ist noch nicht eingerichtet. Setze WEB_BOT_USERNAME oder öffne die App aus Telegram.",
+        "auth.checking": "Telegram-Sitzung wird geprüft...",
         "nav.today": "Heute",
         "nav.add": "Neu",
         "nav.history": "Verlauf",
@@ -184,6 +265,9 @@ const i18n = {
         "actions.edit": "Bearbeiten",
         "actions.delete": "Löschen",
         "actions.save": "Speichern",
+        "actions.add": "Hinzufügen",
+        "actions.added": "Hinzugefügt",
+        "actions.logout": "Abmelden",
         "fields.date": "Datum",
         "fields.exercise": "Übung",
         "fields.sets": "Sätze",
@@ -196,7 +280,26 @@ const i18n = {
         "progress.best": "Bestes",
         "progress.latest": "Letztes",
         "progress.volume": "Volumen",
+        "progress.metric": "Metrik",
+        "progress.period": "Zeitraum",
+        "progress.weight": "Gewicht",
+        "progress.volumeMetric": "Volumen",
+        "progress.repsTime": "Wdh.",
+        "progress.value": "Wert",
+        "progress.sessions": "Einheiten",
+        "progress.logged": "erfasst",
+        "progress.pr": "PR",
+        "progress.bestWeight": "bestes Gewicht",
+        "progress.recent": "Letzte Sätze",
+        "progress.all": "Alle",
+        "progress.notEnoughData": "Füge mehr Sätze hinzu, um einen Trend zu sehen.",
         "exercises.mine": "Meine Übungen",
+        "exercises.global": "Global",
+        "exercises.search": "Übungen suchen",
+        "exercises.editTitle": "Übung bearbeiten",
+        "exercises.noMatches": "Keine passenden Übungen.",
+        "exercises.noGlobalMatches": "Suche oder stöbere in globalen Übungen.",
+        "exercises.note": "Notiz",
         "settings.language": "Sprache",
         "settings.timezone": "Zeitzone",
         "settings.theme": "Theme",
@@ -207,6 +310,10 @@ const i18n = {
         "toast.saved": "Workout gespeichert.",
         "toast.added": "Workout hinzugefügt.",
         "toast.deleted": "Workout gelöscht.",
+        "toast.exerciseSaved": "Übung gespeichert.",
+        "toast.exerciseDeleted": "Übung entfernt.",
+        "toast.exerciseAdded": "Übung hinzugefügt.",
+        "toast.loggedOut": "Abgemeldet.",
         "add.previousHint": "Vorherige Werte erscheinen hier.",
         "add.previousLoaded": "Vorherige geladen: {{details}}",
         "add.noPrevious": "Keine vorherigen Werte für diese Übung.",
@@ -218,6 +325,11 @@ const i18n = {
     },
     fr: {
         "app.kicker": "Carnet d'entraînement",
+        "auth.title": "Connexion avec Telegram",
+        "auth.body": "Vos données d'entraînement sont privées. Connectez-vous via Telegram pour continuer.",
+        "auth.openTelegram": "Ouvrir dans Telegram",
+        "auth.configMissing": "La connexion Telegram n'est pas encore configurée. Définissez WEB_BOT_USERNAME ou ouvrez l'app depuis Telegram.",
+        "auth.checking": "Vérification de la session Telegram...",
         "nav.today": "Aujourd'hui",
         "nav.add": "Ajouter",
         "nav.history": "Historique",
@@ -252,6 +364,9 @@ const i18n = {
         "actions.edit": "Modifier",
         "actions.delete": "Supprimer",
         "actions.save": "Enregistrer",
+        "actions.add": "Ajouter",
+        "actions.added": "Ajouté",
+        "actions.logout": "Se déconnecter",
         "fields.date": "Date",
         "fields.exercise": "Exercice",
         "fields.sets": "Séries",
@@ -264,7 +379,26 @@ const i18n = {
         "progress.best": "Meilleur",
         "progress.latest": "Dernier",
         "progress.volume": "volume",
+        "progress.metric": "Métrique",
+        "progress.period": "Période",
+        "progress.weight": "Poids",
+        "progress.volumeMetric": "Volume",
+        "progress.repsTime": "Rép.",
+        "progress.value": "valeur",
+        "progress.sessions": "Séances",
+        "progress.logged": "enregistrées",
+        "progress.pr": "PR",
+        "progress.bestWeight": "meilleur poids",
+        "progress.recent": "Séries récentes",
+        "progress.all": "Tout",
+        "progress.notEnoughData": "Ajoutez plus de séries pour voir une tendance.",
         "exercises.mine": "Mes exercices",
+        "exercises.global": "Global",
+        "exercises.search": "Rechercher",
+        "exercises.editTitle": "Modifier l'exercice",
+        "exercises.noMatches": "Aucun exercice correspondant.",
+        "exercises.noGlobalMatches": "Recherchez ou parcourez les exercices globaux.",
+        "exercises.note": "Note",
         "settings.language": "Langue",
         "settings.timezone": "Fuseau horaire",
         "settings.theme": "Thème",
@@ -275,6 +409,10 @@ const i18n = {
         "toast.saved": "Séance enregistrée.",
         "toast.added": "Séance ajoutée.",
         "toast.deleted": "Séance supprimée.",
+        "toast.exerciseSaved": "Exercice enregistré.",
+        "toast.exerciseDeleted": "Exercice retiré.",
+        "toast.exerciseAdded": "Exercice ajouté.",
+        "toast.loggedOut": "Déconnecté.",
         "add.previousHint": "Les valeurs précédentes apparaîtront ici.",
         "add.previousLoaded": "Valeurs chargées : {{details}}",
         "add.noPrevious": "Aucune valeur précédente pour cet exercice.",
@@ -289,18 +427,32 @@ const i18n = {
 const $ = selector => document.querySelector(selector);
 const $$ = selector => Array.from(document.querySelectorAll(selector));
 
-function userParam() {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get("telegramId") || localStorage.getItem("telegramId");
-    return id ? `?telegramId=${encodeURIComponent(id)}` : "";
+async function api(path, options = {}) {
+    const headers = {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+    };
+    const response = await fetch(`/api/${path}`, {
+        ...options,
+        headers,
+        credentials: "same-origin",
+    });
+    const data = await response.json();
+    if (response.status === 401) {
+        await showAuthScreen(data.error);
+    }
+    if (!response.ok) throw new Error(data.error || "Request failed");
+    return data;
 }
 
-async function api(path, options = {}) {
-    const glue = path.includes("?") ? "&" : "?";
-    const suffix = userParam().replace("?", "");
-    const response = await fetch(`/api/${path}${suffix ? `${glue}${suffix}` : ""}`, {
-        headers: {"Content-Type": "application/json"},
+async function authApi(path, options = {}) {
+    const response = await fetch(`/api/auth/${path}`, {
         ...options,
+        credentials: "same-origin",
+        headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {}),
+        },
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Request failed");
@@ -322,6 +474,91 @@ function applyI18n() {
     });
     $("#screen-title").textContent = t(`screens.${state.tab}`);
 }
+
+function setAuthenticatedShell(isAuthenticated) {
+    $(".app-shell").hidden = !isAuthenticated;
+    $("#auth-screen").hidden = isAuthenticated;
+}
+
+async function loadAuthConfig() {
+    if (!state.authConfig) {
+        state.authConfig = await authApi("config");
+    }
+    return state.authConfig;
+}
+
+function renderTelegramLoginWidget(botUsername) {
+    const container = $("#telegram-login-widget");
+    container.innerHTML = "";
+    if (!botUsername) return;
+
+    const script = document.createElement("script");
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
+    script.async = true;
+    script.dataset.telegramLogin = botUsername;
+    script.dataset.size = "large";
+    script.dataset.radius = "8";
+    script.dataset.requestAccess = "write";
+    script.dataset.onauth = "onTelegramLogin(user)";
+    container.appendChild(script);
+}
+
+async function showAuthScreen(message) {
+    setAuthenticatedShell(false);
+    applyI18n();
+    $("#auth-message").textContent = message || t("auth.checking");
+
+    try {
+        const config = await loadAuthConfig();
+        renderTelegramLoginWidget(config.botUsername);
+        $("#telegram-open-link").href = config.botUsername ? `https://t.me/${config.botUsername}` : "https://t.me/";
+        if (!telegramInitData && !config.botUsername) {
+            $("#auth-message").textContent = t("auth.configMissing");
+        }
+    } catch (error) {
+        $("#auth-message").textContent = error.message || t("auth.configMissing");
+    }
+}
+
+async function completeAuth(user) {
+    state.user = user;
+    state.theme = localStorage.getItem("theme") || user?.theme || "system";
+    setAuthenticatedShell(true);
+    applyTheme();
+    await refreshAll();
+}
+
+async function ensureAuth() {
+    applyI18n();
+    const status = await authApi("status");
+    if (status.authenticated) {
+        await completeAuth(status.user);
+        return;
+    }
+
+    if (telegramInitData) {
+        const auth = await authApi("telegram-webapp", {
+            method: "POST",
+            body: JSON.stringify({initData: telegramInitData}),
+        });
+        await completeAuth(auth.user);
+        return;
+    }
+
+    await showAuthScreen();
+}
+
+window.onTelegramLogin = async user => {
+    try {
+        const auth = await authApi("telegram-login", {
+            method: "POST",
+            body: JSON.stringify(user),
+        });
+        await completeAuth(auth.user);
+    } catch (error) {
+        await showAuthScreen(error.message);
+    }
+};
 
 function applyTheme() {
     const selected = state.theme;
@@ -411,17 +648,60 @@ function renderExercises() {
     $$("#workout-form input, #workout-form select, #workout-form textarea, #workout-form button[type='submit']").forEach(node => {
         node.disabled = state.exercises.length === 0;
     });
-    $("#exercise-list").innerHTML = state.exercises.length
-        ? state.exercises.map(ex => `
-            <article class="workout-row">
-                <div>
-                    <h3>${escapeHtml(ex.name)}</h3>
-                    <p>${escapeHtml(ex.notes || "No notes")}</p>
+    $("#exercise-list-title").textContent = state.exerciseScope === "mine" ? t("exercises.mine") : t("exercises.global");
+
+    if (state.exerciseScope === "mine") {
+        const query = state.exerciseSearch.toLowerCase();
+        const filtered = state.exercises.filter(ex =>
+            ex.name.toLowerCase().includes(query) ||
+            (ex.notes || "").toLowerCase().includes(query)
+        );
+
+        $("#exercise-count").textContent = filtered.length;
+        $("#exercise-list").innerHTML = filtered.length
+            ? filtered.map(userExerciseRow).join("")
+            : `<div class="empty">${t(state.exercises.length ? "exercises.noMatches" : "empty.exercises")}</div>`;
+        return;
+    }
+
+    $("#exercise-count").textContent = state.globalExercises.length;
+    $("#exercise-list").innerHTML = state.globalExercises.length
+        ? state.globalExercises.map(globalExerciseRow).join("")
+        : `<div class="empty">${t("exercises.noGlobalMatches")}</div>`;
+}
+
+function userExerciseRow(exercise) {
+    return `
+        <article class="workout-row exercise-row">
+            <div>
+                <h3>${escapeHtml(exercise.name)}</h3>
+                <p>${escapeHtml(exercise.notes || t("exercises.note"))}</p>
+                <div class="exercise-meta">
+                    ${exercise.notes ? `<span class="tag">${t("exercises.note")}</span>` : ""}
                 </div>
-                <span class="pill">Add</span>
-            </article>
-        `).join("")
-        : `<div class="empty">${t("empty.exercises")}</div>`;
+            </div>
+            <div class="row-actions">
+                <button class="row-action" type="button" data-edit-exercise="${escapeHtml(exercise.name)}" aria-label="${t("actions.edit")}">✎</button>
+                <button class="row-action danger" type="button" data-delete-exercise="${escapeHtml(exercise.name)}" aria-label="${t("actions.delete")}">×</button>
+            </div>
+        </article>
+    `;
+}
+
+function globalExerciseRow(exercise) {
+    return `
+        <article class="workout-row exercise-row">
+            <div>
+                <h3>${escapeHtml(exercise.name)}</h3>
+                <div class="exercise-meta">
+                    <span class="tag ${exercise.added ? "success" : ""}">${exercise.added ? t("actions.added") : t("exercises.global")}</span>
+                </div>
+            </div>
+            <div class="row-actions">
+                <button class="row-action" type="button" data-add-global-exercise="${escapeHtml(exercise.name)}" ${exercise.added ? "disabled" : ""} aria-label="${t("actions.add")}">＋</button>
+            </div>
+        </article>
+    `;
 }
 
 function allWorkouts() {
@@ -497,6 +777,65 @@ async function saveEditedWorkout() {
     showToast("toast.saved");
 }
 
+function findExercise(name) {
+    return state.exercises.find(ex => ex.name === name);
+}
+
+function openExerciseDialog(exercise) {
+    $("#exercise-edit-name").value = exercise.name;
+    $("#exercise-edit-title").textContent = exercise.name;
+    $("#exercise-edit-notes").value = exercise.notes || "";
+    $("#exercise-dialog").showModal();
+}
+
+async function loadGlobalExercises() {
+    const params = new URLSearchParams();
+    if (state.exerciseSearch) params.set("search", state.exerciseSearch);
+    const data = await api(`exercises/global${params.toString() ? `?${params.toString()}` : ""}`);
+    state.globalExercises = data.exercises || [];
+    renderExercises();
+}
+
+async function saveExerciseNotes() {
+    const name = $("#exercise-edit-name").value;
+    const data = await api(`exercises/${encodeURIComponent(name)}`, {
+        method: "PATCH",
+        body: JSON.stringify({notes: $("#exercise-edit-notes").value}),
+    });
+    state.exercises = data.exercises;
+    $("#exercise-dialog").close();
+    renderExercises();
+    showToast("toast.exerciseSaved");
+}
+
+async function deleteExercise(name) {
+    const data = await api(`exercises/${encodeURIComponent(name)}`, {method: "DELETE"});
+    state.exercises = data.exercises;
+    $("#exercise-dialog").close();
+    await refreshAll();
+    showToast("toast.exerciseDeleted");
+}
+
+async function addGlobalExercise(name) {
+    const data = await api("exercises", {
+        method: "POST",
+        body: JSON.stringify({name, notes: ""}),
+    });
+    state.exercises = data.exercises;
+    await loadGlobalExercises();
+    await refreshAll();
+    state.exerciseScope = "global";
+    renderExerciseScope();
+    showToast("toast.exerciseAdded");
+}
+
+function renderExerciseScope() {
+    $$("#exercise-scope button").forEach(button => {
+        button.classList.toggle("active", button.dataset.scope === state.exerciseScope);
+    });
+    renderExercises();
+}
+
 function renderHistory() {
     const groups = state.history?.groups || [];
     $("#history-list").innerHTML = groups.length
@@ -515,17 +854,66 @@ function renderProgress() {
         $("#progress-chart").innerHTML = `<text x="160" y="92" text-anchor="middle" fill="currentColor">${t("empty.progress")}</text>`;
         $("#progress-best").textContent = "0";
         $("#progress-latest").textContent = "0";
+        $("#progress-sessions").textContent = "0";
+        $("#progress-pr").textContent = "0";
+        $("#progress-recent").innerHTML = `<div class="empty">${t("empty.progress")}</div>`;
         return;
     }
 
-    $("#progress-best").textContent = Math.round(data.best?.volume || 0).toLocaleString();
-    $("#progress-latest").textContent = data.latest?.weight || data.latest?.repsOrTime || 0;
-    drawChart(data.points);
+    const metric = state.progressMetric;
+    const values = data.points.map(point => metricValue(point, metric));
+    const bestValue = Math.max(...values, 0);
+    const latestValue = values.at(-1) || 0;
+
+    $("#progress-best").textContent = formatMetric(bestValue, metric);
+    $("#progress-latest").textContent = formatMetric(latestValue, metric);
+    $("#progress-best-label").textContent = metricLabel(metric);
+    $("#progress-latest-label").textContent = metricLabel(metric);
+    $("#progress-sessions").textContent = data.summary?.sessions || data.points.length;
+    $("#progress-pr").textContent = formatMetric(data.summary?.bestWeight || data.summary?.bestRepsOrTime || 0, data.summary?.isTime ? "repsOrTime" : "weight");
+    $("#progress-pr-label").textContent = data.summary?.isTime ? metricLabel("repsOrTime") : t("progress.bestWeight");
+    renderProgressRecent(data.recent || []);
+    drawChart(data.points, metric);
 }
 
-function drawChart(points) {
+function metricValue(point, metric) {
+    if (metric === "volume") return point.volume || (!point.isTime && point.weight && point.repsOrTime && point.sets
+        ? point.weight * point.repsOrTime * point.sets
+        : 0);
+    if (metric === "repsOrTime") return point.repsOrTime || 0;
+    if (metric === "sets") return point.sets || 0;
+    return point.weight || 0;
+}
+
+function formatMetric(value, metric) {
+    const rounded = Number.isInteger(value) ? value : Number(value.toFixed(1));
+    if (metric === "weight") return rounded ? `${rounded}` : "0";
+    if (metric === "volume") return Math.round(value).toLocaleString();
+    return String(rounded);
+}
+
+function metricLabel(metric) {
+    if (metric === "volume") return t("progress.volumeMetric");
+    if (metric === "repsOrTime") return t("progress.repsTime");
+    if (metric === "sets") return t("fields.sets");
+    return t("progress.weight");
+}
+
+function renderProgressRecent(rows) {
+    $("#progress-recent").innerHTML = rows.length
+        ? rows.map(row => `
+            <div class="mini-row">
+                <span>${escapeHtml(row.dateLabel)}</span>
+                <strong>${escapeHtml(workoutDetail(row))}</strong>
+                <small class="mini-value">${escapeHtml(formatMetric(metricValue(row, state.progressMetric), state.progressMetric))}</small>
+            </div>
+        `).join("")
+        : `<div class="empty">${t("empty.progress")}</div>`;
+}
+
+function drawChart(points, metric) {
     const svg = $("#progress-chart");
-    const values = points.map(point => point.volume || point.weight || point.repsOrTime || 0);
+    const values = points.map(point => metricValue(point, metric));
     const max = Math.max(...values, 1);
     const min = Math.min(...values, 0);
     const width = 320;
@@ -539,13 +927,16 @@ function drawChart(points) {
         return [x, y];
     });
     const path = coords.map(([x, y], index) => `${index ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
-    const area = `${path} L ${coords.at(-1)[0].toFixed(1)} ${height - pad} L ${pad} ${height - pad} Z`;
+    const area = coords.length > 1
+        ? `${path} L ${coords.at(-1)[0].toFixed(1)} ${height - pad} L ${pad} ${height - pad} Z`
+        : "";
 
     svg.innerHTML = `
-        <path d="${area}" fill="var(--primary)" opacity=".12"></path>
+        ${area ? `<path d="${area}" fill="var(--primary)" opacity=".12"></path>` : ""}
         <path d="${path}" fill="none" stroke="var(--primary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
         ${coords.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4" fill="var(--surface)" stroke="var(--primary)" stroke-width="3"></circle>`).join("")}
         <line x1="${pad}" y1="${height - pad}" x2="${width - pad}" y2="${height - pad}" stroke="var(--line)" stroke-width="1"></line>
+        ${coords.length === 1 ? `<text x="160" y="146" text-anchor="middle" fill="var(--muted)" font-size="12">${t("progress.notEnoughData")}</text>` : ""}
     `;
 }
 
@@ -564,7 +955,6 @@ async function refreshAll() {
     state.exercises = bootstrap.exercises;
     state.dashboard = dashboard;
     state.history = history;
-    localStorage.setItem("telegramId", state.user.telegramId);
     $("#language-select").value = state.user.language;
     $("#timezone-input").value = state.user.timezone;
     renderDashboard();
@@ -594,7 +984,10 @@ function adjustNumberInput(input, delta) {
 
 async function loadProgress() {
     const exercise = $("#progress-exercise").value || state.exercises[0]?.name || "";
-    state.progress = await api(`progress${exercise ? `?exercise=${encodeURIComponent(exercise)}` : ""}`);
+    const params = new URLSearchParams();
+    if (exercise) params.set("exercise", exercise);
+    params.set("period", state.progressPeriod);
+    state.progress = await api(`progress?${params.toString()}`);
     if (state.progress.exercise) $("#progress-exercise").value = state.progress.exercise;
     renderProgress();
 }
@@ -647,18 +1040,51 @@ function bindEvents() {
 
     $("#exercise-form").addEventListener("submit", async event => {
         event.preventDefault();
-        await api("exercises", {
+        const data = await api("exercises", {
             method: "POST",
             body: JSON.stringify({
                 name: $("#exercise-name").value,
                 notes: $("#exercise-notes").value,
             }),
         });
+        state.exercises = data.exercises;
         $("#exercise-form").reset();
         await refreshAll();
+        showToast("toast.exerciseAdded");
     });
 
+    let exerciseSearchTimer;
+    $("#exercise-search").addEventListener("input", event => {
+        state.exerciseSearch = event.target.value.trim();
+        window.clearTimeout(exerciseSearchTimer);
+        exerciseSearchTimer = window.setTimeout(async () => {
+            if (state.exerciseScope === "global") {
+                await loadGlobalExercises();
+            } else {
+                renderExercises();
+            }
+        }, 220);
+    });
+
+    $$("#exercise-scope button").forEach(button => button.addEventListener("click", async () => {
+        state.exerciseScope = button.dataset.scope;
+        renderExerciseScope();
+        if (state.exerciseScope === "global") {
+            await loadGlobalExercises();
+        }
+    }));
+
     $("#progress-exercise").addEventListener("change", loadProgress);
+    $$("#progress-metric button").forEach(button => button.addEventListener("click", () => {
+        state.progressMetric = button.dataset.metric;
+        $$("#progress-metric button").forEach(item => item.classList.toggle("active", item === button));
+        renderProgress();
+    }));
+    $$("#progress-period button").forEach(button => button.addEventListener("click", async () => {
+        state.progressPeriod = button.dataset.period;
+        $$("#progress-period button").forEach(item => item.classList.toggle("active", item === button));
+        await loadProgress();
+    }));
 
     $("#settings-form").addEventListener("submit", async event => {
         event.preventDefault();
@@ -673,6 +1099,13 @@ function bindEvents() {
         });
         applyTheme();
         await refreshAll();
+    });
+
+    $("#logout-button").addEventListener("click", async () => {
+        await authApi("logout", {method: "POST"});
+        state.user = null;
+        await showAuthScreen();
+        showToast("toast.loggedOut");
     });
 
     $("#use-previous").addEventListener("click", () => {
@@ -710,6 +1143,14 @@ function bindEvents() {
         $("#edit-dialog").close();
         await deleteWorkout(id);
     });
+    $("#exercise-close").addEventListener("click", () => $("#exercise-dialog").close());
+    $("#exercise-edit-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        await saveExerciseNotes();
+    });
+    $("#exercise-delete").addEventListener("click", async () => {
+        await deleteExercise($("#exercise-edit-name").value);
+    });
 
     document.addEventListener("click", async event => {
         const editButton = event.target.closest("[data-edit-workout]");
@@ -722,6 +1163,25 @@ function bindEvents() {
         const deleteButton = event.target.closest("[data-delete-workout]");
         if (deleteButton) {
             await deleteWorkout(deleteButton.dataset.deleteWorkout);
+            return;
+        }
+
+        const editExerciseButton = event.target.closest("[data-edit-exercise]");
+        if (editExerciseButton) {
+            const exercise = findExercise(editExerciseButton.dataset.editExercise);
+            if (exercise) openExerciseDialog(exercise);
+            return;
+        }
+
+        const deleteExerciseButton = event.target.closest("[data-delete-exercise]");
+        if (deleteExerciseButton) {
+            await deleteExercise(deleteExerciseButton.dataset.deleteExercise);
+            return;
+        }
+
+        const addGlobalButton = event.target.closest("[data-add-global-exercise]");
+        if (addGlobalButton) {
+            await addGlobalExercise(addGlobalButton.dataset.addGlobalExercise);
         }
     });
 }
@@ -729,7 +1189,7 @@ function bindEvents() {
 $("#workout-date").value = todayInputValue();
 bindEvents();
 applyTheme();
-refreshAll().catch(error => {
+ensureAuth().catch(async error => {
     console.error(error);
-    $("#today-list").innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+    await showAuthScreen(error.message);
 });

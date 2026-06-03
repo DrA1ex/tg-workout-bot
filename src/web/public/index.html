@@ -4,10 +4,22 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Workout Log</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<div class="app-shell">
+<section class="auth-screen" id="auth-screen" hidden>
+    <div class="auth-card">
+        <p class="eyebrow" data-i18n="app.kicker">Workout Log</p>
+        <h1 data-i18n="auth.title">Sign in with Telegram</h1>
+        <p class="auth-copy" data-i18n="auth.body">Your workout data is private. Sign in through Telegram to continue.</p>
+        <div class="auth-widget" id="telegram-login-widget"></div>
+        <p class="helper-text" id="auth-message" data-i18n="auth.checking">Checking Telegram session...</p>
+        <a class="primary-link" id="telegram-open-link" href="https://t.me/" rel="noreferrer" data-i18n="auth.openTelegram">Open in Telegram</a>
+    </div>
+</section>
+
+<div class="app-shell" hidden>
     <header class="top-bar">
         <div>
             <p class="eyebrow" data-i18n="app.kicker">Workout Log</p>
@@ -143,6 +155,23 @@
                     <span data-i18n="fields.exercise">Exercise</span>
                     <select id="progress-exercise"></select>
                 </label>
+                <div>
+                    <span class="control-label" data-i18n="progress.metric">Metric</span>
+                    <div class="segmented four" id="progress-metric">
+                        <button class="active" type="button" data-metric="weight" data-i18n="progress.weight">Weight</button>
+                        <button type="button" data-metric="volume" data-i18n="progress.volumeMetric">Volume</button>
+                        <button type="button" data-metric="repsOrTime" data-i18n="progress.repsTime">Reps</button>
+                        <button type="button" data-metric="sets" data-i18n="fields.sets">Sets</button>
+                    </div>
+                </div>
+                <div>
+                    <span class="control-label" data-i18n="progress.period">Period</span>
+                    <div class="segmented three" id="progress-period">
+                        <button type="button" data-period="30d">30d</button>
+                        <button type="button" data-period="90d">90d</button>
+                        <button class="active" type="button" data-period="all" data-i18n="progress.all">All</button>
+                    </div>
+                </div>
                 <div class="chart-wrap">
                     <svg id="progress-chart" viewBox="0 0 320 180" role="img" aria-label="Progress chart"></svg>
                 </div>
@@ -150,31 +179,58 @@
                     <article class="metric-card">
                         <span data-i18n="progress.best">Best</span>
                         <strong id="progress-best">0</strong>
-                        <small data-i18n="progress.volume">volume</small>
+                        <small id="progress-best-label" data-i18n="progress.value">value</small>
                     </article>
                     <article class="metric-card">
                         <span data-i18n="progress.latest">Latest</span>
                         <strong id="progress-latest">0</strong>
-                        <small data-i18n="fields.weight">Weight</small>
+                        <small id="progress-latest-label" data-i18n="progress.value">value</small>
+                    </article>
+                    <article class="metric-card">
+                        <span data-i18n="progress.sessions">Sessions</span>
+                        <strong id="progress-sessions">0</strong>
+                        <small data-i18n="progress.logged">logged</small>
+                    </article>
+                    <article class="metric-card">
+                        <span data-i18n="progress.pr">PR</span>
+                        <strong id="progress-pr">0</strong>
+                        <small id="progress-pr-label" data-i18n="progress.bestWeight">best weight</small>
                     </article>
                 </div>
+                <div class="section-heading embedded">
+                    <h2 data-i18n="progress.recent">Recent sets</h2>
+                </div>
+                <div class="mini-table" id="progress-recent"></div>
             </div>
         </section>
 
         <section class="screen" id="screen-exercises" aria-labelledby="nav-exercises">
-            <form class="panel form-stack" id="exercise-form">
+            <div class="panel form-stack">
                 <label>
-                    <span data-i18n="fields.name">Name</span>
-                    <input id="exercise-name" name="name" type="text" autocomplete="off" required>
+                    <span data-i18n="exercises.search">Search exercises</span>
+                    <input id="exercise-search" type="search" autocomplete="off" placeholder="Bench press">
                 </label>
-                <label>
-                    <span data-i18n="fields.notes">Notes</span>
-                    <input id="exercise-notes" name="notes" type="text" autocomplete="off">
-                </label>
+                <div class="segmented" id="exercise-scope">
+                    <button class="active" type="button" data-scope="mine" data-i18n="exercises.mine">My exercises</button>
+                    <button type="button" data-scope="global" data-i18n="exercises.global">Global</button>
+                </div>
+            </div>
+            <form class="panel form-stack compact-form" id="exercise-form">
+                <div class="field-grid">
+                    <label>
+                        <span data-i18n="fields.name">Name</span>
+                        <input id="exercise-name" name="name" type="text" autocomplete="off" required>
+                    </label>
+                    <label>
+                        <span data-i18n="fields.notes">Notes</span>
+                        <input id="exercise-notes" name="notes" type="text" autocomplete="off">
+                    </label>
+                </div>
                 <button class="primary-button" type="submit" data-i18n="actions.addExercise">Add exercise</button>
             </form>
             <div class="section-heading">
-                <h2 data-i18n="exercises.mine">My exercises</h2>
+                <h2 id="exercise-list-title" data-i18n="exercises.mine">My exercises</h2>
+                <span class="count-pill" id="exercise-count">0</span>
             </div>
             <div class="list" id="exercise-list"></div>
         </section>
@@ -203,6 +259,7 @@
                     </select>
                 </label>
                 <button class="primary-button" type="submit" data-i18n="actions.saveSettings">Save settings</button>
+                <button class="ghost-button" id="logout-button" type="button" data-i18n="actions.logout">Log out</button>
             </form>
         </section>
     </main>
@@ -246,6 +303,28 @@
             </label>
             <div class="modal-actions">
                 <button class="danger-button" id="edit-delete" type="button" data-i18n="actions.delete">Delete</button>
+                <button class="primary-button" type="submit" data-i18n="actions.save">Save</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog class="modal" id="exercise-dialog">
+        <form class="panel form-stack" id="exercise-edit-form" method="dialog">
+            <div class="modal-heading">
+                <h2 data-i18n="exercises.editTitle">Edit exercise</h2>
+                <button class="icon-button compact" id="exercise-close" type="button" aria-label="Close">×</button>
+            </div>
+            <input id="exercise-edit-name" type="hidden">
+            <div>
+                <span class="panel-label" data-i18n="fields.name">Name</span>
+                <strong id="exercise-edit-title"></strong>
+            </div>
+            <label>
+                <span data-i18n="fields.notes">Notes</span>
+                <textarea id="exercise-edit-notes" rows="4"></textarea>
+            </label>
+            <div class="modal-actions">
+                <button class="danger-button" id="exercise-delete" type="button" data-i18n="actions.delete">Delete</button>
                 <button class="primary-button" type="submit" data-i18n="actions.save">Save</button>
             </div>
         </form>
