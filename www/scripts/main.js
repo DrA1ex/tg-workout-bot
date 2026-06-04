@@ -229,6 +229,7 @@ function allWorkouts() {
     const byId = new Map(history.map(workout => [workout.id, workout]));
     (state.dashboard?.recent || []).forEach(workout => byId.set(workout.id, workout));
     (state.dashboard?.today?.workouts || []).forEach(workout => byId.set(workout.id, workout));
+    (state.progress?.recent || []).forEach(workout => byId.set(workout.id, workout));
     return [...byId.values()];
 }
 
@@ -399,10 +400,9 @@ function renderHistory() {
 function renderProgress() {
     const data = state.progress;
     if (!data?.points?.length) {
-        $("#progress-chart").innerHTML = `<text x="160" y="92" text-anchor="middle" fill="currentColor">${t("empty.progress")}</text>`;
+        $("#progress-chart").innerHTML = `<text x="180" y="120" text-anchor="middle" fill="currentColor">${t("empty.progress")}</text>`;
         $("#progress-best").textContent = "0";
         $("#progress-latest").textContent = "0";
-        $("#progress-sessions").textContent = "0";
         $("#progress-pr").textContent = "0";
         $("#progress-recent").innerHTML = `<div class="empty">${t("empty.progress")}</div>`;
         return;
@@ -411,15 +411,14 @@ function renderProgress() {
     const metric = state.progressMetric;
     const values = data.points.map(point => metricValue(point, metric));
     const bestValue = Math.max(...values, 0);
-    const latestValue = values.at(-1) || 0;
+    const averageValue = values.reduce((sum, value) => sum + value, 0) / values.length;
 
-    $("#progress-best").textContent = formatMetric(bestValue, metric);
-    $("#progress-latest").textContent = formatMetric(latestValue, metric);
+    $("#progress-best").textContent = formatMetricWithUnit(bestValue, metric);
+    $("#progress-latest").textContent = formatMetricWithUnit(averageValue, metric);
     $("#progress-best-label").textContent = metricLabel(metric);
     $("#progress-latest-label").textContent = metricLabel(metric);
-    $("#progress-sessions").textContent = data.summary?.sessions || data.points.length;
-    $("#progress-pr").textContent = formatMetric(data.summary?.bestWeight || data.summary?.bestRepsOrTime || 0, data.summary?.isTime ? "repsOrTime" : "weight");
-    $("#progress-pr-label").textContent = data.summary?.isTime ? metricLabel("repsOrTime") : t("progress.bestWeight");
+    $("#progress-pr").textContent = `${Math.round(data.summary?.totalVolume || 0).toLocaleString()} kg`;
+    $("#progress-pr-label").textContent = t("progress.total");
     renderProgressRecent(data.recent || []);
     drawChart(data.points, metric);
 }
@@ -440,6 +439,12 @@ function formatMetric(value, metric) {
     return String(rounded);
 }
 
+function formatMetricWithUnit(value, metric) {
+    const formatted = formatMetric(value, metric);
+    if (metric === "weight" || metric === "volume") return `${formatted} kg`;
+    return formatted;
+}
+
 function metricLabel(metric) {
     if (metric === "volume") return t("progress.volumeMetric");
     if (metric === "repsOrTime") return t("progress.repsTime");
@@ -448,13 +453,19 @@ function metricLabel(metric) {
 }
 
 function renderProgressRecent(rows) {
+    const data = state.progress;
+    const bestMetricValue = Math.max(...(data?.points || []).map(point => metricValue(point, state.progressMetric)), 0);
     $("#progress-recent").innerHTML = rows.length
         ? rows.map(row => `
-            <div class="mini-row">
-                <span>${escapeHtml(row.dateLabel)}</span>
-                <strong>${escapeHtml(workoutDetail(row))}</strong>
-                <small class="mini-value">${escapeHtml(formatMetric(metricValue(row, state.progressMetric), state.progressMetric))}</small>
-            </div>
+            <button class="progress-record-row" type="button" data-edit-workout="${row.id}">
+                <span class="progress-record-clock">◷</span>
+                <span class="progress-record-body">
+                    <strong>${escapeHtml(row.dateLabel)}</strong>
+                    <small>${escapeHtml(workoutDetail(row))}</small>
+                </span>
+                ${metricValue(row, state.progressMetric) === bestMetricValue ? `<span class="progress-pr-badge">${t("progress.pr")}</span>` : ""}
+                <span class="progress-record-chevron">›</span>
+            </button>
         `).join("")
         : `<div class="empty">${t("empty.progress")}</div>`;
 }
@@ -462,30 +473,78 @@ function renderProgressRecent(rows) {
 function drawChart(points, metric) {
     const svg = $("#progress-chart");
     const values = points.map(point => metricValue(point, metric));
-    const max = Math.max(...values, 1);
-    const min = Math.min(...values, 0);
-    const width = 320;
-    const height = 180;
-    const pad = 24;
+    const rawMax = Math.max(...values, 1);
+    const rawMin = Math.min(...values, 0);
+    const width = 360;
+    const height = 246;
+    const padLeft = 40;
+    const padRight = 18;
+    const padTop = 34;
+    const padBottom = 36;
+    const min = rawMin === rawMax ? Math.max(0, rawMin - 1) : Math.max(0, rawMin - (rawMax - rawMin) * .12);
+    const max = rawMin === rawMax ? rawMax + 1 : rawMax + (rawMax - rawMin) * .12;
     const span = Math.max(max - min, 1);
-    const step = points.length > 1 ? (width - pad * 2) / (points.length - 1) : 0;
+    const step = points.length > 1 ? (width - padLeft - padRight) / (points.length - 1) : 0;
     const coords = values.map((value, index) => {
-        const x = pad + index * step;
-        const y = height - pad - ((value - min) / span) * (height - pad * 2);
+        const x = padLeft + index * step;
+        const y = height - padBottom - ((value - min) / span) * (height - padTop - padBottom);
         return [x, y];
     });
     const path = coords.map(([x, y], index) => `${index ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
-    const area = coords.length > 1
-        ? `${path} L ${coords.at(-1)[0].toFixed(1)} ${height - pad} L ${pad} ${height - pad} Z`
-        : "";
+    const ticks = [0, .25, .5, .75, 1].map(ratio => ({
+        value: min + span * ratio,
+        y: height - padBottom - ratio * (height - padTop - padBottom),
+    })).reverse();
+    const labelIndexes = points.length <= 4
+        ? points.map((_, index) => index)
+        : [0, Math.floor((points.length - 1) / 2), points.length - 1];
+    const labelAnchor = index => {
+        if (index === 0) return "start";
+        if (index === points.length - 1) return "end";
+        return "middle";
+    };
+    const last = coords.at(-1);
+    const lastValue = values.at(-1) || 0;
+    const bubbleX = Math.min(Math.max(last?.[0] || width / 2, 58), width - 58);
+    const bubbleY = Math.max((last?.[1] || padTop) - 32, 20);
 
     svg.innerHTML = `
-        ${area ? `<path d="${area}" fill="var(--primary)" opacity=".12"></path>` : ""}
-        <path d="${path}" fill="none" stroke="var(--primary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
-        ${coords.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4" fill="var(--surface)" stroke="var(--primary)" stroke-width="3"></circle>`).join("")}
-        <line x1="${pad}" y1="${height - pad}" x2="${width - pad}" y2="${height - pad}" stroke="var(--line)" stroke-width="1"></line>
-        ${coords.length === 1 ? `<text x="160" y="146" text-anchor="middle" fill="var(--muted)" font-size="12">${t("progress.notEnoughData")}</text>` : ""}
+        <text x="${padLeft - 34}" y="${padTop - 12}" fill="var(--muted)" font-size="12" font-weight="700">${escapeHtml(metricUnit(metric))}</text>
+        ${ticks.map(tick => `
+            <line x1="${padLeft}" y1="${tick.y.toFixed(1)}" x2="${width - padRight}" y2="${tick.y.toFixed(1)}" stroke="var(--line)" stroke-width="1"></line>
+            <text x="${padLeft - 8}" y="${(tick.y + 4).toFixed(1)}" text-anchor="end" fill="var(--muted)" font-size="12">${escapeHtml(formatAxisValue(tick.value, metric))}</text>
+        `).join("")}
+        <path d="${path}" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+        ${coords.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5" fill="var(--primary)" stroke="var(--surface)" stroke-width="2"></circle>`).join("")}
+        ${labelIndexes.map(index => `<text x="${coords[index][0].toFixed(1)}" y="${height - 8}" text-anchor="${labelAnchor(index)}" fill="var(--muted)" font-size="12" font-weight="650">${escapeHtml(chartDateLabel(points[index]))}</text>`).join("")}
+        ${last ? `
+            <g>
+                <rect x="${(bubbleX - 44).toFixed(1)}" y="${(bubbleY - 20).toFixed(1)}" width="88" height="30" rx="8" fill="var(--primary)"></rect>
+                <path d="M${(last[0] - 6).toFixed(1)} ${(bubbleY + 10).toFixed(1)} L${last[0].toFixed(1)} ${(bubbleY + 18).toFixed(1)} L${(last[0] + 6).toFixed(1)} ${(bubbleY + 10).toFixed(1)} Z" fill="var(--primary)"></path>
+                <text x="${bubbleX.toFixed(1)}" y="${(bubbleY + 1).toFixed(1)}" text-anchor="middle" fill="var(--primary-ink)" font-size="13" font-weight="850">${escapeHtml(formatMetricWithUnit(lastValue, metric))}</text>
+            </g>
+        ` : ""}
+        ${coords.length === 1 ? `<text x="${width / 2}" y="${height - 58}" text-anchor="middle" fill="var(--muted)" font-size="12">${t("progress.notEnoughData")}</text>` : ""}
     `;
+}
+
+function metricUnit(metric) {
+    if (metric === "weight" || metric === "volume") return "kg";
+    if (metric === "sets") return t("fields.sets").toLowerCase();
+    return t("progress.repsTime").toLowerCase();
+}
+
+function formatAxisValue(value, metric) {
+    if (metric === "volume") return Math.round(value).toLocaleString();
+    const rounded = Number(value.toFixed(value >= 10 ? 0 : 1));
+    return String(rounded);
+}
+
+function chartDateLabel(point) {
+    const date = point?.date ? new Date(point.date) : null;
+    if (!date || Number.isNaN(date.getTime())) return point?.label || "";
+    const locale = state.user?.language || "en";
+    return date.toLocaleDateString(locale, {month: "short", day: "numeric"});
 }
 
 function setTab(tab) {
@@ -685,6 +744,7 @@ function adjustNumberInput(input, delta) {
 
 async function loadProgress() {
     const exercise = $("#progress-exercise").value || state.exercises[0]?.name || "";
+    $("#progress-period").value = state.progressPeriod;
     const params = new URLSearchParams();
     if (exercise) params.set("exercise", exercise);
     params.set("period", state.progressPeriod);
@@ -784,11 +844,10 @@ function bindEvents() {
         $$("#progress-metric button").forEach(item => item.classList.toggle("active", item === button));
         renderProgress();
     }));
-    $$("#progress-period button").forEach(button => button.addEventListener("click", async () => {
-        state.progressPeriod = button.dataset.period;
-        $$("#progress-period button").forEach(item => item.classList.toggle("active", item === button));
+    $("#progress-period").addEventListener("change", async event => {
+        state.progressPeriod = event.target.value;
         await loadProgress();
-    }));
+    });
 
     $("#settings-form").addEventListener("submit", async event => {
         event.preventDefault();

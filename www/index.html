@@ -172,57 +172,48 @@
         </section>
 
         <section class="screen" id="screen-progress" aria-labelledby="nav-progress">
-            <div class="panel form-stack">
-                <label>
-                    <span data-i18n="fields.exercise">Exercise</span>
-                    <select id="progress-exercise"></select>
+            <div class="progress-screen">
+                <label class="progress-select-shell">
+                    <span class="progress-leading-icon">╫</span>
+                    <select id="progress-exercise" aria-label="Exercise"></select>
+                    <span class="progress-chevron">⌄</span>
                 </label>
-                <div>
-                    <span class="control-label" data-i18n="progress.metric">Metric</span>
-                    <div class="segmented four" id="progress-metric">
-                        <button class="active" type="button" data-metric="weight" data-i18n="progress.weight">Weight</button>
-                        <button type="button" data-metric="volume" data-i18n="progress.volumeMetric">Volume</button>
-                        <button type="button" data-metric="repsOrTime" data-i18n="progress.repsTime">Reps</button>
-                        <button type="button" data-metric="sets" data-i18n="fields.sets">Sets</button>
-                    </div>
+                <div class="progress-tabs" id="progress-metric" role="tablist" aria-label="Progress metric">
+                    <button class="active" type="button" data-metric="weight" data-i18n="progress.weight">Weight</button>
+                    <button type="button" data-metric="repsOrTime" data-i18n="progress.repsTime">Reps</button>
+                    <button type="button" data-metric="sets" data-i18n="fields.sets">Sets</button>
                 </div>
-                <div>
-                    <span class="control-label" data-i18n="progress.period">Period</span>
-                    <div class="segmented three" id="progress-period">
-                        <button type="button" data-period="30d">30d</button>
-                        <button type="button" data-period="90d">90d</button>
-                        <button class="active" type="button" data-period="all" data-i18n="progress.all">All</button>
-                    </div>
+                <label class="progress-period-shell">
+                    <span class="progress-leading-icon">▣</span>
+                    <select id="progress-period" aria-label="Period">
+                        <option value="30d" data-i18n="progress.last30">Last 30 days</option>
+                        <option value="90d" data-i18n="progress.last90">Last 90 days</option>
+                        <option value="all" data-i18n="progress.allTime">All time</option>
+                    </select>
+                    <span class="progress-chevron">⌄</span>
+                </label>
+                <div class="progress-chart-wrap">
+                    <svg id="progress-chart" viewBox="0 0 360 246" role="img" aria-label="Progress chart"></svg>
                 </div>
-                <div class="chart-wrap">
-                    <svg id="progress-chart" viewBox="0 0 320 180" role="img" aria-label="Progress chart"></svg>
-                </div>
-                <div class="summary-grid compact">
-                    <article class="metric-card">
-                        <span data-i18n="progress.best">Best</span>
+                <div class="progress-summary-grid">
+                    <article class="progress-summary-card best">
+                        <span><b>🏆</b><span data-i18n="progress.best">Best</span></span>
                         <strong id="progress-best">0</strong>
                         <small id="progress-best-label" data-i18n="progress.value">value</small>
                     </article>
-                    <article class="metric-card">
-                        <span data-i18n="progress.latest">Latest</span>
+                    <article class="progress-summary-card average">
+                        <span><b>⌁</b><span data-i18n="progress.average">Average</span></span>
                         <strong id="progress-latest">0</strong>
                         <small id="progress-latest-label" data-i18n="progress.value">value</small>
                     </article>
-                    <article class="metric-card">
-                        <span data-i18n="progress.sessions">Sessions</span>
-                        <strong id="progress-sessions">0</strong>
-                        <small data-i18n="progress.logged">logged</small>
-                    </article>
-                    <article class="metric-card">
-                        <span data-i18n="progress.pr">PR</span>
+                    <article class="progress-summary-card volume">
+                        <span><b>▥</b><span data-i18n="progress.volumeMetric">Volume</span></span>
                         <strong id="progress-pr">0</strong>
-                        <small id="progress-pr-label" data-i18n="progress.bestWeight">best weight</small>
+                        <small id="progress-pr-label" data-i18n="progress.total">Total</small>
                     </article>
                 </div>
-                <div class="section-heading embedded">
-                    <h2 data-i18n="progress.recent">Recent sets</h2>
-                </div>
-                <div class="mini-table" id="progress-recent"></div>
+                <h2 class="progress-records-title" data-i18n="progress.recent">Recent records</h2>
+                <div class="progress-records-list" id="progress-recent"></div>
             </div>
         </section>
 

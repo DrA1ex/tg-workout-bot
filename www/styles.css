@@ -952,6 +952,307 @@ textarea {
     height: auto;
 }
 
+body[data-tab="progress"] .page-heading {
+    grid-template-columns: 52px 1fr 52px;
+    margin-bottom: 12px;
+}
+
+body[data-tab="progress"] .page-heading div {
+    grid-column: 2;
+    text-align: center;
+}
+
+body[data-tab="progress"] .page-heading h1 {
+    font-size: 27px;
+    line-height: 1.15;
+}
+
+body[data-tab="progress"] #screen-subtitle,
+body[data-tab="progress"] .calendar-button {
+    display: none;
+}
+
+#screen-progress {
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+}
+
+.progress-screen {
+    display: grid;
+    gap: 16px;
+}
+
+.progress-select-shell,
+.progress-period-shell {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 58px;
+    border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: 0 3px 12px rgba(15, 23, 42, .035);
+}
+
+.progress-select-shell {
+    padding: 0 14px;
+}
+
+.progress-period-shell {
+    width: min(100%, 286px);
+    min-height: 54px;
+    padding: 0 13px;
+}
+
+.progress-select-shell select,
+.progress-period-shell select {
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    appearance: none;
+    background: transparent;
+    color: var(--text);
+    font-weight: 800;
+}
+
+.progress-select-shell select {
+    font-size: 19px;
+}
+
+.progress-period-shell select {
+    font-size: 16px;
+}
+
+.progress-leading-icon {
+    color: var(--primary);
+    font-size: 25px;
+    line-height: 1;
+}
+
+.progress-period-shell .progress-leading-icon {
+    font-size: 21px;
+}
+
+.progress-chevron {
+    color: var(--muted);
+    font-size: 24px;
+    font-weight: 850;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.progress-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    margin: -2px -24px 4px;
+    border-bottom: 1px solid var(--line);
+}
+
+.progress-tabs button {
+    position: relative;
+    min-height: 52px;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.progress-tabs button.active {
+    color: var(--primary);
+}
+
+.progress-tabs button.active::after {
+    position: absolute;
+    right: 10px;
+    bottom: -1px;
+    left: 10px;
+    height: 3px;
+    border-radius: 999px 999px 0 0;
+    content: "";
+    background: var(--primary);
+}
+
+.progress-chart-wrap {
+    overflow: visible;
+    margin: -2px -6px 0;
+    background: transparent;
+}
+
+.progress-chart-wrap svg {
+    display: block;
+    width: 100%;
+    min-height: 252px;
+}
+
+.progress-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.progress-summary-card {
+    min-width: 0;
+    min-height: 116px;
+    padding: 13px 12px;
+    border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: 0 5px 18px rgba(15, 23, 42, .045);
+}
+
+.progress-summary-card > span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.progress-summary-card b {
+    color: var(--primary);
+    font-size: 17px;
+    font-style: normal;
+    line-height: 1;
+}
+
+.progress-summary-card.best b {
+    color: #eab308;
+}
+
+.progress-summary-card.volume b {
+    color: var(--success);
+}
+
+.progress-summary-card strong {
+    display: block;
+    margin-top: 22px;
+    color: var(--text);
+    font-size: 24px;
+    font-weight: 850;
+    line-height: 1;
+}
+
+.progress-summary-card small {
+    display: block;
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.25;
+}
+
+.progress-records-title {
+    margin-top: 2px;
+    font-size: 21px;
+    font-weight: 850;
+}
+
+.progress-records-list {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: 0 5px 18px rgba(15, 23, 42, .04);
+}
+
+.progress-record-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 74px;
+    padding: 12px 14px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+}
+
+.progress-record-row:last-child {
+    border-bottom: 0;
+}
+
+.progress-record-clock {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    color: var(--muted);
+    font-size: 22px;
+    line-height: 1;
+}
+
+.progress-record-body {
+    min-width: 0;
+}
+
+.progress-record-body strong,
+.progress-record-body small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.progress-record-body strong {
+    font-size: 15px;
+    font-weight: 850;
+}
+
+.progress-record-body small {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 650;
+}
+
+.progress-pr-badge {
+    display: inline-grid;
+    min-width: 44px;
+    min-height: 34px;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, #eab308 42%, var(--line));
+    border-radius: 999px;
+    color: #ca8a04;
+    font-size: 14px;
+    font-weight: 850;
+}
+
+.progress-record-chevron {
+    color: var(--muted);
+    font-size: 34px;
+    line-height: 1;
+}
+
+[data-theme="dark"] .progress-summary-card,
+[data-theme="dark"] .progress-records-list,
+[data-theme="dark"] .progress-select-shell,
+[data-theme="dark"] .progress-period-shell {
+    box-shadow: 0 8px 22px rgba(0, 0, 0, .18);
+}
+
+@media (max-width: 380px) {
+    .progress-summary-grid {
+        gap: 8px;
+    }
+
+    .progress-summary-card {
+        padding: 12px 10px;
+    }
+
+    .progress-summary-card strong {
+        font-size: 21px;
+    }
+}
+
 .bottom-nav {
     position: fixed;
     right: 0;
@@ -980,6 +1281,11 @@ textarea {
 .bottom-nav button.active {
     background: var(--surface-soft);
     color: var(--primary);
+}
+
+.bottom-nav button:focus,
+.bottom-nav button:focus-visible {
+    outline: 0;
 }
 
 .bottom-nav span {
