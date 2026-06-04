@@ -653,12 +653,6 @@ function bindEvents() {
     $$("[data-tab]").forEach(button => button.addEventListener("click", () => setTab(button.dataset.tab)));
     $("[data-action='quick-add']").addEventListener("click", () => setTab("add"));
 
-    $("#theme-toggle").addEventListener("click", () => {
-        state.theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-        localStorage.setItem("theme", state.theme);
-        applyTheme();
-    });
-
     $$(".add-reps-control [data-mode]").forEach(button => button.addEventListener("click", () => {
         setAddMode(button.dataset.mode);
     }));
