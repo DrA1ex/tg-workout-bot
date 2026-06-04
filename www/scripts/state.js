@@ -1,6 +1,7 @@
 export const state = {
     user: null,
     exercises: [],
+    recentExercises: [],
     globalExercises: [],
     exerciseScope: "mine",
     exerciseSearch: "",

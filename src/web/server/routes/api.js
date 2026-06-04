@@ -3,7 +3,7 @@ import {models} from "../../../db/index.js";
 import {resolveUser, authUserPayload} from "../auth/user.js";
 import {notFound, parseBody, sendJson} from "../http.js";
 import {getDashboard} from "../services/dashboard.js";
-import {getUserExercisesNormalized, setUserExerciseList} from "../services/exercises.js";
+import {getRecentUserExercises, getUserExercisesNormalized, setUserExerciseList} from "../services/exercises.js";
 import {getHistory} from "../services/history.js";
 import {getProgress} from "../services/progress.js";
 import {parseWorkoutBody, workoutPayload} from "../services/workouts.js";
@@ -66,6 +66,11 @@ export async function handleApi(req, res, url, config) {
 
     if (req.method === "GET" && url.pathname === "/api/exercises") {
         const exercises = await getUserExercisesNormalized(user.telegramId);
+        return sendJson(res, 200, {exercises});
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/exercises/recent") {
+        const exercises = await getRecentUserExercises(user.telegramId, url.searchParams.get("limit") || 10);
         return sendJson(res, 200, {exercises});
     }
 

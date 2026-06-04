@@ -190,11 +190,41 @@ function renderActivity() {
     }).join("");
 }
 
+function exerciseSelectOptions(selectedValue = "") {
+    const recentNames = new Set((state.recentExercises || []).map(exercise => exercise.name));
+    const exercisesByName = new Map(state.exercises.map(exercise => [exercise.name, exercise]));
+    const recent = (state.recentExercises || [])
+        .map(exercise => exercisesByName.get(exercise.name))
+        .filter(Boolean);
+    const rest = state.exercises.filter(exercise => !recentNames.has(exercise.name));
+    const option = exercise => `<option value="${escapeHtml(exercise.name)}" ${exercise.name === selectedValue ? "selected" : ""}>${escapeHtml(exercise.name)}</option>`;
+
+    if (!recent.length) return rest.map(option).join("");
+
+    return [
+        `<option value="" disabled>${escapeHtml(t("exercises.recentlyUsed"))}</option>`,
+        ...recent.map(option),
+        `<option value="" disabled>${escapeHtml(t("exercises.allExercises"))}</option>`,
+        ...rest.map(option),
+    ].join("");
+}
+
+function setExerciseSelectOptions(selector, selectedValue) {
+    const select = $(selector);
+    const nextValue = selectedValue || select.value;
+    select.innerHTML = exerciseSelectOptions(nextValue);
+    if (nextValue && [...select.options].some(option => option.value === nextValue)) {
+        select.value = nextValue;
+    } else {
+        const firstEnabled = [...select.options].find(option => !option.disabled);
+        if (firstEnabled) select.value = firstEnabled.value;
+    }
+}
+
 function renderExercises() {
-    const options = state.exercises.map(ex => `<option value="${escapeHtml(ex.name)}">${escapeHtml(ex.name)}</option>`).join("");
-    $("#workout-exercise").innerHTML = options;
-    $("#edit-exercise").innerHTML = options;
-    $("#progress-exercise").innerHTML = options;
+    setExerciseSelectOptions("#workout-exercise", $("#workout-exercise").value);
+    setExerciseSelectOptions("#edit-exercise", $("#edit-exercise").value);
+    setExerciseSelectOptions("#progress-exercise", $("#progress-exercise").value);
     $("#add-empty").hidden = state.exercises.length > 0;
     $$("#workout-form input, #workout-form select, #workout-form textarea, #workout-form button[type='submit']").forEach(node => {
         node.disabled = state.exercises.length === 0;
@@ -592,9 +622,11 @@ function setTab(tab) {
 
 async function refreshAll() {
     const bootstrap = await api("bootstrap");
+    const recentExercises = await api("exercises/recent?limit=10");
     const dashboard = await api("dashboard");
     state.user = bootstrap.user;
     state.exercises = bootstrap.exercises;
+    state.recentExercises = recentExercises.exercises || [];
     state.dashboard = dashboard;
     $("#language-select").value = state.user.language;
     $("#timezone-input").value = state.user.timezone;
