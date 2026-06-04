@@ -85,9 +85,39 @@ function workoutVolume(workout) {
     return Math.round(workout.weight * workout.repsOrTime * workout.sets);
 }
 
+function parseClientDate(value) {
+    if (!value) return null;
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+
+    const raw = String(value).trim();
+    if (!raw) return null;
+
+    const direct = new Date(raw);
+    if (!Number.isNaN(direct.getTime())) return direct;
+
+    const normalized = raw
+        .replace(/^(\d{4}-\d{2}-\d{2})\s+/, "$1T")
+        .replace(/\s+([+-]\d{2}:?\d{2}|Z)$/i, "$1");
+    const parsed = new Date(normalized);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+
+    const dateOnly = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (dateOnly) {
+        const fallback = new Date(`${dateOnly[1]}T12:00:00Z`);
+        if (!Number.isNaN(fallback.getTime())) return fallback;
+    }
+
+    return null;
+}
+
+function currentLocale() {
+    return state.user?.language || "en";
+}
+
 function workoutTimeLabel(workout) {
-    if (!workout.date) return workout.dateLabel || "";
-    return new Date(workout.date).toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
+    const date = parseClientDate(workout.date);
+    if (!date) return workout.dateLabel || "";
+    return date.toLocaleTimeString(currentLocale(), {hour: "numeric", minute: "2-digit"});
 }
 
 function formatMetricNumber(value) {
@@ -122,12 +152,13 @@ function renderDashboard() {
 }
 
 function todaySubtitle(data) {
-    const source = data.today.workouts[0]?.date ? new Date(data.today.workouts[0].date) : new Date();
-    return source.toLocaleDateString("en", {
+    const source = parseClientDate(data.today.workouts[0]?.date) || new Date();
+    const locale = currentLocale();
+    return source.toLocaleDateString(locale, {
         month: "short",
         day: "numeric",
         year: "numeric",
-    }) + " • " + source.toLocaleDateString("en", {weekday: "long"});
+    }) + " • " + source.toLocaleDateString(locale, {weekday: "long"});
 }
 
 function renderLastSession(workout) {
@@ -238,7 +269,7 @@ function findWorkout(id) {
 }
 
 function workoutDateInputValue(workout) {
-    const date = new Date(workout.date);
+    const date = parseClientDate(workout.date) || new Date();
     const offset = date.getTimezoneOffset();
     return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 10);
 }
@@ -541,10 +572,9 @@ function formatAxisValue(value, metric) {
 }
 
 function chartDateLabel(point) {
-    const date = point?.date ? new Date(point.date) : null;
-    if (!date || Number.isNaN(date.getTime())) return point?.label || "";
-    const locale = state.user?.language || "en";
-    return date.toLocaleDateString(locale, {month: "short", day: "numeric"});
+    const date = parseClientDate(point?.date);
+    if (!date) return point?.label || "";
+    return date.toLocaleDateString(currentLocale(), {month: "short", day: "numeric"});
 }
 
 function setTab(tab) {
@@ -915,7 +945,14 @@ function bindEvents() {
         const editButton = event.target.closest("[data-edit-workout]");
         if (editButton) {
             const workout = findWorkout(editButton.dataset.editWorkout);
-            if (workout) openEditDialog(workout);
+            if (workout) {
+                try {
+                    openEditDialog(workout);
+                } catch (error) {
+                    console.error(error);
+                    showToast("toast.editOpenFailed");
+                }
+            }
             return;
         }
 
