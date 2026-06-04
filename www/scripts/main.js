@@ -8,6 +8,10 @@ import {applyTheme} from './theme.js';
 let previousWorkoutController = null;
 let previousWorkoutRequest = null;
 let previousWorkoutRequestExercise = "";
+let historyObserver = null;
+
+const HISTORY_PAGE_SIZE = 8;
+const HISTORY_INITIAL_SIZE = 24;
 
 function workoutRow(workout) {
     const detail = workoutDetail(workout);
@@ -379,12 +383,17 @@ function renderHistory() {
     const groups = state.history?.groups || [];
     $("#history-list").innerHTML = groups.length
         ? groups.map(group => `
-            <section class="day-group">
-                <header><span>${escapeHtml(group.label)}</span><span>${group.workouts.length}</span></header>
-                <div class="list">${group.workouts.map(workoutRow).join("")}</div>
+            <section class="day-group history-day-group">
+                <header>
+                    <span>${escapeHtml(group.label)}</span>
+                    <span>${group.workouts.length}</span>
+                </header>
+                <div class="list history-workout-list">${group.workouts.map(workoutRow).join("")}</div>
             </section>
         `).join("")
         : `<div class="empty">${t("empty.history")}</div>`;
+    $("#history-sentinel").hidden = !state.history?.hasMore || !groups.length;
+    $("#history-sentinel").textContent = state.history?.loading ? t("actions.loading") : "";
 }
 
 function renderProgress() {
@@ -495,21 +504,62 @@ function setTab(tab) {
 async function refreshAll() {
     const bootstrap = await api("bootstrap");
     const dashboard = await api("dashboard");
-    const history = await api("history");
     state.user = bootstrap.user;
     state.exercises = bootstrap.exercises;
     state.dashboard = dashboard;
-    state.history = history;
     $("#language-select").value = state.user.language;
     $("#timezone-input").value = state.user.timezone;
+    await loadHistory({reset: true, limit: HISTORY_INITIAL_SIZE});
     renderDashboard();
     renderExercises();
-    renderHistory();
     await loadProgress();
     applyI18n();
     if (state.tab === "add") {
         updatePreviousWorkoutSummary().catch(console.error);
     }
+}
+
+async function loadHistory({reset = false, limit = HISTORY_PAGE_SIZE} = {}) {
+    if (state.history?.loading) return;
+    if (!reset && !state.history?.hasMore) return;
+    const offset = reset ? 0 : (state.history?.nextOffset || 0);
+    state.history = {
+        groups: reset ? [] : (state.history?.groups || []),
+        hasMore: reset ? false : Boolean(state.history?.hasMore),
+        nextOffset: offset,
+        loading: true,
+    };
+    renderHistory();
+
+    const data = await api(`history?offset=${offset}&limit=${limit}`);
+    state.history = {
+        groups: reset ? data.groups : [...(state.history?.groups || []), ...(data.groups || [])],
+        hasMore: Boolean(data.hasMore),
+        nextOffset: data.nextOffset || 0,
+        loading: false,
+    };
+    renderHistory();
+}
+
+function setupHistoryInfiniteScroll() {
+    const sentinel = $("#history-sentinel");
+    if (!sentinel || historyObserver) return;
+
+    if (!("IntersectionObserver" in window)) {
+        window.addEventListener("scroll", () => {
+            if (state.tab !== "history" || state.history?.loading || !state.history?.hasMore) return;
+            const nearBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 240;
+            if (nearBottom) loadHistory().catch(console.error);
+        }, {passive: true});
+        return;
+    }
+
+    historyObserver = new IntersectionObserver(entries => {
+        const visible = entries.some(entry => entry.isIntersecting);
+        if (!visible || state.tab !== "history" || state.history?.loading || !state.history?.hasMore) return;
+        loadHistory().catch(console.error);
+    }, {root: null, rootMargin: "240px 0px", threshold: 0});
+    historyObserver.observe(sentinel);
 }
 
 function clearWorkoutInputs() {
@@ -652,6 +702,7 @@ function todayInputValue() {
 function bindEvents() {
     $$("[data-tab]").forEach(button => button.addEventListener("click", () => setTab(button.dataset.tab)));
     $("[data-action='quick-add']").addEventListener("click", () => setTab("add"));
+    setupHistoryInfiniteScroll();
 
     $$(".add-reps-control [data-mode]").forEach(button => button.addEventListener("click", () => {
         setAddMode(button.dataset.mode);

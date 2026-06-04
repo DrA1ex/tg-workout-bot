@@ -5,7 +5,7 @@ export const state = {
     exerciseScope: "mine",
     exerciseSearch: "",
     dashboard: null,
-    history: null,
+    history: {groups: [], hasMore: false, nextOffset: 0, loading: false},
     progress: null,
     progressMetric: "weight",
     progressPeriod: "all",

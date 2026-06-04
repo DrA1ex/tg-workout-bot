@@ -48,7 +48,10 @@ export async function handleApi(req, res, url, config) {
     }
 
     if (req.method === "GET" && url.pathname === "/api/history") {
-        return sendJson(res, 200, await getHistory(user));
+        return sendJson(res, 200, await getHistory(user, {
+            offset: url.searchParams.get("offset"),
+            limit: url.searchParams.get("limit"),
+        }));
     }
 
     if (req.method === "GET" && url.pathname === "/api/workouts/previous") {
