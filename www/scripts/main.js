@@ -841,12 +841,22 @@ function bindEvents() {
     });
 }
 
+function registerServiceWorker() {
+    if (!("serviceWorker" in navigator)) return;
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(error => {
+            console.warn("Service worker registration failed:", error);
+        });
+    });
+}
+
 $("#workout-date").value = todayInputValue();
 document.body.dataset.tab = state.tab;
 configureAuth({applyTheme, refreshAll});
 setUnauthorizedHandler(showAuthScreen);
 bindEvents();
 applyTheme();
+registerServiceWorker();
 ensureAuth().catch(async error => {
     console.error(error);
     await showAuthScreen(error.message);

@@ -11,6 +11,9 @@ await rm(outDir, {recursive: true, force: true});
 await mkdir(path.join(outDir, "assets"), {recursive: true});
 await cp(path.join(srcDir, "index.html"), path.join(outDir, "index.html"));
 await cp(path.join(srcDir, "styles.css"), path.join(outDir, "styles.css"));
+await cp(path.join(srcDir, "manifest.webmanifest"), path.join(outDir, "manifest.webmanifest"));
+await cp(path.join(srcDir, "sw.js"), path.join(outDir, "sw.js"));
+await cp(path.join(srcDir, "icons"), path.join(outDir, "icons"), {recursive: true});
 
 await esbuild.build({
     entryPoints: [path.join(srcDir, "scripts", "main.js")],

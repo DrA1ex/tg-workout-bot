@@ -1,0 +1,20 @@
+{
+  "name": "Workout Log",
+  "short_name": "Workout",
+  "description": "Mobile workout tracking dashboard.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#1155f6",
+  "categories": ["fitness", "health", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
