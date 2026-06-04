@@ -51,6 +51,16 @@ export async function handleApi(req, res, url, config) {
         return sendJson(res, 200, await getHistory(user));
     }
 
+    if (req.method === "GET" && url.pathname === "/api/workouts/previous") {
+        const exercise = String(url.searchParams.get("exercise") || "").trim();
+        if (!exercise) return sendJson(res, 400, {error: "Exercise is required"});
+
+        const workout = await WorkoutDAO.getLastWorkout(user.telegramId, exercise);
+        return sendJson(res, 200, {
+            workout: workout ? workoutPayload(workout, user.language || "en", user.timezone || "UTC") : null,
+        });
+    }
+
     if (req.method === "GET" && url.pathname === "/api/exercises") {
         const exercises = await getUserExercisesNormalized(user.telegramId);
         return sendJson(res, 200, {exercises});

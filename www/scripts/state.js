@@ -15,4 +15,7 @@ export const state = {
     theme: localStorage.getItem("theme") || "system",
     editMode: "reps",
     authConfig: null,
+    previousWorkout: null,
+    previousWorkoutExercise: "",
+    previousWorkoutLoaded: false,
 };

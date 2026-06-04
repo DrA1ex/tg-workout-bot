@@ -5,6 +5,10 @@ import {$, $$, escapeHtml} from './dom.js';
 import {applyI18n, interpolate, t} from './i18n/index.js';
 import {applyTheme} from './theme.js';
 
+let previousWorkoutController = null;
+let previousWorkoutRequest = null;
+let previousWorkoutRequestExercise = "";
+
 function workoutRow(workout) {
     const detail = workoutDetail(workout);
 
@@ -484,7 +488,7 @@ function setTab(tab) {
     $("#screen-subtitle").textContent = tab === "dashboard" && state.dashboard ? todaySubtitle(state.dashboard) : "";
     if (tab === "add") {
         window.scrollTo({top: 0, behavior: "instant"});
-        updatePreviousWorkoutSummary();
+        updatePreviousWorkoutSummary().catch(console.error);
     }
 }
 
@@ -504,44 +508,111 @@ async function refreshAll() {
     await loadProgress();
     applyI18n();
     if (state.tab === "add") {
-        updatePreviousWorkoutSummary();
+        updatePreviousWorkoutSummary().catch(console.error);
     }
 }
 
 function clearWorkoutInputs() {
+    abortPreviousWorkoutRequest();
     $("#workout-sets").value = "3";
     $("#workout-weight").value = "";
     $("#workout-reps").value = "12";
     $("#workout-notes").value = "";
     $("#notes-count").textContent = "0";
+    state.previousWorkout = null;
+    state.previousWorkoutExercise = "";
+    state.previousWorkoutLoaded = false;
     $("#previous-hint").textContent = t("add.previousHint");
     $("#previous-summary").textContent = t("add.previousHint");
 }
 
-function findPreviousWorkoutForSelectedExercise() {
-    const selected = $("#workout-exercise").value;
-    return state.dashboard?.recent?.find(row => row.exercise === selected);
+function abortPreviousWorkoutRequest() {
+    if (!previousWorkoutController) return;
+    previousWorkoutController.abort();
+    previousWorkoutController = null;
+    previousWorkoutRequest = null;
+    previousWorkoutRequestExercise = "";
 }
 
-function updatePreviousWorkoutSummary() {
+function findPreviousWorkoutForSelectedExercise() {
     const selected = $("#workout-exercise").value;
-    const previous = findPreviousWorkoutForSelectedExercise();
-    if (!$("#workout-sets").value) $("#workout-sets").value = "3";
-    if (!$("#workout-reps").value) $("#workout-reps").value = "12";
-    if (!previous) {
+    return state.previousWorkoutExercise === selected ? state.previousWorkout : null;
+}
+
+function setPreviousWorkoutSummary(workout, selected) {
+    if (!workout) {
         $("#previous-hint").textContent = selected ? t("add.noPrevious") : t("add.previousHint");
         $("#previous-summary").textContent = selected ? t("add.noPrevious") : t("add.previousHint");
         return;
     }
 
-    $("#previous-hint").textContent = interpolate(t("add.previousLoaded"), {details: workoutDetail(previous)});
-    $("#previous-summary").textContent = workoutDetail(previous);
+    $("#previous-hint").textContent = interpolate(t("add.previousLoaded"), {details: workoutDetail(workout)});
+    $("#previous-summary").textContent = workoutDetail(workout);
 }
 
-function applyPreviousWorkoutValues() {
-    const previous = findPreviousWorkoutForSelectedExercise();
+async function updatePreviousWorkoutSummary() {
+    const selected = $("#workout-exercise").value;
+    if (!$("#workout-sets").value) $("#workout-sets").value = "3";
+    if (!$("#workout-reps").value) $("#workout-reps").value = "12";
+
+    if (selected && state.previousWorkoutExercise === selected && state.previousWorkoutLoaded) {
+        setPreviousWorkoutSummary(state.previousWorkout, selected);
+        return state.previousWorkout;
+    }
+
+    if (selected && previousWorkoutRequest && previousWorkoutRequestExercise === selected) {
+        return previousWorkoutRequest;
+    }
+
+    abortPreviousWorkoutRequest();
+    state.previousWorkout = null;
+    state.previousWorkoutExercise = selected;
+    state.previousWorkoutLoaded = false;
+
+    if (!selected) {
+        setPreviousWorkoutSummary(null, selected);
+        return null;
+    }
+
+    const controller = new AbortController();
+    previousWorkoutController = controller;
+    previousWorkoutRequestExercise = selected;
+
+    previousWorkoutRequest = (async () => {
+        const data = await api(`workouts/previous?exercise=${encodeURIComponent(selected)}`, {
+            signal: controller.signal,
+        });
+        if (controller.signal.aborted || $("#workout-exercise").value !== selected) return null;
+        state.previousWorkout = data.workout || null;
+        state.previousWorkoutExercise = selected;
+        state.previousWorkoutLoaded = true;
+        setPreviousWorkoutSummary(state.previousWorkout, selected);
+        return state.previousWorkout;
+    })();
+
+    try {
+        return await previousWorkoutRequest;
+    } catch (error) {
+        if (error.name === "AbortError") return null;
+        if ($("#workout-exercise").value === selected) {
+            state.previousWorkout = null;
+            state.previousWorkoutExercise = selected;
+            state.previousWorkoutLoaded = true;
+            setPreviousWorkoutSummary(null, selected);
+        }
+        throw error;
+    } finally {
+        if (previousWorkoutController === controller) {
+            previousWorkoutController = null;
+            previousWorkoutRequest = null;
+            previousWorkoutRequestExercise = "";
+        }
+    }
+}
+
+async function applyPreviousWorkoutValues() {
+    const previous = findPreviousWorkoutForSelectedExercise() || await updatePreviousWorkoutSummary();
     if (!previous) {
-        updatePreviousWorkoutSummary();
         return;
     }
 
@@ -549,7 +620,7 @@ function applyPreviousWorkoutValues() {
     $("#workout-weight").value = previous.weight || "";
     $("#workout-reps").value = previous.repsOrTime || "12";
     setAddMode(previous.isTime ? "time" : "reps");
-    updatePreviousWorkoutSummary();
+    setPreviousWorkoutSummary(previous, $("#workout-exercise").value);
 }
 
 function adjustNumberInput(input, delta) {
@@ -696,12 +767,16 @@ function bindEvents() {
         showToast("toast.loggedOut");
     });
 
-    $("#use-previous").addEventListener("click", () => {
-        applyPreviousWorkoutValues();
+    $("#use-previous").addEventListener("click", async () => {
+        try {
+            await applyPreviousWorkoutValues();
+        } catch (error) {
+            console.error(error);
+        }
     });
 
     $("#workout-exercise").addEventListener("change", () => {
-        updatePreviousWorkoutSummary();
+        updatePreviousWorkoutSummary().catch(console.error);
     });
 
     document.addEventListener("click", event => {
