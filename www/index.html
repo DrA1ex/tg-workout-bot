@@ -370,6 +370,17 @@
         </form>
     </dialog>
 
+    <dialog class="modal confirm-dialog" id="delete-workout-dialog">
+        <div class="confirm-card" role="alertdialog" aria-labelledby="delete-workout-title" aria-describedby="delete-workout-copy">
+            <h2 id="delete-workout-title" data-i18n="deleteWorkout.title">Delete workout?</h2>
+            <p id="delete-workout-copy" data-i18n="deleteWorkout.body">This action cannot be undone.</p>
+            <div class="confirm-actions">
+                <button class="ghost-button" id="delete-workout-cancel" type="button" data-i18n="actions.cancel">Cancel</button>
+                <button class="danger-button" id="delete-workout-confirm" type="button" data-i18n="actions.delete">Delete</button>
+            </div>
+        </div>
+    </dialog>
+
     <nav class="bottom-nav" aria-label="Main navigation">
         <button class="active" id="nav-dashboard" data-tab="dashboard" type="button"><span>▦</span><small>Dashboard</small></button>
         <button id="nav-history" data-tab="history" type="button"><span>▣</span><small data-i18n="nav.history">History</small></button>

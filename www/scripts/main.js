@@ -9,6 +9,7 @@ let previousWorkoutController = null;
 let previousWorkoutRequest = null;
 let previousWorkoutRequestExercise = "";
 let historyObserver = null;
+let deleteWorkoutConfirmResolve = null;
 
 const HISTORY_PAGE_SIZE = 8;
 const HISTORY_INITIAL_SIZE = 24;
@@ -365,10 +366,28 @@ function openEditDialog(workout) {
     $("#edit-dialog").showModal();
 }
 
+function resolveDeleteWorkoutConfirmation(confirmed) {
+    if (!deleteWorkoutConfirmResolve) return;
+    const resolve = deleteWorkoutConfirmResolve;
+    deleteWorkoutConfirmResolve = null;
+    resolve(confirmed);
+}
+
+function confirmWorkoutDelete() {
+    const dialog = $("#delete-workout-dialog");
+    if (dialog.open) return Promise.resolve(false);
+    dialog.showModal();
+    return new Promise(resolve => {
+        deleteWorkoutConfirmResolve = resolve;
+    });
+}
+
 async function deleteWorkout(id) {
+    if (!await confirmWorkoutDelete()) return false;
     await api(`workouts/${id}`, {method: "DELETE"});
     await refreshAll();
     showToast("toast.deleted");
+    return true;
 }
 
 async function saveEditedWorkout() {
@@ -961,8 +980,20 @@ function bindEvents() {
     });
     $("#edit-delete").addEventListener("click", async () => {
         const id = $("#edit-id").value;
-        $("#edit-dialog").close();
-        await deleteWorkout(id);
+        if (await deleteWorkout(id)) {
+            $("#edit-dialog").close();
+        }
+    });
+    $("#delete-workout-cancel").addEventListener("click", () => {
+        $("#delete-workout-dialog").close();
+        resolveDeleteWorkoutConfirmation(false);
+    });
+    $("#delete-workout-confirm").addEventListener("click", () => {
+        $("#delete-workout-dialog").close();
+        resolveDeleteWorkoutConfirmation(true);
+    });
+    $("#delete-workout-dialog").addEventListener("close", () => {
+        resolveDeleteWorkoutConfirmation(false);
     });
     $("#exercise-close").addEventListener("click", () => $("#exercise-dialog").close());
     $("#exercise-edit-form").addEventListener("submit", async event => {
