@@ -643,6 +643,98 @@ textarea {
     backdrop-filter: blur(8px);
 }
 
+.workout-sheet-dialog {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0 auto;
+    padding: 58px 12px 14px;
+    overflow: visible;
+    isolation: isolate;
+}
+
+.workout-sheet-dialog[open] {
+    display: grid;
+    align-items: end;
+}
+
+.workout-sheet-dialog::backdrop {
+    background: transparent;
+    backdrop-filter: none;
+}
+
+.workout-sheet-dialog::before {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    content: "";
+    background:
+        linear-gradient(180deg, rgba(246, 248, 251, .62), rgba(234, 238, 244, .88)),
+        radial-gradient(circle at 50% 5%, rgba(255, 255, 255, .92), transparent 34%),
+        var(--bg);
+    backdrop-filter: blur(18px);
+}
+
+.workout-sheet-dialog::after {
+    position: fixed;
+    inset: 18px 16px auto;
+    z-index: 0;
+    height: 360px;
+    border-radius: 28px;
+    content: "";
+    background:
+        linear-gradient(#ffffff, #ffffff) padding-box,
+        linear-gradient(135deg, rgba(209, 213, 219, .74), rgba(255, 255, 255, .18)) border-box;
+    border: 1px solid transparent;
+    box-shadow: 0 18px 56px rgba(15, 23, 42, .08);
+    opacity: .52;
+    transform: scale(.94) translateY(-14px);
+}
+
+[data-theme="dark"] .workout-sheet-dialog::before {
+    background:
+        linear-gradient(180deg, rgba(14, 19, 26, .72), rgba(9, 12, 18, .9)),
+        radial-gradient(circle at 50% 5%, rgba(46, 59, 74, .72), transparent 34%),
+        var(--bg);
+}
+
+[data-theme="dark"] .workout-sheet-dialog::after {
+    background:
+        linear-gradient(var(--surface), var(--surface)) padding-box,
+        linear-gradient(135deg, rgba(86, 100, 118, .72), rgba(255, 255, 255, .08)) border-box;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, .28);
+}
+
+.edit-sheet {
+    z-index: 1;
+    width: min(100%, 430px);
+    margin: 0 auto;
+    max-height: calc(100dvh - 72px);
+}
+
+.workout-sheet-dialog .sticky-form-actions {
+    position: absolute;
+    right: 16px;
+    bottom: 0;
+    left: 16px;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: .82fr 1fr;
+    gap: 10px;
+    width: auto;
+    margin: 0;
+    padding: 12px 16px max(18px, env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--surface) 94%, transparent) 26%, color-mix(in srgb, var(--surface) 98%, transparent));
+    backdrop-filter: blur(16px);
+}
+
+.workout-sheet-dialog .danger-button,
+.workout-sheet-dialog .save-button {
+    min-height: 58px;
+    border-radius: 11px;
+}
+
 .modal-heading,
 .modal-actions {
     display: grid;
@@ -1307,10 +1399,12 @@ body[data-tab="add"] main {
 
 .add-sheet {
     position: relative;
+    display: flex;
+    flex-direction: column;
     width: 100%;
     max-height: calc(100dvh - 72px);
-    overflow: auto;
-    padding: 8px 16px max(18px, env(safe-area-inset-bottom));
+    overflow: hidden;
+    padding: 8px 16px 0;
     border: 1px solid rgba(209, 213, 219, .82);
     border-radius: 30px;
     background: color-mix(in srgb, var(--surface) 96%, transparent);
@@ -1334,6 +1428,7 @@ body[data-tab="add"] main {
 .add-screen-header {
     display: grid;
     grid-template-columns: 48px 1fr 48px;
+    flex: 0 0 auto;
     align-items: center;
     min-height: 56px;
 }
@@ -1358,15 +1453,19 @@ body[data-tab="add"] main {
     line-height: 1;
 }
 
-.add-header-button:last-child {
-    font-size: 31px;
-    letter-spacing: 2px;
+.add-header-spacer {
+    width: 48px;
+    height: 48px;
 }
 
 .add-form {
     display: grid;
+    flex: 1 1 auto;
     gap: 18px;
+    overflow: auto;
     padding-top: 10px;
+    padding-bottom: 94px;
+    scrollbar-width: thin;
 }
 
 .add-field {
@@ -1402,7 +1501,7 @@ body[data-tab="add"] main {
 
 .field-shell {
     display: grid;
-    grid-template-columns: 42px 1fr 28px 24px;
+    grid-template-columns: 42px minmax(0, 1fr) 24px;
     align-items: center;
     min-height: 58px;
     padding: 0 14px;
@@ -1450,19 +1549,6 @@ body[data-tab="add"] main {
     font-weight: 850;
 }
 
-.clear-field-button {
-    display: grid;
-    width: 24px;
-    height: 24px;
-    place-items: center;
-    border: 0;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--muted) 30%, transparent);
-    color: #ffffff;
-    font-size: 19px;
-    line-height: 1;
-}
-
 .add-controls {
     display: grid;
     grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
@@ -1470,6 +1556,7 @@ body[data-tab="add"] main {
 }
 
 .add-form .stepper {
+    position: relative;
     display: grid;
     grid-template-columns: 45px minmax(54px, 1fr) 45px;
     width: 100%;
@@ -1482,11 +1569,11 @@ body[data-tab="add"] main {
 }
 
 .add-form .number-control .stepper {
-    grid-template-columns: 45px minmax(62px, 1fr) 58px;
+    grid-template-columns: 45px minmax(62px, 1fr) 45px;
 }
 
 .add-form .reps-control .stepper {
-    grid-template-columns: 45px minmax(62px, 1fr) 66px;
+    grid-template-columns: 45px minmax(62px, 1fr) 45px;
 }
 
 .add-form .stepper button,
@@ -1514,11 +1601,25 @@ body[data-tab="add"] main {
     text-align: center;
 }
 
-.add-form .stepper .unit-button {
+.add-form .stepper button:last-of-type {
     border-right: 0;
-    color: var(--text);
-    font-size: 16px;
-    font-weight: 730;
+}
+
+.stepper-unit {
+    position: absolute;
+    right: 50px;
+    bottom: 5px;
+    max-width: 76px;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 760;
+    line-height: 1;
+    pointer-events: none;
+    text-align: right;
+    text-overflow: ellipsis;
+    text-transform: none;
+    white-space: nowrap;
 }
 
 .hidden-mode {
@@ -1552,16 +1653,18 @@ body[data-tab="add"] main {
     color: var(--muted);
     font-size: 15px;
     font-weight: 650;
+    min-width: 48px;
+    text-align: right;
     white-space: nowrap;
 }
 
 .previous-row {
     display: grid;
-    grid-template-columns: 42px 1fr auto;
+    grid-template-columns: 34px 1fr auto;
     align-items: center;
     width: 100%;
-    min-height: 66px;
-    padding: 9px 15px;
+    min-height: 50px;
+    padding: 7px 12px;
     color: var(--text);
     font-size: 17px;
     font-weight: 730;
@@ -1570,13 +1673,13 @@ body[data-tab="add"] main {
 
 .previous-row span:last-child {
     color: var(--muted);
-    font-size: 30px;
+    font-size: 24px;
     font-weight: 320;
 }
 
 .previous-icon {
     color: var(--primary);
-    font-size: 28px;
+    font-size: 23px;
 }
 
 .previous-copy {
@@ -1588,7 +1691,7 @@ body[data-tab="add"] main {
 .previous-copy strong {
     overflow: hidden;
     color: var(--text);
-    font-size: 17px;
+    font-size: 15px;
     line-height: 1.05;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1597,7 +1700,7 @@ body[data-tab="add"] main {
 .previous-copy small {
     overflow: hidden;
     color: var(--muted);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 650;
     line-height: 1.15;
     text-overflow: ellipsis;
@@ -1609,12 +1712,14 @@ body[data-tab="add"] main {
 }
 
 body[data-tab="add"] .sticky-form-actions {
-    position: sticky;
-    bottom: -18px;
+    position: absolute;
+    right: 16px;
+    bottom: 0;
+    left: 16px;
     z-index: 5;
     display: block;
-    width: 100%;
-    margin: 0 -16px calc(-1 * max(18px, env(safe-area-inset-bottom)));
+    width: auto;
+    margin: 0;
     padding: 12px 16px max(18px, env(safe-area-inset-bottom));
     background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--surface) 94%, transparent) 26%, color-mix(in srgb, var(--surface) 98%, transparent));
     backdrop-filter: blur(16px);

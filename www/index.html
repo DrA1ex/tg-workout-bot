@@ -92,7 +92,7 @@
                 <header class="add-screen-header">
                     <button class="add-header-button" data-tab="dashboard" type="button" aria-label="Close">×</button>
                     <h1 id="add-title" data-i18n="screens.add">Add workout</h1>
-                    <button class="add-header-button" type="button" aria-label="More">⋯</button>
+                    <span class="add-header-spacer" aria-hidden="true"></span>
                 </header>
                 <form class="add-form" id="workout-form">
                     <div class="empty compact-empty" id="add-empty" hidden data-i18n="empty.exercises">Add your first exercise to start logging workouts.</div>
@@ -110,7 +110,6 @@
                             <div class="field-shell">
                                 <span class="field-icon dumbbell-icon">╫</span>
                                 <select id="workout-exercise" name="exercise" required></select>
-                                <button class="clear-field-button" type="button" aria-label="Clear exercise">×</button>
                                 <span class="field-chevron">⌄</span>
                             </div>
                         </label>
@@ -134,20 +133,21 @@
                         </label>
                         <label class="add-field number-control">
                             <span data-i18n="fields.weight">Weight</span>
-                            <div class="stepper">
-                                <button type="button" data-step-target="workout-weight" data-step="-2.5">−</button>
-                                <input id="workout-weight" name="weight" type="number" min="0" step="0.5" inputmode="decimal">
-                                <button class="unit-button" type="button" data-step-target="workout-weight" data-step="2.5">kg</button>
-                            </div>
-                        </label>
-                    </div>
-                    <label class="add-field number-control reps-control">
+                        <div class="stepper">
+                            <button type="button" data-step-target="workout-weight" data-step="-2.5">−</button>
+                            <input id="workout-weight" name="weight" type="number" min="0" step="0.5" inputmode="decimal">
+                            <button type="button" data-step-target="workout-weight" data-step="2.5">+</button>
+                            <span class="stepper-unit">kg</span>
+                        </div>
+                    </label>
+                </div>
+                    <label class="add-field number-control reps-control add-reps-control">
                         <span data-i18n="fields.repsTime">Reps / Time</span>
                         <div class="stepper">
                             <button type="button" data-step-target="workout-reps" data-step="-1">−</button>
                             <input id="workout-reps" name="repsOrTime" type="number" min="1" step="1" inputmode="numeric" required>
-                            <button class="unit-button active" id="mode-reps" type="button" data-mode="reps" data-i18n="fields.reps">Reps</button>
-                            <button class="unit-button hidden-mode" id="mode-time" type="button" data-mode="time" data-i18n="fields.time">Time</button>
+                            <button type="button" data-step-target="workout-reps" data-step="1">+</button>
+                            <span class="stepper-unit" data-i18n="fields.reps">Reps</span>
                         </div>
                     </label>
                     <label class="add-field notes-field">
@@ -284,46 +284,73 @@
         </section>
     </main>
 
-    <dialog class="modal" id="edit-dialog">
-        <form class="panel form-stack" id="edit-form" method="dialog">
-            <div class="modal-heading">
-                <h2 data-i18n="edit.title">Edit workout</h2>
-                <button class="icon-button compact" id="edit-close" type="button" aria-label="Close">×</button>
-            </div>
+    <dialog class="modal workout-sheet-dialog" id="edit-dialog">
+        <form class="add-sheet edit-sheet" id="edit-form" method="dialog">
+            <div class="sheet-grabber" aria-hidden="true"></div>
+            <header class="add-screen-header">
+                <button class="add-header-button" id="edit-close" type="button" aria-label="Close">×</button>
+                <h1 data-i18n="edit.title">Edit workout</h1>
+                <span class="add-header-spacer" aria-hidden="true"></span>
+            </header>
             <input id="edit-id" type="hidden">
-            <label>
-                <span data-i18n="fields.date">Date</span>
-                <input id="edit-date" type="date" required>
-            </label>
-            <label>
-                <span data-i18n="fields.exercise">Exercise</span>
-                <select id="edit-exercise" required></select>
-            </label>
-            <div class="field-grid">
-                <label>
+            <div class="add-form">
+                <section class="quick-entry-panel">
+                    <label class="add-field full-field date-field">
+                        <span data-i18n="fields.date">Date</span>
+                        <div class="field-shell">
+                            <span class="field-icon">▣</span>
+                            <input id="edit-date" type="date" required>
+                            <span class="field-chevron">⌄</span>
+                        </div>
+                    </label>
+                    <label class="add-field full-field exercise-field">
+                        <span data-i18n="fields.exercise">Exercise</span>
+                        <div class="field-shell">
+                            <span class="field-icon dumbbell-icon">╫</span>
+                            <select id="edit-exercise" required></select>
+                            <span class="field-chevron">⌄</span>
+                        </div>
+                    </label>
+                </section>
+                <div class="add-controls">
+                    <label class="add-field compact-control">
                     <span data-i18n="fields.sets">Sets</span>
-                    <input id="edit-sets" type="number" min="1" inputmode="numeric" required>
-                </label>
-                <label>
-                    <span data-i18n="fields.weight">Weight</span>
-                    <input id="edit-weight" type="number" min="0" step="0.5" inputmode="decimal">
-                </label>
-            </div>
-            <label>
-                <span data-i18n="fields.repsTime">Reps / Time</span>
-                <div class="segmented" id="edit-mode">
-                    <button class="active" type="button" data-mode="reps" data-i18n="fields.reps">Reps</button>
-                    <button type="button" data-mode="time" data-i18n="fields.time">Time</button>
+                        <div class="stepper">
+                            <button type="button" data-step-target="edit-sets" data-step="-1">−</button>
+                            <input id="edit-sets" type="number" min="1" inputmode="numeric" required>
+                            <button type="button" data-step-target="edit-sets" data-step="1">+</button>
+                        </div>
+                    </label>
+                    <label class="add-field number-control">
+                        <span data-i18n="fields.weight">Weight</span>
+                        <div class="stepper">
+                            <button type="button" data-step-target="edit-weight" data-step="-2.5">−</button>
+                            <input id="edit-weight" type="number" min="0" step="0.5" inputmode="decimal">
+                            <button type="button" data-step-target="edit-weight" data-step="2.5">+</button>
+                            <span class="stepper-unit">kg</span>
+                        </div>
+                    </label>
                 </div>
-                <input id="edit-reps" type="number" min="1" step="1" inputmode="numeric" required>
-            </label>
-            <label>
-                <span data-i18n="fields.notes">Notes</span>
-                <textarea id="edit-notes" rows="3"></textarea>
-            </label>
-            <div class="modal-actions">
-                <button class="danger-button" id="edit-delete" type="button" data-i18n="actions.delete">Delete</button>
-                <button class="primary-button" type="submit" data-i18n="actions.save">Save</button>
+                <label class="add-field number-control reps-control edit-reps-control">
+                    <span data-i18n="fields.repsTime">Reps / Time</span>
+                    <div class="stepper">
+                        <button type="button" data-step-target="edit-reps" data-step="-1">−</button>
+                        <input id="edit-reps" type="number" min="1" step="1" inputmode="numeric" required>
+                        <button type="button" data-step-target="edit-reps" data-step="1">+</button>
+                        <span class="stepper-unit" data-i18n="fields.reps">Reps</span>
+                    </div>
+                </label>
+                <label class="add-field notes-field">
+                    <span data-i18n="fields.notes">Notes</span>
+                    <div class="notes-shell">
+                        <textarea id="edit-notes" rows="4" maxlength="200" placeholder="Add a note (optional)"></textarea>
+                        <small><span id="edit-notes-count">0</span>/200</small>
+                    </div>
+                </label>
+                <div class="sticky-form-actions edit-actions">
+                    <button class="danger-button" id="edit-delete" type="button" data-i18n="actions.delete">Delete</button>
+                    <button class="primary-button save-button" type="submit" data-i18n="actions.save">Save</button>
+                </div>
             </div>
         </form>
     </dialog>

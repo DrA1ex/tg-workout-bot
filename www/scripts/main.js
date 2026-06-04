@@ -244,22 +244,53 @@ function showToast(key) {
 
 function setAddMode(mode) {
     state.mode = mode;
-    $$(".reps-control [data-mode]").forEach(item => item.classList.toggle("active", item.dataset.mode === mode));
+    $$(".add-reps-control [data-mode]").forEach(item => item.classList.toggle("active", item.dataset.mode === mode));
 }
 
 function setEditMode(mode) {
     state.editMode = mode;
-    $$("#edit-mode button").forEach(item => item.classList.toggle("active", item.dataset.mode === mode));
+    $$(".edit-reps-control [data-mode]").forEach(item => item.classList.toggle("active", item.dataset.mode === mode));
+}
+
+function workoutFormFields(prefix) {
+    return {
+        date: $(`#${prefix}-date`),
+        exercise: $(`#${prefix}-exercise`),
+        sets: $(`#${prefix}-sets`),
+        weight: $(`#${prefix}-weight`),
+        reps: $(`#${prefix}-reps`),
+        notes: $(`#${prefix}-notes`),
+        notesCount: $(`#${prefix}-notes-count`),
+    };
+}
+
+function setWorkoutFormValues(prefix, workout) {
+    const fields = workoutFormFields(prefix);
+    fields.date.value = workoutDateInputValue(workout);
+    fields.exercise.value = workout.exercise;
+    fields.sets.value = workout.sets || "";
+    fields.weight.value = workout.weight || "";
+    fields.reps.value = workout.repsOrTime || "";
+    fields.notes.value = workout.notes || "";
+    fields.notesCount.textContent = String(fields.notes.value.length);
+}
+
+function readWorkoutFormValues(prefix, isTime) {
+    const fields = workoutFormFields(prefix);
+    return {
+        date: fields.date.value,
+        exercise: fields.exercise.value,
+        sets: fields.sets.value,
+        weight: fields.weight.value,
+        repsOrTime: fields.reps.value,
+        isTime,
+        notes: fields.notes.value,
+    };
 }
 
 function openEditDialog(workout) {
     $("#edit-id").value = workout.id;
-    $("#edit-date").value = workoutDateInputValue(workout);
-    $("#edit-exercise").value = workout.exercise;
-    $("#edit-sets").value = workout.sets || "";
-    $("#edit-weight").value = workout.weight || "";
-    $("#edit-reps").value = workout.repsOrTime || "";
-    $("#edit-notes").value = workout.notes || "";
+    setWorkoutFormValues("edit", workout);
     setEditMode(workout.isTime ? "time" : "reps");
     $("#edit-dialog").showModal();
 }
@@ -274,15 +305,7 @@ async function saveEditedWorkout() {
     const id = $("#edit-id").value;
     await api(`workouts/${id}`, {
         method: "PATCH",
-        body: JSON.stringify({
-            date: $("#edit-date").value,
-            exercise: $("#edit-exercise").value,
-            sets: $("#edit-sets").value,
-            weight: $("#edit-weight").value,
-            repsOrTime: $("#edit-reps").value,
-            isTime: state.editMode === "time",
-            notes: $("#edit-notes").value,
-        }),
+        body: JSON.stringify(readWorkoutFormValues("edit", state.editMode === "time")),
     });
     $("#edit-dialog").close();
     await refreshAll();
@@ -461,7 +484,7 @@ function setTab(tab) {
     $("#screen-subtitle").textContent = tab === "dashboard" && state.dashboard ? todaySubtitle(state.dashboard) : "";
     if (tab === "add") {
         window.scrollTo({top: 0, behavior: "instant"});
-        loadPreviousWorkoutValues();
+        updatePreviousWorkoutSummary();
     }
 }
 
@@ -481,7 +504,7 @@ async function refreshAll() {
     await loadProgress();
     applyI18n();
     if (state.tab === "add") {
-        loadPreviousWorkoutValues();
+        updatePreviousWorkoutSummary();
     }
 }
 
@@ -495,14 +518,30 @@ function clearWorkoutInputs() {
     $("#previous-summary").textContent = t("add.previousHint");
 }
 
-function loadPreviousWorkoutValues() {
+function findPreviousWorkoutForSelectedExercise() {
     const selected = $("#workout-exercise").value;
-    const previous = state.dashboard?.recent?.find(row => row.exercise === selected);
+    return state.dashboard?.recent?.find(row => row.exercise === selected);
+}
+
+function updatePreviousWorkoutSummary() {
+    const selected = $("#workout-exercise").value;
+    const previous = findPreviousWorkoutForSelectedExercise();
+    if (!$("#workout-sets").value) $("#workout-sets").value = "3";
+    if (!$("#workout-reps").value) $("#workout-reps").value = "12";
     if (!previous) {
-        if (!$("#workout-sets").value) $("#workout-sets").value = "3";
-        if (!$("#workout-reps").value) $("#workout-reps").value = "12";
         $("#previous-hint").textContent = selected ? t("add.noPrevious") : t("add.previousHint");
         $("#previous-summary").textContent = selected ? t("add.noPrevious") : t("add.previousHint");
+        return;
+    }
+
+    $("#previous-hint").textContent = interpolate(t("add.previousLoaded"), {details: workoutDetail(previous)});
+    $("#previous-summary").textContent = workoutDetail(previous);
+}
+
+function applyPreviousWorkoutValues() {
+    const previous = findPreviousWorkoutForSelectedExercise();
+    if (!previous) {
+        updatePreviousWorkoutSummary();
         return;
     }
 
@@ -510,8 +549,7 @@ function loadPreviousWorkoutValues() {
     $("#workout-weight").value = previous.weight || "";
     $("#workout-reps").value = previous.repsOrTime || "12";
     setAddMode(previous.isTime ? "time" : "reps");
-    $("#previous-hint").textContent = interpolate(t("add.previousLoaded"), {details: workoutDetail(previous)});
-    $("#previous-summary").textContent = workoutDetail(previous);
+    updatePreviousWorkoutSummary();
 }
 
 function adjustNumberInput(input, delta) {
@@ -550,7 +588,7 @@ function bindEvents() {
         applyTheme();
     });
 
-    $$(".reps-control [data-mode]").forEach(button => button.addEventListener("click", () => {
+    $$(".add-reps-control [data-mode]").forEach(button => button.addEventListener("click", () => {
         setAddMode(button.dataset.mode);
     }));
 
@@ -558,9 +596,8 @@ function bindEvents() {
         $("#notes-count").textContent = String(event.target.value.length);
     });
 
-    $(".clear-field-button").addEventListener("click", () => {
-        $("#workout-exercise").value = "";
-        loadPreviousWorkoutValues();
+    $("#edit-notes").addEventListener("input", event => {
+        $("#edit-notes-count").textContent = String(event.target.value.length);
     });
 
     $("#workout-form").addEventListener("submit", async event => {
@@ -660,11 +697,11 @@ function bindEvents() {
     });
 
     $("#use-previous").addEventListener("click", () => {
-        loadPreviousWorkoutValues();
+        applyPreviousWorkoutValues();
     });
 
     $("#workout-exercise").addEventListener("change", () => {
-        loadPreviousWorkoutValues();
+        updatePreviousWorkoutSummary();
     });
 
     document.addEventListener("click", event => {
@@ -675,7 +712,7 @@ function bindEvents() {
         if (input) adjustNumberInput(input, Number.parseFloat(stepButton.dataset.step));
     });
 
-    $$("#edit-mode button").forEach(button => button.addEventListener("click", () => setEditMode(button.dataset.mode)));
+    $$(".edit-reps-control [data-mode]").forEach(button => button.addEventListener("click", () => setEditMode(button.dataset.mode)));
     $("#edit-close").addEventListener("click", () => $("#edit-dialog").close());
     $("#edit-form").addEventListener("submit", async event => {
         event.preventDefault();
