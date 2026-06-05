@@ -1,5 +1,13 @@
 :root {
     color-scheme: light;
+    --tg-safe-area-top: 0px;
+    --tg-safe-area-right: 0px;
+    --tg-safe-area-bottom: 0px;
+    --tg-safe-area-left: 0px;
+    --tg-content-safe-area-top: 0px;
+    --tg-content-safe-area-right: 0px;
+    --tg-content-safe-area-bottom: 0px;
+    --tg-content-safe-area-left: 0px;
     --bg: #f6f8fb;
     --surface: #ffffff;
     --surface-soft: #eef3f8;
@@ -1342,8 +1350,12 @@ body {
 .app-shell {
     width: min(100%, 430px);
     max-width: 430px;
-    padding: max(18px, env(safe-area-inset-top)) 24px 118px;
+    padding: calc(max(18px, env(safe-area-inset-top)) + var(--tg-content-safe-area-top)) 24px 118px;
     background: var(--bg);
+}
+
+.telegram-webapp .auth-screen {
+    padding-top: var(--tg-content-safe-area-top);
 }
 
 .page-heading {
@@ -2051,7 +2063,7 @@ body[data-tab="add"] main {
     position: relative;
     display: grid;
     min-height: 100dvh;
-    padding: 58px 12px 14px;
+    padding: calc(58px + var(--tg-content-safe-area-top)) 12px 14px;
     align-items: end;
     isolation: isolate;
 }
@@ -2488,7 +2500,7 @@ body[data-tab="add"] .sticky-form-actions {
         width: 100%;
         max-width: none;
         margin: 0;
-        padding-top: 22px;
+        padding-top: calc(22px + var(--tg-content-safe-area-top));
         padding-right: 18px;
         padding-left: 18px;
     }
