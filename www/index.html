@@ -42,55 +42,80 @@
         <section class="toast" id="toast" aria-live="polite"></section>
 
         <section class="screen active" id="screen-dashboard" aria-labelledby="nav-dashboard">
-            <section class="dashboard-card weekly-streak-card">
-                <div class="weekly-streak-heading">
-                    <div>
-                        <span class="weekly-streak-label" data-i18n="dashboard.weeklyStreak">Weekly streak</span>
-                        <span class="weekly-streak-info" id="weekly-streak-info" tabindex="0">i</span>
-                        <strong><span id="weekly-streak">0</span> <em id="weekly-streak-unit">weeks</em></strong>
+            <div class="dashboard-skeleton" id="dashboard-skeleton" aria-hidden="true">
+                <section class="dashboard-card skeleton-card skeleton-streak-card">
+                    <div class="skeleton-row">
+                        <span class="skeleton-line wide"></span>
+                        <span class="skeleton-icon"></span>
                     </div>
-                    <span class="weekly-streak-icon" aria-hidden="true">🔥</span>
+                    <span class="skeleton-number"></span>
+                    <div class="skeleton-week-strip">
+                        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                </section>
+                <section class="dashboard-card skeleton-card skeleton-today-card">
+                    <span class="skeleton-line medium"></span>
+                    <span class="skeleton-line"></span>
+                    <span class="skeleton-button"></span>
+                </section>
+                <div class="dashboard-insight-list">
+                    <span class="dashboard-insight-row skeleton-insight-row"></span>
+                    <span class="dashboard-insight-row skeleton-insight-row"></span>
+                    <span class="dashboard-insight-row skeleton-insight-row"></span>
                 </div>
-                <div class="streak-week-strip" id="streak-week-strip"></div>
-                <span class="weekly-streak-badge" id="weekly-streak-status">This week</span>
-            </section>
-
-            <section class="dashboard-card workout-log-card">
-                <div class="dashboard-workout-list" id="today-list"></div>
-            </section>
-
-            <div class="dashboard-insight-list">
-                <button class="dashboard-insight-row" id="dashboard-last-workout-row" data-tab="history" type="button">
-                    <span class="stat-icon">🕘</span>
-                    <span class="dashboard-insight-copy">
-                        <small data-i18n="dashboard.lastWorkout">Last workout</small>
-                        <strong id="dashboard-last-workout">—</strong>
-                        <em id="dashboard-last-workout-detail"></em>
-                    </span>
-                    <span class="dashboard-row-meta" id="dashboard-last-workout-date"></span>
-                    <span class="dashboard-row-chevron">›</span>
-                </button>
-                <button class="dashboard-insight-row" data-tab="progress" type="button">
-                    <span class="stat-icon bars">📊</span>
-                    <span class="dashboard-insight-copy">
-                        <small data-i18n="dashboard.weeklyVolume">Weekly volume</small>
-                        <strong><span id="weekly-volume">0</span> <em>kg</em></strong>
-                    </span>
-                    <span class="dashboard-row-chevron">›</span>
-                </button>
-                <button class="dashboard-insight-row" data-tab="history" type="button">
-                    <span class="stat-icon">📅</span>
-                    <span class="dashboard-insight-copy">
-                        <small data-i18n="dashboard.trainingDays">Training days</small>
-                        <strong><span id="weekly-days">0</span> / 7 <em data-i18n="dashboard.days">days</em></strong>
-                    </span>
-                    <span class="dashboard-row-chevron">›</span>
-                </button>
             </div>
-            <span id="weekly-workouts" hidden>0</span>
-            <span id="weekly-exercises" hidden>0</span>
-            <div id="activity-strip" hidden></div>
-            <div id="recent-list" hidden></div>
+
+            <div id="dashboard-content" hidden>
+                <section class="dashboard-card weekly-streak-card">
+                    <div class="weekly-streak-heading">
+                        <div>
+                            <span class="weekly-streak-label" data-i18n="dashboard.weeklyStreak">Weekly streak</span>
+                            <span class="weekly-streak-info" id="weekly-streak-info" tabindex="0">i</span>
+                            <strong><span id="weekly-streak">0</span> <em id="weekly-streak-unit">weeks</em></strong>
+                        </div>
+                        <span class="weekly-streak-icon" aria-hidden="true">🔥</span>
+                    </div>
+                    <div class="streak-week-strip" id="streak-week-strip"></div>
+                    <span class="weekly-streak-badge" id="weekly-streak-status">This week</span>
+                </section>
+
+                <section class="dashboard-card workout-log-card">
+                    <div class="dashboard-workout-list" id="today-list"></div>
+                </section>
+
+                <div class="dashboard-insight-list">
+                    <button class="dashboard-insight-row" id="dashboard-last-workout-row" data-tab="history" type="button">
+                        <span class="stat-icon">🕘</span>
+                        <span class="dashboard-insight-copy">
+                            <small data-i18n="dashboard.lastWorkout">Last workout</small>
+                            <strong id="dashboard-last-workout">—</strong>
+                            <em id="dashboard-last-workout-detail"></em>
+                        </span>
+                        <span class="dashboard-row-meta" id="dashboard-last-workout-date"></span>
+                        <span class="dashboard-row-chevron">›</span>
+                    </button>
+                    <button class="dashboard-insight-row" data-tab="progress" type="button">
+                        <span class="stat-icon bars">📊</span>
+                        <span class="dashboard-insight-copy">
+                            <small data-i18n="dashboard.weeklyVolume">Weekly volume</small>
+                            <strong><span id="weekly-volume">0</span> <em>kg</em></strong>
+                        </span>
+                        <span class="dashboard-row-chevron">›</span>
+                    </button>
+                    <button class="dashboard-insight-row" data-tab="history" type="button">
+                        <span class="stat-icon">📅</span>
+                        <span class="dashboard-insight-copy">
+                            <small data-i18n="dashboard.trainingDays">Training days</small>
+                            <strong><span id="weekly-days">0</span> / 7 <em data-i18n="dashboard.days">days</em></strong>
+                        </span>
+                        <span class="dashboard-row-chevron">›</span>
+                    </button>
+                </div>
+                <span id="weekly-workouts" hidden>0</span>
+                <span id="weekly-exercises" hidden>0</span>
+                <div id="activity-strip" hidden></div>
+                <div id="recent-list" hidden></div>
+            </div>
         </section>
 
         <section class="screen add-modal-screen" id="screen-add" aria-labelledby="nav-add">
@@ -166,13 +191,36 @@
                     </label>
                     <p class="helper-text" id="previous-hint" data-i18n="add.previousHint">Previous values will appear here.</p>
                     <div class="sticky-form-actions">
-                        <button class="primary-button save-button" type="submit" data-save-mode="finish">Save</button>
+                        <button class="primary-button save-button" id="workout-save-button" type="submit" data-save-mode="finish">Save</button>
                     </div>
                 </form>
             </div>
         </section>
 
         <section class="screen" id="screen-history" aria-labelledby="nav-history">
+            <div class="history-skeleton" id="history-skeleton" aria-hidden="true" hidden>
+                <section class="day-group history-day-group skeleton-history-group">
+                    <header>
+                        <span class="skeleton-line medium"></span>
+                        <span class="skeleton-line tiny"></span>
+                    </header>
+                    <div class="list history-workout-list">
+                        <span class="workout-row skeleton-history-row"></span>
+                        <span class="workout-row skeleton-history-row"></span>
+                        <span class="workout-row skeleton-history-row"></span>
+                    </div>
+                </section>
+                <section class="day-group history-day-group skeleton-history-group">
+                    <header>
+                        <span class="skeleton-line medium"></span>
+                        <span class="skeleton-line tiny"></span>
+                    </header>
+                    <div class="list history-workout-list">
+                        <span class="workout-row skeleton-history-row"></span>
+                        <span class="workout-row skeleton-history-row"></span>
+                    </div>
+                </section>
+            </div>
             <div class="list grouped" id="history-list"></div>
             <div class="history-sentinel" id="history-sentinel" aria-live="polite" hidden>
                 <span data-i18n="actions.loading">Loading...</span>
@@ -181,47 +229,62 @@
 
         <section class="screen" id="screen-progress" aria-labelledby="nav-progress">
             <div class="progress-screen">
-                <label class="progress-select-shell">
-                    <span class="progress-leading-icon">🏋️</span>
-                    <select id="progress-exercise" aria-label="Exercise"></select>
-                    <span class="progress-chevron">⌄</span>
-                </label>
-                <div class="progress-tabs" id="progress-metric" role="tablist" aria-label="Progress metric">
-                    <button class="active" type="button" data-metric="weight" data-i18n="progress.weight">Weight</button>
-                    <button type="button" data-metric="repsOrTime" data-i18n="progress.repsTime">Reps</button>
-                    <button type="button" data-metric="sets" data-i18n="fields.sets">Sets</button>
+                <div class="progress-skeleton" id="progress-skeleton" aria-hidden="true" hidden>
+                    <span class="progress-select-shell skeleton-progress-shell"></span>
+                    <span class="skeleton-tabs"></span>
+                    <span class="progress-period-shell skeleton-progress-period"></span>
+                    <span class="progress-chart-wrap skeleton-chart"></span>
+                    <div class="progress-summary-grid">
+                        <span class="progress-summary-card skeleton-summary-card"></span>
+                        <span class="progress-summary-card skeleton-summary-card"></span>
+                        <span class="progress-summary-card skeleton-summary-card"></span>
+                    </div>
+                    <span class="workout-row skeleton-history-row"></span>
+                    <span class="workout-row skeleton-history-row"></span>
                 </div>
-                <label class="progress-period-shell">
-                    <span class="progress-leading-icon">📅</span>
-                    <select id="progress-period" aria-label="Period">
-                        <option value="30d" data-i18n="progress.last30">Last 30 days</option>
-                        <option value="90d" data-i18n="progress.last90">Last 90 days</option>
-                        <option value="all" data-i18n="progress.allTime">All time</option>
-                    </select>
-                    <span class="progress-chevron">⌄</span>
-                </label>
-                <div class="progress-chart-wrap">
-                    <svg id="progress-chart" viewBox="0 0 360 246" role="img" aria-label="Progress chart"></svg>
+                <div class="progress-content" id="progress-content" hidden>
+                    <label class="progress-select-shell">
+                        <span class="progress-leading-icon">🏋️</span>
+                        <select id="progress-exercise" aria-label="Exercise"></select>
+                        <span class="progress-chevron">⌄</span>
+                    </label>
+                    <div class="progress-tabs" id="progress-metric" role="tablist" aria-label="Progress metric">
+                        <button class="active" type="button" data-metric="weight" data-i18n="progress.weight">Weight</button>
+                        <button type="button" data-metric="repsOrTime" data-i18n="progress.repsTime">Reps</button>
+                        <button type="button" data-metric="sets" data-i18n="fields.sets">Sets</button>
+                    </div>
+                    <label class="progress-period-shell">
+                        <span class="progress-leading-icon">📅</span>
+                        <select id="progress-period" aria-label="Period">
+                            <option value="30d" data-i18n="progress.last30">Last 30 days</option>
+                            <option value="90d" data-i18n="progress.last90">Last 90 days</option>
+                            <option value="all" data-i18n="progress.allTime">All time</option>
+                        </select>
+                        <span class="progress-chevron">⌄</span>
+                    </label>
+                    <div class="progress-chart-wrap">
+                        <svg id="progress-chart" viewBox="0 0 360 246" role="img" aria-label="Progress chart"></svg>
+                    </div>
+                    <div class="progress-summary-grid">
+                        <article class="progress-summary-card best">
+                            <span><b>🏆</b><span data-i18n="progress.best">Best</span></span>
+                            <strong id="progress-best">0</strong>
+                            <small id="progress-best-label" data-i18n="progress.value">value</small>
+                        </article>
+                        <article class="progress-summary-card average">
+                            <span><b>📈</b><span data-i18n="progress.average">Average</span></span>
+                            <strong id="progress-latest">0</strong>
+                            <small id="progress-latest-label" data-i18n="progress.value">value</small>
+                        </article>
+                        <article class="progress-summary-card volume">
+                            <span><b>📊</b><span data-i18n="progress.volumeMetric">Volume</span></span>
+                            <strong id="progress-pr">0</strong>
+                            <small id="progress-pr-label" data-i18n="progress.total">Total</small>
+                        </article>
+                    </div>
+                    <h2 class="progress-records-title" data-i18n="progress.recent">Recent records</h2>
+                    <div class="progress-records-list" id="progress-recent"></div>
                 </div>
-                <div class="progress-summary-grid">
-                    <article class="progress-summary-card best">
-                        <span><b>🏆</b><span data-i18n="progress.best">Best</span></span>
-                        <strong id="progress-best">0</strong>
-                        <small id="progress-best-label" data-i18n="progress.value">value</small>
-                    </article>
-                    <article class="progress-summary-card average">
-                        <span><b>📈</b><span data-i18n="progress.average">Average</span></span>
-                        <strong id="progress-latest">0</strong>
-                        <small id="progress-latest-label" data-i18n="progress.value">value</small>
-                    </article>
-                    <article class="progress-summary-card volume">
-                        <span><b>📊</b><span data-i18n="progress.volumeMetric">Volume</span></span>
-                        <strong id="progress-pr">0</strong>
-                        <small id="progress-pr-label" data-i18n="progress.total">Total</small>
-                    </article>
-                </div>
-                <h2 class="progress-records-title" data-i18n="progress.recent">Recent records</h2>
-                <div class="progress-records-list" id="progress-recent"></div>
             </div>
         </section>
 
@@ -257,7 +320,19 @@
         </section>
 
         <section class="screen" id="screen-settings" aria-labelledby="nav-settings">
-            <form class="panel form-stack" id="settings-form">
+            <div class="settings-skeleton" id="settings-skeleton" aria-hidden="true" hidden>
+                <section class="panel form-stack skeleton-settings-card">
+                    <span class="skeleton-line medium"></span>
+                    <span class="skeleton-settings-field"></span>
+                    <span class="skeleton-line medium"></span>
+                    <span class="skeleton-settings-field"></span>
+                    <span class="skeleton-line medium"></span>
+                    <span class="skeleton-settings-field"></span>
+                    <span class="skeleton-button"></span>
+                    <span class="skeleton-button muted"></span>
+                </section>
+            </div>
+            <form class="panel form-stack" id="settings-form" hidden>
                 <label>
                     <span data-i18n="settings.language">Language</span>
                     <select id="language-select">
@@ -390,9 +465,9 @@
     </dialog>
 
     <nav class="bottom-nav" aria-label="Main navigation">
-        <button class="active" id="nav-dashboard" data-tab="dashboard" type="button"><span>🏠</span><small>Dashboard</small></button>
+        <button class="active" id="nav-dashboard" data-tab="dashboard" type="button"><span>🏠</span><small data-i18n="nav.dashboard">Overview</small></button>
         <button id="nav-history" data-tab="history" type="button"><span>📅</span><small data-i18n="nav.history">History</small></button>
-        <button id="nav-add" data-tab="add" type="button"><span>＋</span><small data-i18n="nav.add">Add</small></button>
+        <button id="nav-add" data-tab="add" type="button" disabled><span>＋</span><small data-i18n="nav.add">Add</small></button>
         <button id="nav-progress" data-tab="progress" type="button"><span>📈</span><small data-i18n="nav.progress">Progress</small></button>
         <button id="nav-settings" data-tab="settings" type="button"><span>⚙️</span><small>Settings</small></button>
     </nav>

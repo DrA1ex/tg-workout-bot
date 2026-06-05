@@ -158,6 +158,45 @@ function renderDashboard() {
     renderStreakWeeks(data.weeklyStreak?.weeks || data.activity || []);
     renderDashboardList($("#today-list"), data.today.workouts);
     renderList($("#recent-list"), data.recent, "empty.recent");
+    hideDashboardSkeleton();
+}
+
+function showDashboardSkeleton() {
+    state.appReady = false;
+    updateAppReadyState();
+    const skeleton = $("#dashboard-skeleton");
+    const content = $("#dashboard-content");
+    if (skeleton) skeleton.hidden = false;
+    if (content) content.hidden = true;
+}
+
+function hideDashboardSkeleton() {
+    const skeleton = $("#dashboard-skeleton");
+    const content = $("#dashboard-content");
+    if (skeleton) skeleton.hidden = true;
+    if (content) content.hidden = false;
+    state.appReady = true;
+    updateAppReadyState();
+}
+
+function updateAppReadyState() {
+    const addButton = $("#nav-add");
+    if (addButton) {
+        addButton.disabled = !state.appReady;
+    }
+}
+
+function updateWorkoutFormState() {
+    const disabled = state.savingWorkout || state.exercises.length === 0;
+    $$("#workout-form input, #workout-form select, #workout-form textarea, #workout-form button").forEach(node => {
+        node.disabled = disabled;
+    });
+
+    const saveButton = $("#workout-save-button");
+    if (saveButton) {
+        saveButton.textContent = state.savingWorkout ? t("actions.saving") : t("actions.save");
+        saveButton.classList.toggle("loading", state.savingWorkout);
+    }
 }
 
 function weekUnitLabel(count) {
@@ -265,9 +304,7 @@ function renderExercises() {
     setExerciseSelectOptions("#edit-exercise", $("#edit-exercise").value);
     setExerciseSelectOptions("#progress-exercise", $("#progress-exercise").value);
     $("#add-empty").hidden = state.exercises.length > 0;
-    $$("#workout-form input, #workout-form select, #workout-form textarea, #workout-form button[type='submit']").forEach(node => {
-        node.disabled = state.exercises.length === 0;
-    });
+    updateWorkoutFormState();
     $("#exercise-list-title").textContent = state.exerciseScope === "mine" ? t("exercises.mine") : t("exercises.global");
 
     if (state.exerciseScope === "mine") {
@@ -401,6 +438,7 @@ function openEditDialog(workout) {
     $("#edit-id").value = workout.id;
     setWorkoutFormValues("edit", workout);
     setEditMode(workout.isTime ? "time" : "reps");
+    document.body.classList.add("sheet-open");
     $("#edit-dialog").showModal();
 }
 
@@ -500,7 +538,12 @@ function renderExerciseScope() {
 
 function renderHistory() {
     const groups = state.history?.groups || [];
-    $("#history-list").innerHTML = groups.length
+    const isInitialLoading = (state.history?.loading || !state.history?.loaded) && !groups.length;
+    $("#history-skeleton").hidden = !isInitialLoading;
+    $("#history-list").hidden = isInitialLoading;
+    $("#history-list").innerHTML = isInitialLoading
+        ? ""
+        : groups.length
         ? groups.map(group => `
             <section class="day-group history-day-group">
                 <header>
@@ -511,12 +554,17 @@ function renderHistory() {
             </section>
         `).join("")
         : `<div class="empty">${t("empty.history")}</div>`;
-    $("#history-sentinel").hidden = !state.history?.hasMore || !groups.length;
+    $("#history-sentinel").hidden = isInitialLoading || !state.history?.hasMore || !groups.length;
     $("#history-sentinel").textContent = state.history?.loading ? t("actions.loading") : "";
 }
 
 function renderProgress() {
     const data = state.progress;
+    const isLoading = state.progressLoading || !state.progressLoaded;
+    $("#progress-skeleton").hidden = !isLoading;
+    $("#progress-content").hidden = isLoading;
+    if (isLoading) return;
+
     if (!data?.points?.length) {
         $("#progress-chart").innerHTML = `<text x="180" y="120" text-anchor="middle" fill="currentColor">${t("empty.progress")}</text>`;
         $("#progress-best").textContent = "0";
@@ -586,6 +634,17 @@ function renderProgressRecent(rows) {
             </button>
         `).join("")
         : `<div class="empty">${t("empty.progress")}</div>`;
+}
+
+function renderSettings() {
+    const isLoading = !state.settingsLoaded;
+    $("#settings-skeleton").hidden = !isLoading;
+    $("#settings-form").hidden = isLoading;
+    if (isLoading || !state.user) return;
+
+    $("#language-select").value = state.user.language;
+    $("#timezone-input").value = state.user.timezone;
+    $("#theme-select").value = state.theme;
 }
 
 function drawChart(points, metric) {
@@ -665,12 +724,23 @@ function chartDateLabel(point) {
 }
 
 function setTab(tab) {
+    if (tab === "add" && !state.appReady) return;
+
     state.tab = tab;
     document.body.dataset.tab = tab;
     $$(".screen").forEach(screen => screen.classList.toggle("active", screen.id === `screen-${tab}`));
     $$(".bottom-nav button").forEach(button => button.classList.toggle("active", button.dataset.tab === tab));
     $("#screen-title").textContent = t(`screens.${tab}`);
     $("#screen-subtitle").textContent = tab === "dashboard" && state.dashboard ? todaySubtitle(state.dashboard) : "";
+    if (tab === "history") {
+        ensureHistoryLoaded();
+    }
+    if (tab === "progress") {
+        ensureProgressLoaded();
+    }
+    if (tab === "settings") {
+        renderSettings();
+    }
     if (tab === "add") {
         window.scrollTo({top: 0, behavior: "instant"});
         updatePreviousWorkoutSummary().catch(console.error);
@@ -678,23 +748,44 @@ function setTab(tab) {
 }
 
 async function refreshAll() {
-    const bootstrap = await api("bootstrap");
-    const recentExercises = await api("exercises/recent?limit=10");
-    const dashboard = await api("dashboard");
+    showDashboardSkeleton();
+    const [bootstrap, recentExercises, dashboard] = await Promise.all([
+        api("bootstrap"),
+        api("exercises/recent?limit=10"),
+        api("dashboard"),
+    ]);
     state.user = bootstrap.user;
     state.exercises = bootstrap.exercises;
     state.recentExercises = recentExercises.exercises || [];
     state.dashboard = dashboard;
-    $("#language-select").value = state.user.language;
-    $("#timezone-input").value = state.user.timezone;
-    await loadHistory({reset: true, limit: HISTORY_INITIAL_SIZE});
+    state.settingsLoaded = true;
+    renderSettings();
     renderDashboard();
     renderExercises();
-    await loadProgress();
     applyI18n();
+    ensureHistoryLoaded();
+    ensureProgressLoaded();
     if (state.tab === "add") {
         updatePreviousWorkoutSummary().catch(console.error);
     }
+}
+
+function ensureHistoryLoaded() {
+    if (state.history?.loaded || state.history?.loading) return;
+    if (!state.user) {
+        renderHistory();
+        return;
+    }
+    loadHistory({reset: true, limit: HISTORY_INITIAL_SIZE}).catch(console.error);
+}
+
+function ensureProgressLoaded() {
+    if (state.progressLoaded || state.progressLoading) return;
+    if (!state.user) {
+        renderProgress();
+        return;
+    }
+    loadProgress().catch(console.error);
 }
 
 async function loadHistory({reset = false, limit = HISTORY_PAGE_SIZE} = {}) {
@@ -706,6 +797,7 @@ async function loadHistory({reset = false, limit = HISTORY_PAGE_SIZE} = {}) {
         hasMore: reset ? false : Boolean(state.history?.hasMore),
         nextOffset: offset,
         loading: true,
+        loaded: false,
     };
     renderHistory();
 
@@ -715,6 +807,7 @@ async function loadHistory({reset = false, limit = HISTORY_PAGE_SIZE} = {}) {
         hasMore: Boolean(data.hasMore),
         nextOffset: data.nextOffset || 0,
         loading: false,
+        loaded: true,
     };
     renderHistory();
 }
@@ -862,14 +955,21 @@ function adjustNumberInput(input, delta) {
 }
 
 async function loadProgress() {
+    state.progressLoading = true;
+    renderProgress();
     const exercise = $("#progress-exercise").value || state.exercises[0]?.name || "";
     $("#progress-period").value = state.progressPeriod;
     const params = new URLSearchParams();
     if (exercise) params.set("exercise", exercise);
     params.set("period", state.progressPeriod);
-    state.progress = await api(`progress?${params.toString()}`);
-    if (state.progress.exercise) $("#progress-exercise").value = state.progress.exercise;
-    renderProgress();
+    try {
+        state.progress = await api(`progress?${params.toString()}`);
+        state.progressLoaded = true;
+        if (state.progress.exercise) $("#progress-exercise").value = state.progress.exercise;
+    } finally {
+        state.progressLoading = false;
+        renderProgress();
+    }
 }
 
 function todayInputValue() {
@@ -896,27 +996,40 @@ function bindEvents() {
 
     $("#workout-form").addEventListener("submit", async event => {
         event.preventDefault();
+        if (state.savingWorkout) return;
+
         const saveMode = event.submitter?.dataset.saveMode || "next";
-        await api("workouts", {
-            method: "POST",
-            body: JSON.stringify({
-                date: $("#workout-date").value,
-                exercise: $("#workout-exercise").value,
-                sets: $("#workout-sets").value,
-                weight: $("#workout-weight").value,
-                repsOrTime: $("#workout-reps").value,
-                isTime: state.mode === "time",
-                notes: $("#workout-notes").value,
-            }),
-        });
-        clearWorkoutInputs();
-        await refreshAll();
-        showToast("toast.added");
-        if (saveMode === "finish") {
-            setTab("dashboard");
-        } else {
-            setTab("add");
-            $("#workout-exercise").focus();
+        state.savingWorkout = true;
+        updateWorkoutFormState();
+
+        try {
+            await api("workouts", {
+                method: "POST",
+                body: JSON.stringify({
+                    date: $("#workout-date").value,
+                    exercise: $("#workout-exercise").value,
+                    sets: $("#workout-sets").value,
+                    weight: $("#workout-weight").value,
+                    repsOrTime: $("#workout-reps").value,
+                    isTime: state.mode === "time",
+                    notes: $("#workout-notes").value,
+                }),
+            });
+            clearWorkoutInputs();
+            await refreshAll();
+            showToast("toast.added");
+            if (saveMode === "finish") {
+                setTab("dashboard");
+            } else {
+                setTab("add");
+                $("#workout-exercise").focus();
+            }
+        } catch (error) {
+            console.error(error);
+            showToast("toast.saveFailed");
+        } finally {
+            state.savingWorkout = false;
+            updateWorkoutFormState();
         }
     });
 
@@ -985,6 +1098,8 @@ function bindEvents() {
     $("#logout-button").addEventListener("click", async () => {
         await authApi("logout", {method: "POST"});
         state.user = null;
+        state.settingsLoaded = false;
+        renderSettings();
         await showAuthScreen();
         showToast("toast.loggedOut");
     });
@@ -1011,6 +1126,9 @@ function bindEvents() {
 
     $$(".edit-reps-control [data-mode]").forEach(button => button.addEventListener("click", () => setEditMode(button.dataset.mode)));
     $("#edit-close").addEventListener("click", () => $("#edit-dialog").close());
+    $("#edit-dialog").addEventListener("close", () => {
+        document.body.classList.remove("sheet-open");
+    });
     $("#edit-form").addEventListener("submit", async event => {
         event.preventDefault();
         await saveEditedWorkout();
@@ -1044,6 +1162,7 @@ function bindEvents() {
     document.addEventListener("click", async event => {
         const quickAddButton = event.target.closest("[data-action='quick-add']");
         if (quickAddButton) {
+            if (!state.appReady) return;
             setTab("add");
             return;
         }

@@ -18,6 +18,23 @@ function setAuthenticatedShell(isAuthenticated) {
     $("#auth-screen").hidden = isAuthenticated;
 }
 
+function setAppReady(isReady) {
+    state.appReady = isReady;
+    const addButton = $("#nav-add");
+    if (addButton) {
+        addButton.disabled = !isReady;
+    }
+}
+
+function showAppSkeletonShell() {
+    setAppReady(false);
+    state.settingsLoaded = false;
+    $(".app-shell").hidden = false;
+    $("#auth-screen").hidden = true;
+    $("#dashboard-skeleton").hidden = false;
+    $("#dashboard-content").hidden = true;
+}
+
 async function loadAuthConfig() {
     if (!state.authConfig) {
         state.authConfig = await authApi("config");
@@ -42,6 +59,8 @@ function renderTelegramLoginWidget(botUsername) {
 }
 
 export async function showAuthScreen(message) {
+    setAppReady(false);
+    state.settingsLoaded = false;
     setAuthenticatedShell(false);
     applyI18n();
     $("#auth-message").textContent = message || "";
@@ -69,25 +88,29 @@ async function completeAuth(user) {
 }
 
 export async function ensureAuth() {
-    setAuthenticatedShell(false);
+    showAppSkeletonShell();
     applyI18n();
     $("#auth-message").textContent = t("auth.checking");
-    const status = await authApi("status");
-    if (status.authenticated) {
-        await completeAuth(status.user);
-        return;
-    }
+    try {
+        const status = await authApi("status");
+        if (status.authenticated) {
+            await completeAuth(status.user);
+            return;
+        }
 
-    if (telegramInitData) {
-        const auth = await authApi("telegram-webapp", {
-            method: "POST",
-            body: JSON.stringify({initData: telegramInitData}),
-        });
-        await completeAuth(auth.user);
-        return;
-    }
+        if (telegramInitData) {
+            const auth = await authApi("telegram-webapp", {
+                method: "POST",
+                body: JSON.stringify({initData: telegramInitData}),
+            });
+            await completeAuth(auth.user);
+            return;
+        }
 
-    await showAuthScreen();
+        await showAuthScreen();
+    } catch (error) {
+        await showAuthScreen(error.message);
+    }
 }
 
 window.onTelegramLogin = async user => {

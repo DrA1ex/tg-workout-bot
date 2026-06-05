@@ -73,6 +73,12 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
+body[data-tab="add"],
+body.sheet-open {
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
 @supports not (overflow-x: clip) {
     html,
     body {
@@ -392,6 +398,7 @@ label span {
 }
 
 .workout-row {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 10px;
@@ -460,6 +467,18 @@ label span {
 .row-action:disabled {
     cursor: default;
     opacity: .45;
+}
+
+button:disabled {
+    cursor: default;
+    opacity: .56;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+    cursor: default;
+    opacity: .72;
 }
 
 .exercise-row {
@@ -685,7 +704,7 @@ textarea {
     max-height: none;
     margin: 0 auto;
     padding: 58px 12px 14px;
-    overflow: visible;
+    overflow: hidden;
     isolation: isolate;
 }
 
@@ -744,8 +763,10 @@ textarea {
 .edit-sheet {
     z-index: 1;
     width: min(100%, 430px);
+    max-width: 100%;
     margin: 0 auto;
     max-height: calc(100dvh - 72px);
+    overflow: hidden;
 }
 
 .workout-sheet-dialog .sticky-form-actions {
@@ -991,6 +1012,52 @@ body[data-tab="progress"] .calendar-button {
 .progress-screen {
     display: grid;
     gap: 16px;
+}
+
+.progress-skeleton {
+    display: grid;
+    gap: 16px;
+}
+
+.progress-skeleton[hidden] {
+    display: none;
+}
+
+.progress-content {
+    display: grid;
+    gap: 16px;
+}
+
+.skeleton-progress-shell,
+.skeleton-progress-period,
+.skeleton-tabs,
+.skeleton-chart,
+.skeleton-summary-card {
+    position: relative;
+    overflow: hidden;
+    border-color: color-mix(in srgb, var(--line) 86%, transparent);
+    background: color-mix(in srgb, var(--line) 58%, var(--surface));
+    background-image: linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface) 68%, transparent), transparent);
+    background-size: 220% 100%;
+    animation: skeleton-shimmer 1.25s ease-in-out infinite;
+}
+
+.skeleton-tabs {
+    display: block;
+    height: 42px;
+    margin: -2px -24px 4px;
+    border-radius: 0;
+}
+
+.skeleton-chart {
+    display: block;
+    min-height: 246px;
+    border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+    border-radius: 8px;
+}
+
+.skeleton-summary-card {
+    min-height: 104px;
 }
 
 .progress-select-shell,
@@ -1423,6 +1490,198 @@ body[data-tab="dashboard"] .calendar-button {
     border-radius: 14px;
     background: var(--surface);
     box-shadow: 0 2px 10px rgba(15, 23, 42, .025);
+}
+
+.dashboard-skeleton {
+    display: grid;
+    gap: 12px;
+}
+
+.skeleton-card {
+    display: grid;
+    gap: 14px;
+    padding: 15px;
+}
+
+.skeleton-streak-card {
+    min-height: 150px;
+}
+
+.skeleton-today-card {
+    min-height: 126px;
+}
+
+.skeleton-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 58px;
+    align-items: center;
+    gap: 14px;
+}
+
+.skeleton-line,
+.skeleton-number,
+.skeleton-icon,
+.skeleton-button,
+.skeleton-settings-field,
+.skeleton-week-strip span,
+.skeleton-insight-row::before {
+    position: relative;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--line) 58%, var(--surface));
+}
+
+.skeleton-line,
+.skeleton-number,
+.skeleton-icon,
+.skeleton-button,
+.skeleton-settings-field,
+.skeleton-week-strip span,
+.skeleton-insight-row::before {
+    background-image: linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface) 68%, transparent), transparent);
+    background-size: 220% 100%;
+    animation: skeleton-shimmer 1.25s ease-in-out infinite;
+}
+
+.skeleton-line {
+    display: block;
+    width: 58%;
+    height: 16px;
+}
+
+.skeleton-line.wide {
+    width: 70%;
+}
+
+.skeleton-line.medium {
+    width: 48%;
+}
+
+.skeleton-line.tiny {
+    width: 28px;
+}
+
+.skeleton-number {
+    width: 116px;
+    height: 38px;
+}
+
+.skeleton-icon {
+    width: 54px;
+    height: 54px;
+}
+
+.skeleton-button {
+    width: min(220px, 72%);
+    height: 44px;
+    justify-self: center;
+}
+
+.skeleton-week-strip {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.skeleton-week-strip span {
+    width: 31px;
+    height: 31px;
+    justify-self: center;
+}
+
+.skeleton-insight-row {
+    min-height: 72px;
+    pointer-events: none;
+}
+
+.skeleton-insight-row::before {
+    grid-column: 1 / -1;
+    width: 100%;
+    height: 20px;
+    content: "";
+}
+
+.settings-skeleton {
+    display: grid;
+}
+
+.settings-skeleton[hidden] {
+    display: none;
+}
+
+.skeleton-settings-card {
+    gap: 10px;
+}
+
+.skeleton-settings-field {
+    display: block;
+    width: 100%;
+    height: 48px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+}
+
+.skeleton-settings-card .skeleton-button {
+    width: 100%;
+    height: 52px;
+    margin-top: 4px;
+}
+
+.skeleton-settings-card .skeleton-button.muted {
+    background: color-mix(in srgb, var(--line) 36%, var(--surface));
+}
+
+.history-skeleton {
+    display: grid;
+    gap: 14px;
+}
+
+.history-skeleton[hidden] {
+    display: none;
+}
+
+.skeleton-history-group header .skeleton-line {
+    height: 14px;
+}
+
+.skeleton-history-row {
+    display: block;
+    min-height: 72px;
+    pointer-events: none;
+}
+
+.skeleton-history-row::before,
+.skeleton-history-row::after {
+    position: absolute;
+    left: 16px;
+    content: "";
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--line) 58%, var(--surface));
+    background-image: linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface) 68%, transparent), transparent);
+    background-size: 220% 100%;
+    animation: skeleton-shimmer 1.25s ease-in-out infinite;
+}
+
+.skeleton-history-row::before {
+    top: 18px;
+    width: 46%;
+    height: 16px;
+}
+
+.skeleton-history-row::after {
+    top: 44px;
+    width: 68%;
+    height: 12px;
+}
+
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: 120% 0;
+    }
+
+    100% {
+        background-position: -120% 0;
+    }
 }
 
 .workout-log-card {
@@ -2022,6 +2281,11 @@ body[data-tab="dashboard"] .calendar-button {
     background: transparent;
 }
 
+.bottom-nav button:disabled {
+    pointer-events: none;
+    opacity: .42;
+}
+
 .bottom-nav button.active {
     background: color-mix(in srgb, var(--primary) 8%, transparent);
     color: var(--primary);
@@ -2057,12 +2321,16 @@ body[data-tab="add"] .app-shell {
 
 body[data-tab="add"] main {
     min-height: 100dvh;
+    overflow: hidden;
 }
 
 .add-modal-screen.active {
     position: relative;
     display: grid;
+    width: 100%;
+    max-width: 100%;
     min-height: 100dvh;
+    overflow: hidden;
     padding: calc(58px + var(--tg-content-safe-area-top)) 12px 14px;
     align-items: end;
     isolation: isolate;
@@ -2115,6 +2383,7 @@ body[data-tab="add"] main {
     display: flex;
     flex-direction: column;
     width: 100%;
+    max-width: 100%;
     height: calc(100dvh - 72px);
     max-height: calc(100dvh - 72px);
     overflow: hidden;
@@ -2221,7 +2490,8 @@ body[data-tab="add"] main {
     display: grid;
     flex: 1 1 auto;
     gap: 18px;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
     padding-top: 10px;
     padding-bottom: 94px;
     scrollbar-width: thin;
@@ -2485,6 +2755,10 @@ body[data-tab="add"] .sticky-form-actions {
 }
 
 .save-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
     width: 100%;
     min-height: 58px;
     border-radius: 11px;
@@ -2493,6 +2767,22 @@ body[data-tab="add"] .sticky-form-actions {
     box-shadow: 0 10px 24px rgba(7, 89, 255, .26);
     font-size: 20px;
     font-weight: 760;
+}
+
+.save-button.loading::before {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, .48);
+    border-top-color: #ffffff;
+    border-radius: 999px;
+    content: "";
+    animation: button-spin .8s linear infinite;
+}
+
+@keyframes button-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @media (max-width: 390px) {
