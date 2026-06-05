@@ -28,5 +28,8 @@ export function applyI18n() {
     $$("[data-i18n]").forEach(node => {
         node.textContent = t(node.dataset.i18n);
     });
+    $$("[data-i18n-placeholder]").forEach(node => {
+        node.placeholder = t(node.dataset.i18nPlaceholder);
+    });
     $("#screen-title").textContent = t(`screens.${state.tab}`);
 }

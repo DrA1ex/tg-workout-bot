@@ -46,17 +46,21 @@ function dashboardWorkoutRow(workout) {
 
 function workoutDetail(workout) {
     return [
-        `${workout.sets || 0} sets`,
-        workout.weight ? `${workout.weight} kg` : null,
-        workout.isTime ? `${workout.repsOrTime} sec` : `${workout.repsOrTime || 0} reps`,
+        `${workout.sets || 0} ${t("units.sets")}`,
+        workout.weight ? `${formatMetricNumber(workout.weight)} ${t("units.kg")}` : null,
+        workout.isTime
+            ? `${formatMetricNumber(workout.repsOrTime || 0)} ${t("units.sec")}`
+            : `${formatMetricNumber(workout.repsOrTime || 0)} ${t("units.reps")}`,
     ].filter(Boolean).join(" · ");
 }
 
 function dashboardWorkoutDetail(workout) {
     return [
-        workout.weight ? `${formatMetricNumber(workout.weight)} kg` : null,
-        workout.isTime ? `${formatMetricNumber(workout.repsOrTime || 0)} sec` : `${formatMetricNumber(workout.repsOrTime || 0)} reps`,
-        `${workout.sets || 0} sets`,
+        workout.weight ? `${formatMetricNumber(workout.weight)} ${t("units.kg")}` : null,
+        workout.isTime
+            ? `${formatMetricNumber(workout.repsOrTime || 0)} ${t("units.sec")}`
+            : `${formatMetricNumber(workout.repsOrTime || 0)} ${t("units.reps")}`,
+        `${workout.sets || 0} ${t("units.sets")}`,
     ].filter(Boolean).join(" · ");
 }
 

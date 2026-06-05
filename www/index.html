@@ -185,7 +185,7 @@
                     <label class="add-field notes-field">
                         <span data-i18n="fields.notes">Notes</span>
                         <div class="notes-shell">
-                            <textarea id="workout-notes" name="notes" rows="4" maxlength="200" placeholder="Add a note (optional)"></textarea>
+                            <textarea id="workout-notes" name="notes" rows="4" maxlength="200" placeholder="Add a note (optional)" data-i18n-placeholder="fields.notePlaceholder"></textarea>
                             <small><span id="notes-count">0</span>/200</small>
                         </div>
                     </label>
@@ -307,7 +307,7 @@
                     </label>
                     <label>
                         <span data-i18n="fields.notes">Notes</span>
-                        <input id="exercise-notes" name="notes" type="text" autocomplete="off">
+                        <input id="exercise-notes" name="notes" type="text" autocomplete="off" data-i18n-placeholder="fields.notePlaceholder">
                     </label>
                 </div>
                 <button class="primary-button" type="submit" data-i18n="actions.addExercise">Add exercise</button>
@@ -419,7 +419,7 @@
                 <label class="add-field notes-field">
                     <span data-i18n="fields.notes">Notes</span>
                     <div class="notes-shell">
-                        <textarea id="edit-notes" rows="4" maxlength="200" placeholder="Add a note (optional)"></textarea>
+                        <textarea id="edit-notes" rows="4" maxlength="200" placeholder="Add a note (optional)" data-i18n-placeholder="fields.notePlaceholder"></textarea>
                         <small><span id="edit-notes-count">0</span>/200</small>
                     </div>
                 </label>
@@ -444,7 +444,7 @@
             </div>
             <label>
                 <span data-i18n="fields.notes">Notes</span>
-                <textarea id="exercise-edit-notes" rows="4"></textarea>
+                <textarea id="exercise-edit-notes" rows="4" data-i18n-placeholder="fields.notePlaceholder"></textarea>
             </label>
             <div class="modal-actions">
                 <button class="danger-button" id="exercise-delete" type="button" data-i18n="actions.delete">Delete</button>
@@ -469,7 +469,7 @@
         <button id="nav-history" data-tab="history" type="button"><span>📅</span><small data-i18n="nav.history">History</small></button>
         <button id="nav-add" data-tab="add" type="button" disabled><span>＋</span><small data-i18n="nav.add">Add</small></button>
         <button id="nav-progress" data-tab="progress" type="button"><span>📈</span><small data-i18n="nav.progress">Progress</small></button>
-        <button id="nav-settings" data-tab="settings" type="button"><span>⚙️</span><small>Settings</small></button>
+        <button id="nav-settings" data-tab="settings" type="button"><span>⚙️</span><small data-i18n="nav.settings">Settings</small></button>
     </nav>
 </div>
 <script src="/assets/app.js" defer></script>
