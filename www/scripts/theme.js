@@ -9,6 +9,6 @@ export function applyTheme() {
     document.documentElement.dataset.theme = resolved;
     const icon = $("#theme-icon");
     const select = $("#theme-select");
-    if (icon) icon.textContent = resolved === "dark" ? "☾" : "☼";
+    if (icon) icon.textContent = resolved === "dark" ? "🌙" : "☀️";
     if (select) select.value = selected;
 }

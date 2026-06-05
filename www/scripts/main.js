@@ -116,7 +116,7 @@ function renderDashboardList(target, items) {
         ? items.map(dashboardWorkoutRow).join("")
         : `
             <div class="dashboard-empty">
-                <span class="dashboard-empty-icon">▣</span>
+                <span class="dashboard-empty-icon">📅</span>
                 <span class="dashboard-empty-copy">
                     <strong>${t("dashboard.noWorkoutToday")}</strong>
                     <p>${t("dashboard.emptyTodayHint")}</p>

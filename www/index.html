@@ -36,7 +36,7 @@
             <h1 id="screen-title">Today</h1>
             <p id="screen-subtitle"></p>
         </div>
-        <button class="calendar-button" type="button" aria-label="Calendar">▣</button>
+        <button class="calendar-button" type="button" aria-label="Calendar">📅</button>
     </section>
     <main>
         <section class="toast" id="toast" aria-live="polite"></section>
@@ -49,7 +49,7 @@
                         <span class="weekly-streak-info" id="weekly-streak-info" tabindex="0">i</span>
                         <strong><span id="weekly-streak">0</span> <em id="weekly-streak-unit">weeks</em></strong>
                     </div>
-                    <span class="weekly-streak-icon" aria-hidden="true">♨</span>
+                    <span class="weekly-streak-icon" aria-hidden="true">🔥</span>
                 </div>
                 <div class="streak-week-strip" id="streak-week-strip"></div>
                 <span class="weekly-streak-badge" id="weekly-streak-status">This week</span>
@@ -61,7 +61,7 @@
 
             <div class="dashboard-insight-list">
                 <button class="dashboard-insight-row" id="dashboard-last-workout-row" data-tab="history" type="button">
-                    <span class="stat-icon">◴</span>
+                    <span class="stat-icon">🕘</span>
                     <span class="dashboard-insight-copy">
                         <small data-i18n="dashboard.lastWorkout">Last workout</small>
                         <strong id="dashboard-last-workout">—</strong>
@@ -71,7 +71,7 @@
                     <span class="dashboard-row-chevron">›</span>
                 </button>
                 <button class="dashboard-insight-row" data-tab="progress" type="button">
-                    <span class="stat-icon bars">▌</span>
+                    <span class="stat-icon bars">📊</span>
                     <span class="dashboard-insight-copy">
                         <small data-i18n="dashboard.weeklyVolume">Weekly volume</small>
                         <strong><span id="weekly-volume">0</span> <em>kg</em></strong>
@@ -79,7 +79,7 @@
                     <span class="dashboard-row-chevron">›</span>
                 </button>
                 <button class="dashboard-insight-row" data-tab="history" type="button">
-                    <span class="stat-icon">▣</span>
+                    <span class="stat-icon">📅</span>
                     <span class="dashboard-insight-copy">
                         <small data-i18n="dashboard.trainingDays">Training days</small>
                         <strong><span id="weekly-days">0</span> / 7 <em data-i18n="dashboard.days">days</em></strong>
@@ -107,7 +107,7 @@
                         <label class="add-field full-field date-field">
                             <span data-i18n="fields.date">Date</span>
                             <div class="field-shell">
-                                <span class="field-icon">▣</span>
+                                <span class="field-icon">📅</span>
                                 <input id="workout-date" name="date" type="date" required>
                                 <span class="field-chevron">⌄</span>
                             </div>
@@ -115,13 +115,13 @@
                         <label class="add-field full-field exercise-field">
                             <span data-i18n="fields.exercise">Exercise</span>
                             <div class="field-shell">
-                                <span class="field-icon dumbbell-icon">╫</span>
+                                <span class="field-icon dumbbell-icon">🏋️</span>
                                 <select id="workout-exercise" name="exercise" required></select>
                                 <span class="field-chevron">⌄</span>
                             </div>
                         </label>
                         <button class="previous-row" id="use-previous" type="button">
-                            <span class="previous-icon">↺</span>
+                            <span class="previous-icon">↩️</span>
                             <span class="previous-copy">
                                 <strong data-i18n="actions.usePrevious">Use previous</strong>
                                 <small id="previous-summary" data-i18n="add.previousHint">Previous values will appear here.</small>
@@ -182,7 +182,7 @@
         <section class="screen" id="screen-progress" aria-labelledby="nav-progress">
             <div class="progress-screen">
                 <label class="progress-select-shell">
-                    <span class="progress-leading-icon">╫</span>
+                    <span class="progress-leading-icon">🏋️</span>
                     <select id="progress-exercise" aria-label="Exercise"></select>
                     <span class="progress-chevron">⌄</span>
                 </label>
@@ -192,7 +192,7 @@
                     <button type="button" data-metric="sets" data-i18n="fields.sets">Sets</button>
                 </div>
                 <label class="progress-period-shell">
-                    <span class="progress-leading-icon">▣</span>
+                    <span class="progress-leading-icon">📅</span>
                     <select id="progress-period" aria-label="Period">
                         <option value="30d" data-i18n="progress.last30">Last 30 days</option>
                         <option value="90d" data-i18n="progress.last90">Last 90 days</option>
@@ -210,12 +210,12 @@
                         <small id="progress-best-label" data-i18n="progress.value">value</small>
                     </article>
                     <article class="progress-summary-card average">
-                        <span><b>⌁</b><span data-i18n="progress.average">Average</span></span>
+                        <span><b>📈</b><span data-i18n="progress.average">Average</span></span>
                         <strong id="progress-latest">0</strong>
                         <small id="progress-latest-label" data-i18n="progress.value">value</small>
                     </article>
                     <article class="progress-summary-card volume">
-                        <span><b>▥</b><span data-i18n="progress.volumeMetric">Volume</span></span>
+                        <span><b>📊</b><span data-i18n="progress.volumeMetric">Volume</span></span>
                         <strong id="progress-pr">0</strong>
                         <small id="progress-pr-label" data-i18n="progress.total">Total</small>
                     </article>
@@ -299,7 +299,7 @@
                     <label class="add-field full-field date-field">
                         <span data-i18n="fields.date">Date</span>
                         <div class="field-shell">
-                            <span class="field-icon">▣</span>
+                            <span class="field-icon">📅</span>
                             <input id="edit-date" type="date" required>
                             <span class="field-chevron">⌄</span>
                         </div>
@@ -307,7 +307,7 @@
                     <label class="add-field full-field exercise-field">
                         <span data-i18n="fields.exercise">Exercise</span>
                         <div class="field-shell">
-                            <span class="field-icon dumbbell-icon">╫</span>
+                            <span class="field-icon dumbbell-icon">🏋️</span>
                             <select id="edit-exercise" required></select>
                             <span class="field-chevron">⌄</span>
                         </div>
@@ -390,11 +390,11 @@
     </dialog>
 
     <nav class="bottom-nav" aria-label="Main navigation">
-        <button class="active" id="nav-dashboard" data-tab="dashboard" type="button"><span>▦</span><small>Dashboard</small></button>
-        <button id="nav-history" data-tab="history" type="button"><span>▣</span><small data-i18n="nav.history">History</small></button>
+        <button class="active" id="nav-dashboard" data-tab="dashboard" type="button"><span>🏠</span><small>Dashboard</small></button>
+        <button id="nav-history" data-tab="history" type="button"><span>📅</span><small data-i18n="nav.history">History</small></button>
         <button id="nav-add" data-tab="add" type="button"><span>＋</span><small data-i18n="nav.add">Add</small></button>
-        <button id="nav-progress" data-tab="progress" type="button"><span>⌁</span><small data-i18n="nav.progress">Progress</small></button>
-        <button id="nav-settings" data-tab="settings" type="button"><span>⚙</span><small>Settings</small></button>
+        <button id="nav-progress" data-tab="progress" type="button"><span>📈</span><small data-i18n="nav.progress">Progress</small></button>
+        <button id="nav-settings" data-tab="settings" type="button"><span>⚙️</span><small>Settings</small></button>
     </nav>
 </div>
 <script src="/assets/app.js" defer></script>
