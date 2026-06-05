@@ -44,7 +44,7 @@ function renderTelegramLoginWidget(botUsername) {
 export async function showAuthScreen(message) {
     setAuthenticatedShell(false);
     applyI18n();
-    $("#auth-message").textContent = message || t("auth.checking");
+    $("#auth-message").textContent = message || "";
 
     try {
         const config = await loadAuthConfig();
@@ -52,6 +52,8 @@ export async function showAuthScreen(message) {
         $("#telegram-open-link").href = config.botUsername ? `https://t.me/${config.botUsername}` : "https://t.me/";
         if (!telegramInitData && !config.botUsername) {
             $("#auth-message").textContent = t("auth.configMissing");
+        } else if (!message) {
+            $("#auth-message").textContent = t("auth.ready");
         }
     } catch (error) {
         $("#auth-message").textContent = error.message || t("auth.configMissing");
@@ -67,7 +69,9 @@ async function completeAuth(user) {
 }
 
 export async function ensureAuth() {
+    setAuthenticatedShell(false);
     applyI18n();
+    $("#auth-message").textContent = t("auth.checking");
     const status = await authApi("status");
     if (status.authenticated) {
         await completeAuth(status.user);
