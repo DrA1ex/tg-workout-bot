@@ -33,43 +33,14 @@ function workoutRow(workout) {
 }
 
 function dashboardWorkoutRow(workout) {
-    const volume = workoutVolume(workout);
-
     return `
-        <article class="dashboard-workout-row" data-workout-id="${workout.id}">
-            <div class="workout-check">✓</div>
+        <button class="dashboard-workout-row" type="button" data-edit-workout="${workout.id}">
             <div class="dashboard-workout-body">
-                <div class="dashboard-workout-main">
-                    <div>
-                        <h3>${escapeHtml(workout.exercise)}</h3>
-                        <p>${escapeHtml(workoutTimeLabel(workout))}</p>
-                    </div>
-                    <button class="kebab-button" type="button" data-edit-workout="${workout.id}" aria-label="${t("actions.edit")}">⋮</button>
-                </div>
-                <div class="dashboard-workout-stats">
-                    <div>
-                        <span class="metric-icon">╫</span>
-                        <strong>${workout.sets || 0}</strong>
-                        <small>sets</small>
-                    </div>
-                    <div>
-                        <span class="metric-icon">▱</span>
-                        <strong>${formatMetricNumber(workout.weight || 0)}</strong>
-                        <small>kg</small>
-                    </div>
-                    <div>
-                        <span class="metric-icon">◴</span>
-                        <strong>${formatMetricNumber(workout.repsOrTime || 0)}</strong>
-                        <small>${workout.isTime ? "sec" : "reps"}</small>
-                    </div>
-                </div>
-                <div class="volume-pill">
-                    <span class="volume-icon">▥</span>
-                    <span>Volume</span>
-                    <strong>${volume.toLocaleString()} kg</strong>
-                </div>
+                <h3>${escapeHtml(workout.exercise)}</h3>
+                <p>${escapeHtml(dashboardWorkoutDetail(workout))}</p>
             </div>
-        </article>
+            <span class="dashboard-workout-chevron" aria-hidden="true">›</span>
+        </button>
     `;
 }
 
@@ -78,6 +49,14 @@ function workoutDetail(workout) {
         `${workout.sets || 0} sets`,
         workout.weight ? `${workout.weight} kg` : null,
         workout.isTime ? `${workout.repsOrTime} sec` : `${workout.repsOrTime || 0} reps`,
+    ].filter(Boolean).join(" · ");
+}
+
+function dashboardWorkoutDetail(workout) {
+    return [
+        workout.weight ? `${formatMetricNumber(workout.weight)} kg` : null,
+        workout.isTime ? `${formatMetricNumber(workout.repsOrTime || 0)} sec` : `${formatMetricNumber(workout.repsOrTime || 0)} reps`,
+        `${workout.sets || 0} sets`,
     ].filter(Boolean).join(" · ");
 }
 
@@ -135,21 +114,64 @@ function renderList(target, items, emptyKey) {
 function renderDashboardList(target, items) {
     target.innerHTML = items.length
         ? items.map(dashboardWorkoutRow).join("")
-        : `<div class="dashboard-empty">${t("empty.today")}</div>`;
+        : `
+            <div class="dashboard-empty">
+                <span class="dashboard-empty-icon">▣</span>
+                <span class="dashboard-empty-copy">
+                    <strong>${t("dashboard.noWorkoutToday")}</strong>
+                    <p>${t("dashboard.emptyTodayHint")}</p>
+                </span>
+                <button class="primary-button compact-action" data-action="quick-add" type="button">
+                    <span>＋</span>
+                    <span>${t("actions.addWorkout")}</span>
+                </button>
+            </div>
+        `;
 }
 
 function renderDashboard() {
     const data = state.dashboard;
-    $("#weekly-streak").textContent = data.stats.weeklyStreak;
+    const weeklyStreak = data.weeklyStreak?.count ?? data.stats.weeklyStreak;
+    $("#weekly-streak").textContent = weeklyStreak;
+    $("#weekly-streak-unit").textContent = weekUnitLabel(weeklyStreak);
     $("#weekly-volume").textContent = data.stats.weeklyVolume.toLocaleString();
     $("#weekly-workouts").textContent = data.stats.weeklyWorkouts;
     $("#weekly-days").textContent = data.stats.weeklyDays;
     $("#weekly-exercises").textContent = data.stats.weeklyExercises;
+    $("#weekly-streak-status").textContent = data.weeklyStreak?.currentWeekHasWorkout
+        ? t("dashboard.currentWeekDone")
+        : t("dashboard.currentWeekOpen");
+    $("#weekly-streak-info").dataset.tooltip = t("dashboard.weeklyStreakHint");
+    $("#weekly-streak-info").setAttribute("aria-label", t("dashboard.weeklyStreakHint"));
+    $("#weekly-streak-info").setAttribute("title", t("dashboard.weeklyStreakHint"));
+    $(".weekly-streak-card").classList.toggle("at-risk", !data.weeklyStreak?.currentWeekHasWorkout);
+    const hasTodayWorkouts = data.today.workouts.length > 0;
+    $("#dashboard-last-workout-row").hidden = hasTodayWorkouts;
+    if (!hasTodayWorkouts) {
+        $("#dashboard-last-workout").textContent = data.lastSession?.exercise || t("dashboard.noLastSession");
+        $("#dashboard-last-workout-detail").textContent = data.lastSession ? workoutDetail(data.lastSession) : "";
+        $("#dashboard-last-workout-date").textContent = shortDateLabel(data.lastSession);
+    }
     $("#screen-subtitle").textContent = todaySubtitle(data);
     renderLastSession(data.lastSession);
     renderActivity();
+    renderStreakWeeks(data.weeklyStreak?.weeks || data.activity || []);
     renderDashboardList($("#today-list"), data.today.workouts);
     renderList($("#recent-list"), data.recent, "empty.recent");
+}
+
+function weekUnitLabel(count) {
+    const language = currentLocale();
+    if (language === "ru") {
+        const mod10 = count % 10;
+        const mod100 = count % 100;
+        if (mod10 === 1 && mod100 !== 11) return "неделя";
+        if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "недели";
+        return "недель";
+    }
+    if (language === "de") return count === 1 ? "Woche" : "Wochen";
+    if (language === "fr") return count === 1 ? "semaine" : "semaines";
+    return count === 1 ? "week" : "weeks";
 }
 
 function todaySubtitle(data) {
@@ -160,6 +182,12 @@ function todaySubtitle(data) {
         day: "numeric",
         year: "numeric",
     }) + " • " + source.toLocaleDateString(locale, {weekday: "long"});
+}
+
+function shortDateLabel(workout) {
+    const date = parseClientDate(workout?.date);
+    if (!date) return workout?.dateLabel || "";
+    return date.toLocaleDateString(currentLocale(), {day: "numeric", month: "short"});
 }
 
 function renderLastSession(workout) {
@@ -189,6 +217,16 @@ function renderActivity() {
             </div>
         `;
     }).join("");
+}
+
+function renderStreakWeeks(weeks) {
+    const visibleWeeks = weeks.slice(-7);
+    $("#streak-week-strip").innerHTML = visibleWeeks.map(week => `
+        <div class="streak-week ${week.hasWorkout ? "active" : ""} ${week.isCurrent ? "current" : ""}">
+            <span>${escapeHtml(week.label)}</span>
+            <strong>${week.hasWorkout ? "✓" : ""}</strong>
+        </div>
+    `).join("");
 }
 
 function exerciseSelectOptions(selectedValue = "") {
@@ -842,7 +880,6 @@ function todayInputValue() {
 
 function bindEvents() {
     $$("[data-tab]").forEach(button => button.addEventListener("click", () => setTab(button.dataset.tab)));
-    $("[data-action='quick-add']").addEventListener("click", () => setTab("add"));
     setupHistoryInfiniteScroll();
 
     $$(".add-reps-control [data-mode]").forEach(button => button.addEventListener("click", () => {
@@ -1005,6 +1042,12 @@ function bindEvents() {
     });
 
     document.addEventListener("click", async event => {
+        const quickAddButton = event.target.closest("[data-action='quick-add']");
+        if (quickAddButton) {
+            setTab("add");
+            return;
+        }
+
         const editButton = event.target.closest("[data-edit-workout]");
         if (editButton) {
             const workout = findWorkout(editButton.dataset.editWorkout);

@@ -20,8 +20,8 @@ export function dateOnly(date) {
 }
 
 export function shortWeekLabel(date) {
-    const end = addDays(date, 6);
-    return `${date.toISOString().slice(5, 10)}..${end.toISOString().slice(5, 10)}`;
+    const value = date.toISOString();
+    return `${value.slice(8, 10)}.${value.slice(5, 7)}`;
 }
 
 export function periodStart(period) {

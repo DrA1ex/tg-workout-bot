@@ -42,46 +42,54 @@
         <section class="toast" id="toast" aria-live="polite"></section>
 
         <section class="screen active" id="screen-dashboard" aria-labelledby="nav-dashboard">
-            <section class="dashboard-card workout-log-card">
-                <div class="workout-log-heading">
-                    <h2 data-i18n="app.kicker">Workout Log</h2>
-                    <button class="primary-button compact-action" data-action="quick-add" type="button">
-                        <span>＋</span>
-                        <span data-i18n="actions.addWorkout">Add workout</span>
-                    </button>
+            <section class="dashboard-card weekly-streak-card">
+                <div class="weekly-streak-heading">
+                    <div>
+                        <span class="weekly-streak-label" data-i18n="dashboard.weeklyStreak">Weekly streak</span>
+                        <span class="weekly-streak-info" id="weekly-streak-info" tabindex="0">i</span>
+                        <strong><span id="weekly-streak">0</span> <em id="weekly-streak-unit">weeks</em></strong>
+                    </div>
+                    <span class="weekly-streak-icon" aria-hidden="true">♨</span>
                 </div>
+                <div class="streak-week-strip" id="streak-week-strip"></div>
+                <span class="weekly-streak-badge" id="weekly-streak-status">This week</span>
+            </section>
+
+            <section class="dashboard-card workout-log-card">
                 <div class="dashboard-workout-list" id="today-list"></div>
             </section>
 
-            <button class="history-link-card" data-tab="history" type="button">
-                <span>View full history</span>
-                <span>›</span>
-            </button>
-
-            <section class="week-section">
-                <h2>This week</h2>
-                <div class="week-strip" id="activity-strip"></div>
-            </section>
-
-            <div class="dashboard-stat-grid">
-                <article class="dashboard-stat-card">
-                    <span class="stat-icon">▣</span>
-                    <strong id="weekly-workouts">0</strong>
-                    <small data-i18n="dashboard.workouts">Workouts</small>
-                </article>
-                <article class="dashboard-stat-card">
+            <div class="dashboard-insight-list">
+                <button class="dashboard-insight-row" id="dashboard-last-workout-row" data-tab="history" type="button">
+                    <span class="stat-icon">◴</span>
+                    <span class="dashboard-insight-copy">
+                        <small data-i18n="dashboard.lastWorkout">Last workout</small>
+                        <strong id="dashboard-last-workout">—</strong>
+                        <em id="dashboard-last-workout-detail"></em>
+                    </span>
+                    <span class="dashboard-row-meta" id="dashboard-last-workout-date"></span>
+                    <span class="dashboard-row-chevron">›</span>
+                </button>
+                <button class="dashboard-insight-row" data-tab="progress" type="button">
                     <span class="stat-icon bars">▌</span>
-                    <strong><span id="weekly-volume">0</span> <em>kg</em></strong>
-                    <small>Total volume</small>
-                </article>
-                <article class="dashboard-stat-card">
-                    <span class="stat-icon fire">♨</span>
-                    <strong id="weekly-streak">0</strong>
-                    <small>Day streak</small>
-                </article>
+                    <span class="dashboard-insight-copy">
+                        <small data-i18n="dashboard.weeklyVolume">Weekly volume</small>
+                        <strong><span id="weekly-volume">0</span> <em>kg</em></strong>
+                    </span>
+                    <span class="dashboard-row-chevron">›</span>
+                </button>
+                <button class="dashboard-insight-row" data-tab="history" type="button">
+                    <span class="stat-icon">▣</span>
+                    <span class="dashboard-insight-copy">
+                        <small data-i18n="dashboard.trainingDays">Training days</small>
+                        <strong><span id="weekly-days">0</span> / 7 <em data-i18n="dashboard.days">days</em></strong>
+                    </span>
+                    <span class="dashboard-row-chevron">›</span>
+                </button>
             </div>
-            <span id="weekly-days" hidden>0</span>
+            <span id="weekly-workouts" hidden>0</span>
             <span id="weekly-exercises" hidden>0</span>
+            <div id="activity-strip" hidden></div>
             <div id="recent-list" hidden></div>
         </section>
 

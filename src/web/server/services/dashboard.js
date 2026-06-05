@@ -57,11 +57,10 @@ export async function getDashboard(user) {
     const weeklyVolume = weekRows.reduce((sum, row) => sum + volumeFor(row), 0);
     const exerciseCount = new Set(weekRows.map(row => row.exercise)).size;
     const weeklyDays = new Set(weekRows.map(row => dateOnly(new Date(row.date)))).size;
-    const activityAnchor = workoutDates.length
-        ? weekStartUtc(new Date(`${workoutDates[0]}T00:00:00Z`))
-        : currentWeekStart;
-    const activity = Array.from({length: 8}, (_, index) => {
-        const start = addWeeks(activityAnchor, index - 7);
+    const currentWeekKey = dateOnly(currentWeekStart);
+    const activityAnchor = currentWeekStart;
+    const activity = Array.from({length: 7}, (_, index) => {
+        const start = addWeeks(activityAnchor, index - 6);
         const days = Array.from({length: 7}, (_unused, dayIndex) => dateOnly(addDays(start, dayIndex)));
         const activeDays = days.filter(day => workoutDatesSet.has(day)).length;
 
@@ -70,7 +69,7 @@ export async function getDashboard(user) {
             label: shortWeekLabel(start),
             activeDays,
             hasWorkout: activeDays > 0,
-            isCurrent: dateOnly(start) === dateOnly(currentWeekStart),
+            isCurrent: dateOnly(start) === currentWeekKey,
         };
     });
 
@@ -91,6 +90,11 @@ export async function getDashboard(user) {
             weeklyWorkouts: weekRows.length,
             weeklyExercises: exerciseCount,
             weeklyDays,
+        },
+        weeklyStreak: {
+            count: weeklyStreak,
+            currentWeekHasWorkout: workoutWeeks.has(currentWeekKey),
+            weeks: activity,
         },
         activity,
         lastSession: recent[0] || null,
