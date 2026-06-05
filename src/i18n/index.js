@@ -12,7 +12,9 @@ import {UserDAO} from "../dao/index.js";
 export async function getUserLanguage(telegramId) {
     let language;
     try {
-        const user = await UserDAO.findByTelegramId(telegramId);
+        const user = typeof UserDAO.findLanguageByTelegramId === 'function'
+            ? await UserDAO.findLanguageByTelegramId(telegramId)
+            : await UserDAO.findByTelegramId(telegramId);
         language = user?.language || 'en';
     } catch (error) {
         console.error('Error getting user language:', error);

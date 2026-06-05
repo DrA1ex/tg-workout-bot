@@ -6,7 +6,9 @@ export default function initModels(sequelize) {
         telegramId: {type: DataTypes.STRING, primaryKey: true},
         exercises: {type: DataTypes.TEXT, allowNull: false, defaultValue: '[]'}, // JSON array
         language: {type: DataTypes.STRING, allowNull: false, defaultValue: 'ru'}, // Language preference
-        timezone: {type: DataTypes.STRING, allowNull: false, defaultValue: 'UTC'} // Timezone preference
+        timezone: {type: DataTypes.STRING, allowNull: false, defaultValue: 'UTC'}, // Timezone preference
+        theme: {type: DataTypes.STRING, allowNull: false, defaultValue: 'system'},
+        accentColor: {type: DataTypes.STRING, allowNull: false, defaultValue: 'blue'},
     }, {tableName: 'users', timestamps: false});
 
     const Workout = sequelize.define('Workout', {

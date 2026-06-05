@@ -9,6 +9,9 @@ import {getProgress} from "../services/progress.js";
 import {parseWorkoutBody, workoutPayload} from "../services/workouts.js";
 import {handleAuthApi} from "./auth.js";
 
+const VALID_THEMES = new Set(["system", "light", "dark"]);
+const VALID_ACCENTS = new Set(["blue", "cyan", "green", "pink", "red", "purple", "orange"]);
+
 function parseWorkoutId(pathname) {
     const match = pathname.match(/^\/api\/workouts\/(\d+)$/);
     return match ? Number.parseInt(match[1], 10) : null;
@@ -181,6 +184,8 @@ export async function handleApi(req, res, url, config) {
         const updates = {};
         if (body.language) updates.language = String(body.language);
         if (body.timezone) updates.timezone = String(body.timezone);
+        if (VALID_THEMES.has(body.theme)) updates.theme = body.theme;
+        if (VALID_ACCENTS.has(body.accentColor)) updates.accentColor = body.accentColor;
 
         const updated = Object.keys(updates).length ? await UserDAO.update(user.telegramId, updates) : user;
         return sendJson(res, 200, {
@@ -189,6 +194,7 @@ export async function handleApi(req, res, url, config) {
                 language: updated.language || "en",
                 timezone: updated.timezone || "UTC",
                 theme: updated.theme || "system",
+                accentColor: updated.accentColor || "blue",
             },
         });
     }

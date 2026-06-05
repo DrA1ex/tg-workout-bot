@@ -9,6 +9,7 @@ export function authUserPayload(user) {
         language: user.language || "en",
         timezone: user.timezone || "UTC",
         theme: user.theme || "system",
+        accentColor: user.accentColor || "blue",
     };
 }
 

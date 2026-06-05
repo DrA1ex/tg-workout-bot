@@ -47,7 +47,11 @@ describeWithSilencedConsole('Database Migrations', ['warn', 'error', 'log'], () 
         // Users table should have timezone column (either via model or migration)
         const [cols] = await sequelize.query('PRAGMA table_info(users);');
         const hasTimezone = cols.some(col => col.name === 'timezone');
+        const hasTheme = cols.some(col => col.name === 'theme');
+        const hasAccentColor = cols.some(col => col.name === 'accentColor');
         expect(hasTimezone).toBe(true);
+        expect(hasTheme).toBe(true);
+        expect(hasAccentColor).toBe(true);
     });
 
     it('CLI applies pending migrations successfully', async () => {
@@ -70,5 +74,4 @@ describeWithSilencedConsole('Database Migrations', ['warn', 'error', 'log'], () 
         expect(rows.length).toBeGreaterThanOrEqual(1);
     });
 });
-
 

@@ -156,7 +156,9 @@ function renderDashboard() {
         $("#dashboard-last-workout-detail").textContent = data.lastSession ? workoutDetail(data.lastSession) : "";
         $("#dashboard-last-workout-date").textContent = shortDateLabel(data.lastSession);
     }
-    $("#screen-subtitle").textContent = todaySubtitle(data);
+    if (state.tab === "dashboard") {
+        $("#screen-subtitle").textContent = todaySubtitle(data);
+    }
     renderLastSession(data.lastSession);
     renderActivity();
     renderStreakWeeks(data.weeklyStreak?.weeks || data.activity || []);
@@ -649,6 +651,18 @@ function renderSettings() {
     $("#language-select").value = state.user.language;
     $("#timezone-input").value = state.user.timezone;
     $("#theme-select").value = state.theme;
+    $$("#accent-select [data-accent-color]").forEach(button => {
+        button.classList.toggle("active", button.dataset.accentColor === (state.accentColor || "blue"));
+    });
+}
+
+function updateSettingsPreview() {
+    state.theme = $("#theme-select").value;
+    state.accentColor = $("#accent-select [data-accent-color].active")?.dataset.accentColor || state.accentColor || "blue";
+    localStorage.setItem("theme", state.theme);
+    localStorage.setItem("accentColor", state.accentColor);
+    applyTheme();
+    renderSettings();
 }
 
 function drawChart(points, metric) {
@@ -688,6 +702,7 @@ function drawChart(points, metric) {
     const lastValue = values.at(-1) || 0;
     const bubbleX = Math.min(Math.max(last?.[0] || width / 2, 58), width - 58);
     const bubbleY = Math.max((last?.[1] || padTop) - 32, 20);
+    const arrowX = last ? Math.min(Math.max(last[0], bubbleX - 34), bubbleX + 34) : bubbleX;
 
     svg.innerHTML = `
         <text x="${padLeft - 34}" y="${padTop - 12}" fill="var(--muted)" font-size="12" font-weight="700">${escapeHtml(metricUnit(metric))}</text>
@@ -701,7 +716,7 @@ function drawChart(points, metric) {
         ${last ? `
             <g>
                 <rect x="${(bubbleX - 44).toFixed(1)}" y="${(bubbleY - 20).toFixed(1)}" width="88" height="30" rx="8" fill="var(--primary)"></rect>
-                <path d="M${(last[0] - 6).toFixed(1)} ${(bubbleY + 10).toFixed(1)} L${last[0].toFixed(1)} ${(bubbleY + 18).toFixed(1)} L${(last[0] + 6).toFixed(1)} ${(bubbleY + 10).toFixed(1)} Z" fill="var(--primary)"></path>
+                <path d="M${(arrowX - 6).toFixed(1)} ${(bubbleY + 10).toFixed(1)} L${arrowX.toFixed(1)} ${(bubbleY + 18).toFixed(1)} L${(arrowX + 6).toFixed(1)} ${(bubbleY + 10).toFixed(1)} Z" fill="var(--primary)"></path>
                 <text x="${bubbleX.toFixed(1)}" y="${(bubbleY + 1).toFixed(1)}" text-anchor="middle" fill="var(--primary-ink)" font-size="13" font-weight="850">${escapeHtml(formatMetricWithUnit(lastValue, metric))}</text>
             </g>
         ` : ""}
@@ -1086,17 +1101,32 @@ function bindEvents() {
 
     $("#settings-form").addEventListener("submit", async event => {
         event.preventDefault();
-        state.theme = $("#theme-select").value;
-        localStorage.setItem("theme", state.theme);
-        await api("settings", {
+        updateSettingsPreview();
+        const data = await api("settings", {
             method: "PATCH",
             body: JSON.stringify({
                 language: $("#language-select").value,
                 timezone: $("#timezone-input").value,
+                theme: state.theme,
+                accentColor: state.accentColor,
             }),
         });
+        state.user = data.user;
+        state.theme = data.user.theme || state.theme;
+        state.accentColor = data.user.accentColor || state.accentColor;
         applyTheme();
         await refreshAll();
+    });
+    $("#theme-select").addEventListener("change", updateSettingsPreview);
+    $("#accent-select").addEventListener("click", event => {
+        const button = event.target.closest("[data-accent-color]");
+        if (!button) return;
+        $$("#accent-select [data-accent-color]").forEach(item => item.classList.toggle("active", item === button));
+        updateSettingsPreview();
+    });
+    $("#language-select").addEventListener("change", () => {
+        if (state.user) state.user = {...state.user, language: $("#language-select").value};
+        applyI18n();
     });
 
     $("#logout-button").addEventListener("click", async () => {

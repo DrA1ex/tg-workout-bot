@@ -328,6 +328,8 @@
                     <span class="skeleton-settings-field"></span>
                     <span class="skeleton-line medium"></span>
                     <span class="skeleton-settings-field"></span>
+                    <span class="skeleton-line medium"></span>
+                    <span class="skeleton-settings-field"></span>
                     <span class="skeleton-button"></span>
                     <span class="skeleton-button muted"></span>
                 </section>
@@ -354,6 +356,39 @@
                         <option value="dark" data-i18n="settings.dark">Dark</option>
                     </select>
                 </label>
+                <fieldset class="accent-field">
+                    <legend data-i18n="settings.accent">Accent color</legend>
+                    <div class="accent-grid" id="accent-select">
+                        <button class="accent-option" type="button" data-accent-color="blue" style="--swatch: #1155f6;">
+                            <span></span>
+                            <small data-i18n="settings.accentBlue">Blue</small>
+                        </button>
+                        <button class="accent-option" type="button" data-accent-color="cyan" style="--swatch: #0891b2;">
+                            <span></span>
+                            <small data-i18n="settings.accentCyan">Cyan</small>
+                        </button>
+                        <button class="accent-option" type="button" data-accent-color="green" style="--swatch: #16a34a;">
+                            <span></span>
+                            <small data-i18n="settings.accentGreen">Green</small>
+                        </button>
+                        <button class="accent-option" type="button" data-accent-color="pink" style="--swatch: #db2777;">
+                            <span></span>
+                            <small data-i18n="settings.accentPink">Pink</small>
+                        </button>
+                        <button class="accent-option" type="button" data-accent-color="red" style="--swatch: #dc2626;">
+                            <span></span>
+                            <small data-i18n="settings.accentRed">Red</small>
+                        </button>
+                        <button class="accent-option" type="button" data-accent-color="purple" style="--swatch: #7c3aed;">
+                            <span></span>
+                            <small data-i18n="settings.accentPurple">Purple</small>
+                        </button>
+                        <button class="accent-option" type="button" data-accent-color="orange" style="--swatch: #ea580c;">
+                            <span></span>
+                            <small data-i18n="settings.accentOrange">Orange</small>
+                        </button>
+                    </div>
+                </fieldset>
                 <button class="primary-button" type="submit" data-i18n="actions.saveSettings">Save settings</button>
                 <button class="ghost-button" id="logout-button" type="button" data-i18n="actions.logout">Log out</button>
             </form>

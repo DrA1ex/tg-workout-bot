@@ -18,6 +18,15 @@ export class UserDAO {
         }
     }
 
+    static async findLanguageByTelegramId(telegramId) {
+        try {
+            return await models.User.findByPk(telegramId, {attributes: ['language']});
+        } catch (error) {
+            console.error('Error finding user language by Telegram ID:', error);
+            throw error;
+        }
+    }
+
     /**
      * Find or create user by Telegram ID
      * @param {string} telegramId - User's Telegram ID

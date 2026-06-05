@@ -534,6 +534,20 @@ label {
     gap: 7px;
 }
 
+fieldset {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+legend {
+    margin: 0 0 7px;
+    padding: 0;
+    color: var(--text);
+    font-weight: 700;
+}
+
 input,
 select,
 textarea {
@@ -568,6 +582,68 @@ textarea {
 
 textarea {
     resize: vertical;
+}
+
+.accent-field {
+    display: grid;
+    gap: 7px;
+}
+
+.accent-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.accent-option {
+    position: relative;
+    display: grid;
+    min-width: 0;
+    gap: 6px;
+    justify-items: center;
+    padding: 9px 4px 7px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface-soft);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.accent-option span {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--swatch);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .58);
+}
+
+.accent-option small {
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 760;
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.accent-option.active {
+    border-color: color-mix(in srgb, var(--primary) 62%, var(--line));
+    background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+
+.accent-option.active span::after {
+    color: #ffffff;
+    content: "✓";
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.accent-option.active small {
+    color: var(--primary);
 }
 
 .field-grid {
@@ -1407,6 +1483,41 @@ body[data-tab="progress"] .calendar-button {
     --success: #14b8a6;
     --success-soft: #dff8f3;
     --shadow: 0 10px 26px rgba(15, 23, 42, .05);
+}
+
+:root[data-accent="blue"] {
+    --primary: #1155f6;
+    --primary-ink: #ffffff;
+}
+
+:root[data-accent="cyan"] {
+    --primary: #0891b2;
+    --primary-ink: #ffffff;
+}
+
+:root[data-accent="green"] {
+    --primary: #16a34a;
+    --primary-ink: #ffffff;
+}
+
+:root[data-accent="pink"] {
+    --primary: #db2777;
+    --primary-ink: #ffffff;
+}
+
+:root[data-accent="red"] {
+    --primary: #dc2626;
+    --primary-ink: #ffffff;
+}
+
+:root[data-accent="purple"] {
+    --primary: #7c3aed;
+    --primary-ink: #ffffff;
+}
+
+:root[data-accent="orange"] {
+    --primary: #ea580c;
+    --primary-ink: #ffffff;
 }
 
 body {

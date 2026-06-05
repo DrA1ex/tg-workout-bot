@@ -79,6 +79,7 @@ export async function getDashboard(user) {
             language,
             timezone,
             theme: user.theme || "system",
+            accentColor: user.accentColor || "blue",
         },
         today: {
             label: formatDate(today, language, timezone, {weekday: "short", month: "short", day: "numeric"}),

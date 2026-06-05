@@ -81,7 +81,8 @@ export async function showAuthScreen(message) {
 
 async function completeAuth(user) {
     state.user = user;
-    state.theme = localStorage.getItem("theme") || user?.theme || "system";
+    state.theme = user?.theme || localStorage.getItem("theme") || "system";
+    state.accentColor = user?.accentColor || localStorage.getItem("accentColor") || "blue";
     setAuthenticatedShell(true);
     callbacks.applyTheme();
     await callbacks.refreshAll();
