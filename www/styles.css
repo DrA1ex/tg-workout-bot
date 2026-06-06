@@ -458,10 +458,22 @@ label span {
 }
 
 .swipe-workout-row.open .swipe-workout-body h3,
+.swipe-workout-row.swiping .swipe-workout-body h3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--swipe-title-lines, 2);
+    white-space: normal;
+}
+
 .swipe-workout-row.open .swipe-workout-body p,
-.swipe-workout-row.swiping .swipe-workout-body h3,
 .swipe-workout-row.swiping .swipe-workout-body p {
     white-space: nowrap;
+}
+
+.swipe-workout-row.open .swipe-workout-main,
+.swipe-workout-row.swiping .swipe-workout-main {
+    height: var(--swipe-main-height, auto);
+    overflow: hidden;
 }
 
 .swipe-workout-chevron {
@@ -2406,10 +2418,22 @@ body {
 }
 
 .dashboard-swipe-row.open .dashboard-workout-body h3,
+.dashboard-swipe-row.swiping .dashboard-workout-body h3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--swipe-title-lines, 2);
+    white-space: normal;
+}
+
 .dashboard-swipe-row.open .dashboard-workout-body p,
-.dashboard-swipe-row.swiping .dashboard-workout-body h3,
 .dashboard-swipe-row.swiping .dashboard-workout-body p {
     white-space: nowrap;
+}
+
+.dashboard-swipe-row.open .dashboard-workout-row,
+.dashboard-swipe-row.swiping .dashboard-workout-row {
+    height: var(--swipe-main-height, auto);
+    overflow: hidden;
 }
 
 .dashboard-workout-body p {

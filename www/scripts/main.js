@@ -711,7 +711,11 @@ async function deleteWorkout(id) {
 
 function closeSwipeRows(except = null) {
     $$(".swipe-workout-row.open").forEach(row => {
-        if (row !== except) row.classList.remove("open");
+        if (row !== except) {
+            row.classList.remove("open");
+            row.style.removeProperty("--swipe-main-height");
+            row.style.removeProperty("--swipe-title-lines");
+        }
     });
 }
 
@@ -724,6 +728,12 @@ function bindWorkoutSwipeActions() {
         if (!row) return;
 
         closeSwipeRows(row);
+        const title = row.querySelector(".dashboard-workout-body h3, .swipe-workout-body h3");
+        const titleStyle = title ? getComputedStyle(title) : null;
+        const titleLineHeight = titleStyle ? Number.parseFloat(titleStyle.lineHeight) : 0;
+        const titleLines = title && titleLineHeight ? Math.max(1, Math.round(title.getBoundingClientRect().height / titleLineHeight)) : 1;
+        row.style.setProperty("--swipe-main-height", `${main.getBoundingClientRect().height}px`);
+        row.style.setProperty("--swipe-title-lines", String(titleLines));
         workoutSwipe = {
             row,
             main,
@@ -770,6 +780,10 @@ function bindWorkoutSwipeActions() {
         main.style.transform = "";
         if (action) action.style.transform = "";
         row.classList.toggle("open", active && currentProgress > .5);
+        if (!row.classList.contains("open")) {
+            row.style.removeProperty("--swipe-main-height");
+            row.style.removeProperty("--swipe-title-lines");
+        }
         if (active) {
             row.dataset.suppressClick = "true";
             window.setTimeout(() => delete row.dataset.suppressClick, 180);
@@ -1000,6 +1014,38 @@ function removeWorkoutFromLoadedState(id) {
             recent: removeFromArray(state.progress.recent),
         };
         renderProgress();
+    }
+}
+
+function addWorkoutToLoadedState(workout, dateKey) {
+    if (state.dashboard) {
+        const isToday = dateKey === todayInputValue();
+        const recent = [workout, ...(state.dashboard.recent || []).filter(row => String(row.id) !== String(workout.id))].slice(0, 8);
+        state.dashboard = {
+            ...state.dashboard,
+            today: {
+                ...state.dashboard.today,
+                workouts: isToday
+                    ? [...(state.dashboard.today?.workouts || []), workout]
+                    : (state.dashboard.today?.workouts || []),
+            },
+            recent,
+            lastSession: recent[0] || workout,
+        };
+        renderDashboard();
+    }
+
+    if (state.history?.groups?.length) {
+        state.history = {
+            ...state.history,
+            groups: state.history.groups.map(group => {
+                if (group.date !== dateKey) return group;
+                const workouts = [...group.workouts.filter(row => String(row.id) !== String(workout.id)), workout]
+                    .sort((a, b) => Number(a.id) - Number(b.id));
+                return {...group, workouts};
+            }),
+        };
+        renderHistory();
     }
 }
 
@@ -1429,12 +1475,13 @@ function bindEvents() {
         updateWorkoutFormState();
 
         try {
-            await api("workouts", {
+            const workoutDate = $("#workout-date").value;
+            const workout = await api("workouts", {
                 method: "POST",
                 body: JSON.stringify(readWorkoutFormValues("workout")),
             });
+            addWorkoutToLoadedState(workout, workoutDate);
             clearWorkoutInputs();
-            await refreshAll();
             showToast("toast.added");
             if (saveMode === "finish") {
                 navigateTab("dashboard");
