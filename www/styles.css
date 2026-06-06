@@ -1342,11 +1342,22 @@ textarea {
 }
 
 .progress-chevron {
-    color: var(--muted);
-    font-size: 24px;
-    font-weight: 850;
-    line-height: 1;
+    display: grid;
+    width: 22px;
+    height: 22px;
+    place-items: center;
     pointer-events: none;
+}
+
+.progress-chevron::before,
+.field-chevron::before {
+    display: block;
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid var(--muted);
+    border-bottom: 2px solid var(--muted);
+    content: "";
+    transform: translateY(-2px) rotate(45deg);
 }
 
 .progress-tabs {
@@ -2916,9 +2927,11 @@ body[data-tab="add"] main {
 }
 
 .field-chevron {
-    color: var(--muted);
-    font-size: 24px;
-    font-weight: 850;
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    pointer-events: none;
 }
 
 .add-controls {

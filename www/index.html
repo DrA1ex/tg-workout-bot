@@ -173,7 +173,7 @@
                             <div class="field-shell">
                                 <span class="field-icon">📅</span>
                                 <input id="workout-date" name="date" type="date" required>
-                                <span class="field-chevron">⌄</span>
+                                <span class="field-chevron" aria-hidden="true"></span>
                             </div>
                         </label>
                         <label class="add-field full-field exercise-field">
@@ -181,7 +181,7 @@
                             <div class="field-shell">
                                 <span class="field-icon dumbbell-icon">🏋️</span>
                                 <select id="workout-exercise" name="exercise" required></select>
-                                <span class="field-chevron">⌄</span>
+                                <span class="field-chevron" aria-hidden="true"></span>
                             </div>
                         </label>
                         <button class="previous-row" id="use-previous" type="button">
@@ -285,7 +285,7 @@
                     <label class="progress-select-shell">
                         <span class="progress-leading-icon">🏋️</span>
                         <select id="progress-exercise" aria-label="Exercise"></select>
-                        <span class="progress-chevron">⌄</span>
+                        <span class="progress-chevron" aria-hidden="true"></span>
                     </label>
                     <div class="progress-tabs" id="progress-metric" role="tablist" aria-label="Progress metric">
                         <button class="active" type="button" data-metric="weight" data-i18n="progress.weight">Weight</button>
@@ -299,7 +299,7 @@
                             <option value="90d" data-i18n="progress.last90">Last 90 days</option>
                             <option value="all" data-i18n="progress.allTime">All time</option>
                         </select>
-                        <span class="progress-chevron">⌄</span>
+                        <span class="progress-chevron" aria-hidden="true"></span>
                     </label>
                     <div class="progress-chart-wrap">
                         <svg id="progress-chart" viewBox="0 0 360 246" role="img" aria-label="Progress chart"></svg>
@@ -441,7 +441,7 @@
                         <div class="field-shell">
                             <span class="field-icon">📅</span>
                             <input id="edit-date" type="date" required>
-                            <span class="field-chevron">⌄</span>
+                            <span class="field-chevron" aria-hidden="true"></span>
                         </div>
                     </label>
                     <label class="add-field full-field exercise-field">
@@ -449,7 +449,7 @@
                         <div class="field-shell">
                             <span class="field-icon dumbbell-icon">🏋️</span>
                             <select id="edit-exercise" required></select>
-                            <span class="field-chevron">⌄</span>
+                            <span class="field-chevron" aria-hidden="true"></span>
                         </div>
                     </label>
                 </section>
