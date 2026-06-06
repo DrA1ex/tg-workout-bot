@@ -1110,6 +1110,21 @@ function todayInputValue() {
     return new Date(d.getTime() - offset * 60000).toISOString().slice(0, 10);
 }
 
+function updateViewportInsets() {
+    const viewport = window.visualViewport;
+    const bottomOffset = viewport
+        ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+        : 0;
+    document.documentElement.style.setProperty("--viewport-bottom-offset", `${Math.round(bottomOffset)}px`);
+}
+
+function bindViewportInsets() {
+    updateViewportInsets();
+    window.addEventListener("resize", updateViewportInsets, {passive: true});
+    window.visualViewport?.addEventListener("resize", updateViewportInsets, {passive: true});
+    window.visualViewport?.addEventListener("scroll", updateViewportInsets, {passive: true});
+}
+
 function bindEvents() {
     $$("[data-tab]").forEach(button => button.addEventListener("click", () => navigateTab(button.dataset.tab)));
     setupHistoryInfiniteScroll();
@@ -1367,6 +1382,7 @@ $("#workout-date").value = todayInputValue();
 document.body.dataset.tab = state.tab;
 configureAuth({applyTheme, refreshAll});
 setUnauthorizedHandler(showAuthScreen);
+bindViewportInsets();
 bindEvents();
 applyTheme();
 registerServiceWorker();

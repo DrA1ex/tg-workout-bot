@@ -31,5 +31,10 @@ export function applyI18n() {
     $$("[data-i18n-placeholder]").forEach(node => {
         node.placeholder = t(node.dataset.i18nPlaceholder);
     });
+    $$("[data-i18n-label]").forEach(node => {
+        const label = t(node.dataset.i18nLabel);
+        node.setAttribute("aria-label", label);
+        node.setAttribute("title", label);
+    });
     $("#screen-title").textContent = t(`screens.${state.tab}`);
 }
