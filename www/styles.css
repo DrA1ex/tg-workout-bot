@@ -1322,6 +1322,15 @@ textarea {
     font-size: 16px;
 }
 
+.progress-skeleton .skeleton-progress-shell,
+.progress-skeleton .skeleton-progress-period {
+    background: color-mix(in srgb, var(--line) 58%, var(--surface));
+    background-image: linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface) 68%, transparent), transparent);
+    background-size: 220% 100%;
+    animation: skeleton-shimmer 1.25s ease-in-out infinite;
+    box-shadow: none;
+}
+
 .progress-leading-icon {
     color: var(--primary);
     font-size: 25px;
