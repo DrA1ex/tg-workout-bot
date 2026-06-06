@@ -15,6 +15,38 @@ let addScreenCloseTimer = null;
 
 const HISTORY_PAGE_SIZE = 8;
 const HISTORY_INITIAL_SIZE = 24;
+const VALID_TABS = new Set(["dashboard", "history", "add", "progress", "exercises", "settings"]);
+
+function tabFromUrl() {
+    const tab = new URL(window.location.href).searchParams.get("tab");
+    return VALID_TABS.has(tab) ? tab : "dashboard";
+}
+
+function tabUrl(tab) {
+    const url = new URL(window.location.href);
+    if (tab === "dashboard") {
+        url.searchParams.delete("tab");
+    } else {
+        url.searchParams.set("tab", tab);
+    }
+    return `${url.pathname}${url.search}${url.hash}`;
+}
+
+function syncTabUrl(tab, {replace = false} = {}) {
+    const next = tabUrl(tab);
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (next === current) return;
+    window.history[replace ? "replaceState" : "pushState"]({tab}, "", next);
+}
+
+function setHeadingSkeleton(visible) {
+    $("#screen-title").classList.toggle("heading-skeleton", visible);
+    $("#screen-subtitle").classList.toggle("heading-skeleton", visible);
+    if (visible) {
+        $("#screen-title").textContent = "";
+        $("#screen-subtitle").textContent = "";
+    }
+}
 
 function workoutRow(workout) {
     const detail = workoutDetail(workout);
@@ -159,6 +191,8 @@ function renderDashboard() {
         $("#dashboard-last-workout-date").textContent = shortDateLabel(data.lastSession);
     }
     if (state.tab === "dashboard") {
+        setHeadingSkeleton(false);
+        $("#screen-title").textContent = t("screens.dashboard");
         $("#screen-subtitle").textContent = todaySubtitle(data);
     }
     renderLastSession(data.lastSession);
@@ -174,6 +208,9 @@ function showDashboardSkeleton() {
     updateAppReadyState();
     const skeleton = $("#dashboard-skeleton");
     const content = $("#dashboard-content");
+    if (state.tab === "dashboard") {
+        setHeadingSkeleton(true);
+    }
     if (skeleton) skeleton.hidden = false;
     if (content) content.hidden = true;
 }
@@ -183,6 +220,7 @@ function hideDashboardSkeleton() {
     const content = $("#dashboard-content");
     if (skeleton) skeleton.hidden = true;
     if (content) content.hidden = false;
+    setHeadingSkeleton(false);
     state.appReady = true;
     updateAppReadyState();
 }
@@ -501,20 +539,20 @@ function animateAddScreenOpen() {
     animateSheetElement(sheet, "in");
 }
 
-function animateAddScreenClose(nextTab) {
+function animateAddScreenClose(nextTab, options = {}) {
     const sheet = $("#screen-add .add-sheet");
-    animateSheetElement(sheet, "out", () => setTab(nextTab, {animate: false}));
+    animateSheetElement(sheet, "out", () => setTab(nextTab, {...options, animate: false}));
     addScreenCloseTimer = window.setTimeout(() => {
-        if (state.tab === "add") setTab(nextTab, {animate: false});
+        if (state.tab === "add") setTab(nextTab, {...options, animate: false});
     }, 260);
 }
 
-function navigateTab(tab) {
+function navigateTab(tab, options = {}) {
     if (state.tab === "add" && tab !== "add") {
-        animateAddScreenClose(tab);
+        animateAddScreenClose(tab, options);
         return;
     }
-    setTab(tab);
+    setTab(tab, options);
 }
 
 function openSheetDialog(dialog) {
@@ -854,15 +892,23 @@ function chartDateLabel(point) {
 }
 
 function setTab(tab, options = {}) {
-    if (tab === "add" && !state.appReady) return;
+    if (!VALID_TABS.has(tab)) tab = "dashboard";
+    if (tab === "add" && !state.appReady && !options.force) return;
 
     const previousTab = state.tab;
     state.tab = tab;
+    if (options.updateUrl !== false) {
+        syncTabUrl(tab, {replace: options.replaceUrl});
+    }
     document.body.dataset.tab = tab;
     $$(".screen").forEach(screen => screen.classList.toggle("active", screen.id === `screen-${tab}`));
     $$(".bottom-nav button").forEach(button => button.classList.toggle("active", button.dataset.tab === tab));
+    setHeadingSkeleton(false);
     $("#screen-title").textContent = t(`screens.${tab}`);
     $("#screen-subtitle").textContent = tab === "dashboard" && state.dashboard ? todaySubtitle(state.dashboard) : "";
+    if (tab === "dashboard" && !state.dashboard && !$("#dashboard-skeleton")?.hidden) {
+        setHeadingSkeleton(true);
+    }
     if (tab === "history") {
         ensureHistoryLoaded();
     }
@@ -1125,6 +1171,13 @@ function bindViewportInsets() {
     window.visualViewport?.addEventListener("scroll", updateViewportInsets, {passive: true});
 }
 
+function bindHistoryNavigation() {
+    window.history.replaceState({tab: state.tab}, "", tabUrl(state.tab));
+    window.addEventListener("popstate", () => {
+        navigateTab(tabFromUrl(), {updateUrl: false, force: true});
+    });
+}
+
 function bindEvents() {
     $$("[data-tab]").forEach(button => button.addEventListener("click", () => navigateTab(button.dataset.tab)));
     setupHistoryInfiniteScroll();
@@ -1166,9 +1219,9 @@ function bindEvents() {
             await refreshAll();
             showToast("toast.added");
             if (saveMode === "finish") {
-                setTab("dashboard");
+                navigateTab("dashboard");
             } else {
-                setTab("add");
+                navigateTab("add");
                 $("#workout-exercise").focus();
             }
         } catch (error) {
@@ -1379,10 +1432,12 @@ function registerServiceWorker() {
 }
 
 $("#workout-date").value = todayInputValue();
-document.body.dataset.tab = state.tab;
+state.tab = tabFromUrl();
+setTab(state.tab, {force: true, updateUrl: false, animate: false});
 configureAuth({applyTheme, refreshAll});
 setUnauthorizedHandler(showAuthScreen);
 bindViewportInsets();
+bindHistoryNavigation();
 bindEvents();
 applyTheme();
 registerServiceWorker();

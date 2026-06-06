@@ -1196,26 +1196,6 @@ textarea {
     height: auto;
 }
 
-body[data-tab="progress"] .page-heading {
-    grid-template-columns: 52px 1fr 52px;
-    margin-bottom: 12px;
-}
-
-body[data-tab="progress"] .page-heading div {
-    grid-column: 2;
-    text-align: center;
-}
-
-body[data-tab="progress"] .page-heading h1 {
-    font-size: 27px;
-    line-height: 1.15;
-}
-
-body[data-tab="progress"] #screen-subtitle,
-body[data-tab="progress"] .calendar-button {
-    display: none;
-}
-
 #screen-progress {
     padding-bottom: calc(18px + env(safe-area-inset-bottom));
 }
@@ -1546,7 +1526,7 @@ body[data-tab="progress"] .calendar-button {
 .bottom-nav {
     position: fixed;
     right: 0;
-    bottom: 0;
+    bottom: -1px;
     left: 0;
     z-index: 60;
     display: grid;
@@ -1671,56 +1651,64 @@ body {
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 18px;
-    margin-bottom: 18px;
-}
-
-.page-heading h1 {
-    font-size: 42px;
-    font-weight: 850;
-    line-height: 1;
-    letter-spacing: 0;
-}
-
-#screen-subtitle {
-    margin-top: 9px;
-    color: #6b7280;
-    font-size: 16px;
-    font-weight: 650;
-}
-
-.calendar-button {
-    display: grid;
-    width: 52px;
-    height: 52px;
-    place-items: center;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: var(--surface);
-    color: var(--primary);
-    box-shadow: 0 2px 10px rgba(15, 23, 42, .04);
-    font-size: 28px;
-}
-
-body[data-tab="dashboard"] .page-heading {
     margin-bottom: 13px;
 }
 
-body[data-tab="dashboard"] .page-heading h1 {
+.page-heading h1 {
+    min-height: 33px;
     font-size: 30px;
     font-weight: 800;
     line-height: 1.08;
+    letter-spacing: 0;
 }
 
-body[data-tab="dashboard"] #screen-subtitle {
+.page-heading h1.heading-skeleton {
+    width: 112px;
+    border-radius: 999px;
+    color: transparent;
+    background: linear-gradient(90deg, #eef2f7 0%, #f8fafc 42%, #eef2f7 78%);
+    background-size: 220% 100%;
+    animation: shimmer 1.15s infinite linear;
+}
+
+[data-theme="dark"] .page-heading h1.heading-skeleton {
+    background: linear-gradient(90deg, #202a35 0%, #2b3644 42%, #202a35 78%);
+    background-size: 220% 100%;
+}
+
+#screen-subtitle {
+    min-height: 16px;
     margin-top: 6px;
+    color: #6b7280;
     font-size: 13px;
     font-weight: 600;
 }
 
-body[data-tab="dashboard"] .calendar-button {
+#screen-subtitle.heading-skeleton {
+    display: block;
+    width: 150px;
+    border-radius: 999px;
+    color: transparent;
+    background: linear-gradient(90deg, #eef2f7 0%, #f8fafc 42%, #eef2f7 78%);
+    background-size: 220% 100%;
+    animation: shimmer 1.15s infinite linear;
+}
+
+[data-theme="dark"] #screen-subtitle.heading-skeleton {
+    background: linear-gradient(90deg, #202a35 0%, #2b3644 42%, #202a35 78%);
+    background-size: 220% 100%;
+}
+
+.calendar-button {
+    display: grid;
     width: 44px;
     height: 44px;
+    place-items: center;
+    border: 1px solid var(--line);
     border-radius: 13px;
+    background: var(--surface);
+    color: var(--primary);
+    box-shadow: 0 2px 10px rgba(15, 23, 42, .04);
     font-size: 24px;
 }
 
@@ -3044,10 +3032,6 @@ body[data-tab="add"] .sticky-form-actions {
     .add-modal-screen.active {
         padding-right: 10px;
         padding-left: 10px;
-    }
-
-    .page-heading h1 {
-        font-size: 38px;
     }
 
     .workout-log-heading h2 {
