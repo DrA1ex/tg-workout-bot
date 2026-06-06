@@ -884,7 +884,7 @@ textarea {
 .workout-sheet-dialog .sticky-form-actions {
     position: absolute;
     right: 16px;
-    bottom: var(--viewport-bottom-offset);
+    bottom: calc(var(--viewport-bottom-offset) - 1px);
     left: 16px;
     z-index: 5;
     display: grid;
@@ -1055,7 +1055,8 @@ textarea {
 }
 
 #screen-history {
-    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--viewport-bottom-offset) + 22px);
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--viewport-bottom-offset) + 36px);
+    scroll-padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--viewport-bottom-offset) + 36px);
 }
 
 .history-day-group {
@@ -1156,6 +1157,11 @@ textarea {
     color: var(--muted);
     font-size: 13px;
     font-weight: 800;
+    pointer-events: none;
+}
+
+.history-day-group:last-of-type {
+    scroll-margin-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--viewport-bottom-offset) + 36px);
 }
 
 .chart-wrap {
@@ -1546,9 +1552,9 @@ textarea {
 .bottom-nav {
     position: fixed;
     right: 0;
-    bottom: -1px;
+    bottom: calc(var(--viewport-bottom-offset) - 1px);
     left: 0;
-    z-index: 60;
+    z-index: 120;
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     width: min(100%, 520px);
@@ -1558,6 +1564,17 @@ textarea {
     border-top: 1px solid var(--line);
     background: var(--surface);
     transform: translateZ(0);
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.bottom-nav::before {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    content: "";
+    background: var(--surface);
 }
 
 .bottom-nav button {
@@ -1567,6 +1584,7 @@ textarea {
     min-height: 48px;
     border-radius: 12px;
     color: var(--muted);
+    touch-action: manipulation;
 }
 
 .bottom-nav button.active {
@@ -2519,6 +2537,8 @@ body {
 .bottom-nav {
     width: min(100%, 430px);
     height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+    bottom: var(--viewport-bottom-offset);
+    z-index: 120;
     padding: 7px 16px calc(7px + env(safe-area-inset-bottom));
     border-top-color: color-mix(in srgb, var(--line) 70%, transparent);
     background: var(--surface);
