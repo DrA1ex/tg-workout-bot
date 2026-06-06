@@ -298,20 +298,11 @@
                     <button class="active" type="button" data-scope="mine" data-i18n="exercises.mine">My exercises</button>
                     <button type="button" data-scope="global" data-i18n="exercises.global">Global</button>
                 </div>
+                <button class="primary-button exercise-add-trigger" id="exercise-add-open" type="button">
+                    <span>＋</span>
+                    <span data-i18n="actions.addExercise">Add exercise</span>
+                </button>
             </div>
-            <form class="panel form-stack compact-form" id="exercise-form">
-                <div class="field-grid">
-                    <label>
-                        <span data-i18n="fields.name">Name</span>
-                        <input id="exercise-name" name="name" type="text" autocomplete="off" required>
-                    </label>
-                    <label>
-                        <span data-i18n="fields.notes">Notes</span>
-                        <input id="exercise-notes" name="notes" type="text" autocomplete="off" data-i18n-placeholder="fields.notePlaceholder">
-                    </label>
-                </div>
-                <button class="primary-button" type="submit" data-i18n="actions.addExercise">Add exercise</button>
-            </form>
             <div class="section-heading">
                 <h2 id="exercise-list-title" data-i18n="exercises.mine">My exercises</h2>
                 <span class="count-pill" id="exercise-count">0</span>
@@ -466,24 +457,58 @@
         </form>
     </dialog>
 
-    <dialog class="modal" id="exercise-dialog">
-        <form class="panel form-stack" id="exercise-edit-form" method="dialog">
-            <div class="modal-heading">
-                <h2 data-i18n="exercises.editTitle">Edit exercise</h2>
-                <button class="icon-button compact" id="exercise-close" type="button" aria-label="Close">×</button>
+    <dialog class="modal workout-sheet-dialog exercise-sheet-dialog" id="exercise-add-dialog">
+        <form class="add-sheet edit-sheet exercise-sheet" id="exercise-form" method="dialog">
+            <div class="sheet-grabber" aria-hidden="true"></div>
+            <header class="add-screen-header">
+                <button class="add-header-button" id="exercise-add-close" type="button" aria-label="Close">×</button>
+                <h1 data-i18n="actions.addExercise">Add exercise</h1>
+                <span class="add-header-spacer" aria-hidden="true"></span>
+            </header>
+            <div class="add-form exercise-sheet-form">
+                <label class="add-field full-field">
+                    <span data-i18n="fields.name">Name</span>
+                    <div class="field-shell single-field">
+                        <input id="exercise-name" name="name" type="text" autocomplete="off" required>
+                    </div>
+                </label>
+                <label class="add-field notes-field">
+                    <span data-i18n="fields.notes">Notes</span>
+                    <div class="notes-shell">
+                        <textarea id="exercise-notes" name="notes" rows="4" maxlength="200" data-i18n-placeholder="fields.notePlaceholder"></textarea>
+                    </div>
+                </label>
             </div>
+            <div class="sticky-form-actions single-action">
+                <button class="primary-button save-button" type="submit" data-i18n="actions.addExercise">Add exercise</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog class="modal workout-sheet-dialog exercise-sheet-dialog" id="exercise-dialog">
+        <form class="add-sheet edit-sheet exercise-sheet" id="exercise-edit-form" method="dialog">
+            <div class="sheet-grabber" aria-hidden="true"></div>
+            <header class="add-screen-header">
+                <button class="add-header-button" id="exercise-close" type="button" aria-label="Close">×</button>
+                <h1 data-i18n="exercises.editTitle">Edit exercise</h1>
+                <span class="add-header-spacer" aria-hidden="true"></span>
+            </header>
             <input id="exercise-edit-name" type="hidden">
-            <div>
-                <span class="panel-label" data-i18n="fields.name">Name</span>
-                <strong id="exercise-edit-title"></strong>
+            <div class="add-form exercise-sheet-form">
+                <div class="exercise-title-preview">
+                    <span data-i18n="fields.name">Name</span>
+                    <strong id="exercise-edit-title"></strong>
+                </div>
+                <label class="add-field notes-field">
+                    <span data-i18n="fields.notes">Notes</span>
+                    <div class="notes-shell">
+                        <textarea id="exercise-edit-notes" rows="4" maxlength="200" data-i18n-placeholder="fields.notePlaceholder"></textarea>
+                    </div>
+                </label>
             </div>
-            <label>
-                <span data-i18n="fields.notes">Notes</span>
-                <textarea id="exercise-edit-notes" rows="4" data-i18n-placeholder="fields.notePlaceholder"></textarea>
-            </label>
-            <div class="modal-actions">
+            <div class="sticky-form-actions edit-actions">
                 <button class="danger-button" id="exercise-delete" type="button" data-i18n="actions.delete">Delete</button>
-                <button class="primary-button" type="submit" data-i18n="actions.save">Save</button>
+                <button class="primary-button save-button" type="submit" data-i18n="actions.save">Save</button>
             </div>
         </form>
     </dialog>

@@ -10,6 +10,8 @@ let previousWorkoutRequest = null;
 let previousWorkoutRequestExercise = "";
 let historyObserver = null;
 let deleteWorkoutConfirmResolve = null;
+let sheetAnimationSeq = 0;
+let addScreenCloseTimer = null;
 
 const HISTORY_PAGE_SIZE = 8;
 const HISTORY_INITIAL_SIZE = 24;
@@ -444,8 +446,112 @@ function openEditDialog(workout) {
     $("#edit-id").value = workout.id;
     setWorkoutFormValues("edit", workout);
     setEditMode(workout.isTime ? "time" : "reps");
+    openSheetDialog($("#edit-dialog"));
+}
+
+function animateSheetElement(sheet, direction, onFinish) {
+    if (!sheet) {
+        onFinish?.();
+        return;
+    }
+    const animationToken = String(++sheetAnimationSeq);
+    sheet.dataset.sheetAnimation = animationToken;
+    sheet.getAnimations().forEach(animation => animation.cancel());
+
+    if (!sheet?.animate) {
+        sheet.style.opacity = "";
+        sheet.style.transform = "";
+        onFinish?.();
+        return;
+    }
+
+    const frames = direction === "in"
+        ? [
+            {opacity: 0, transform: "translateY(32px) scale(.985)"},
+            {opacity: 1, transform: "translateY(0) scale(1)"},
+        ]
+        : [
+            {opacity: 1, transform: "translateY(0) scale(1)"},
+            {opacity: 0, transform: "translateY(34px) scale(.985)"},
+        ];
+
+    requestAnimationFrame(() => {
+        if (sheet.dataset.sheetAnimation !== animationToken) return;
+        const animation = sheet.animate(frames, {
+            duration: direction === "in" ? 260 : 210,
+            easing: direction === "in" ? "cubic-bezier(.22, 1, .36, 1)" : "cubic-bezier(.4, 0, 1, 1)",
+            fill: "both",
+        });
+        animation.finished.then(() => {
+            if (sheet.dataset.sheetAnimation !== animationToken) return;
+            sheet.style.opacity = "";
+            sheet.style.transform = "";
+            delete sheet.dataset.sheetAnimation;
+            onFinish?.();
+        }, () => {});
+    });
+}
+
+function animateAddScreenOpen() {
+    window.clearTimeout(addScreenCloseTimer);
+    const sheet = $("#screen-add .add-sheet");
+    if (!sheet) return;
+    sheet.style.opacity = "0";
+    sheet.style.transform = "translateY(32px) scale(.985)";
+    animateSheetElement(sheet, "in");
+}
+
+function animateAddScreenClose(nextTab) {
+    const sheet = $("#screen-add .add-sheet");
+    animateSheetElement(sheet, "out", () => setTab(nextTab, {animate: false}));
+    addScreenCloseTimer = window.setTimeout(() => {
+        if (state.tab === "add") setTab(nextTab, {animate: false});
+    }, 260);
+}
+
+function navigateTab(tab) {
+    if (state.tab === "add" && tab !== "add") {
+        animateAddScreenClose(tab);
+        return;
+    }
+    setTab(tab);
+}
+
+function openSheetDialog(dialog) {
+    if (dialog.open) return;
+    const sheet = dialog.querySelector(".add-sheet");
+    dialog.classList.remove("sheet-closing", "sheet-opening");
     document.body.classList.add("sheet-open");
-    $("#edit-dialog").showModal();
+    dialog.showModal();
+    dialog.classList.add("sheet-opening");
+    animateSheetElement(sheet, "in", () => {
+        dialog.classList.remove("sheet-opening");
+    });
+}
+
+function closeSheetDialog(dialog) {
+    if (!dialog.open || dialog.classList.contains("sheet-closing")) return;
+    const sheet = dialog.querySelector(".add-sheet");
+    dialog.classList.add("sheet-closing");
+    const finish = () => {
+        if (!dialog.open) return;
+        dialog.classList.remove("sheet-closing");
+        dialog.close();
+    };
+    animateSheetElement(sheet, "out", finish);
+}
+
+function bindSheetDialog(dialogSelector, closeSelector) {
+    const dialog = $(dialogSelector);
+    $(closeSelector).addEventListener("click", () => closeSheetDialog(dialog));
+    dialog.addEventListener("cancel", event => {
+        event.preventDefault();
+        closeSheetDialog(dialog);
+    });
+    dialog.addEventListener("close", () => {
+        dialog.classList.remove("sheet-closing", "sheet-opening");
+        document.body.classList.remove("sheet-open");
+    });
 }
 
 function resolveDeleteWorkoutConfirmation(confirmed) {
@@ -478,7 +584,7 @@ async function saveEditedWorkout() {
         method: "PATCH",
         body: JSON.stringify(readWorkoutFormValues("edit", state.editMode === "time")),
     });
-    $("#edit-dialog").close();
+    closeSheetDialog($("#edit-dialog"));
     await refreshAll();
     showToast("toast.saved");
 }
@@ -491,7 +597,12 @@ function openExerciseDialog(exercise) {
     $("#exercise-edit-name").value = exercise.name;
     $("#exercise-edit-title").textContent = exercise.name;
     $("#exercise-edit-notes").value = exercise.notes || "";
-    $("#exercise-dialog").showModal();
+    openSheetDialog($("#exercise-dialog"));
+}
+
+function openExerciseAddDialog() {
+    $("#exercise-form").reset();
+    openSheetDialog($("#exercise-add-dialog"));
 }
 
 async function loadGlobalExercises() {
@@ -509,7 +620,7 @@ async function saveExerciseNotes() {
         body: JSON.stringify({notes: $("#exercise-edit-notes").value}),
     });
     state.exercises = data.exercises;
-    $("#exercise-dialog").close();
+    closeSheetDialog($("#exercise-dialog"));
     renderExercises();
     showToast("toast.exerciseSaved");
 }
@@ -517,7 +628,7 @@ async function saveExerciseNotes() {
 async function deleteExercise(name) {
     const data = await api(`exercises/${encodeURIComponent(name)}`, {method: "DELETE"});
     state.exercises = data.exercises;
-    $("#exercise-dialog").close();
+    closeSheetDialog($("#exercise-dialog"));
     await refreshAll();
     showToast("toast.exerciseDeleted");
 }
@@ -742,9 +853,10 @@ function chartDateLabel(point) {
     return date.toLocaleDateString(currentLocale(), {month: "short", day: "numeric"});
 }
 
-function setTab(tab) {
+function setTab(tab, options = {}) {
     if (tab === "add" && !state.appReady) return;
 
+    const previousTab = state.tab;
     state.tab = tab;
     document.body.dataset.tab = tab;
     $$(".screen").forEach(screen => screen.classList.toggle("active", screen.id === `screen-${tab}`));
@@ -762,6 +874,7 @@ function setTab(tab) {
     }
     if (tab === "add") {
         window.scrollTo({top: 0, behavior: "instant"});
+        if (previousTab !== "add" && options.animate !== false) animateAddScreenOpen();
         updatePreviousWorkoutSummary().catch(console.error);
     }
 }
@@ -998,7 +1111,7 @@ function todayInputValue() {
 }
 
 function bindEvents() {
-    $$("[data-tab]").forEach(button => button.addEventListener("click", () => setTab(button.dataset.tab)));
+    $$("[data-tab]").forEach(button => button.addEventListener("click", () => navigateTab(button.dataset.tab)));
     setupHistoryInfiniteScroll();
 
     $$(".add-reps-control [data-mode]").forEach(button => button.addEventListener("click", () => {
@@ -1063,6 +1176,7 @@ function bindEvents() {
         });
         state.exercises = data.exercises;
         $("#exercise-form").reset();
+        closeSheetDialog($("#exercise-add-dialog"));
         await refreshAll();
         showToast("toast.exerciseAdded");
     });
@@ -1159,10 +1273,7 @@ function bindEvents() {
     });
 
     $$(".edit-reps-control [data-mode]").forEach(button => button.addEventListener("click", () => setEditMode(button.dataset.mode)));
-    $("#edit-close").addEventListener("click", () => $("#edit-dialog").close());
-    $("#edit-dialog").addEventListener("close", () => {
-        document.body.classList.remove("sheet-open");
-    });
+    bindSheetDialog("#edit-dialog", "#edit-close");
     $("#edit-form").addEventListener("submit", async event => {
         event.preventDefault();
         await saveEditedWorkout();
@@ -1170,7 +1281,7 @@ function bindEvents() {
     $("#edit-delete").addEventListener("click", async () => {
         const id = $("#edit-id").value;
         if (await deleteWorkout(id)) {
-            $("#edit-dialog").close();
+            closeSheetDialog($("#edit-dialog"));
         }
     });
     $("#delete-workout-cancel").addEventListener("click", () => {
@@ -1184,7 +1295,9 @@ function bindEvents() {
     $("#delete-workout-dialog").addEventListener("close", () => {
         resolveDeleteWorkoutConfirmation(false);
     });
-    $("#exercise-close").addEventListener("click", () => $("#exercise-dialog").close());
+    $("#exercise-add-open").addEventListener("click", openExerciseAddDialog);
+    bindSheetDialog("#exercise-add-dialog", "#exercise-add-close");
+    bindSheetDialog("#exercise-dialog", "#exercise-close");
     $("#exercise-edit-form").addEventListener("submit", async event => {
         event.preventDefault();
         await saveExerciseNotes();
@@ -1197,7 +1310,7 @@ function bindEvents() {
         const quickAddButton = event.target.closest("[data-action='quick-add']");
         if (quickAddButton) {
             if (!state.appReady) return;
-            setTab("add");
+            navigateTab("add");
             return;
         }
 
