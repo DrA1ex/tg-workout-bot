@@ -17,7 +17,7 @@ let pullRefresh = null;
 
 const HISTORY_PAGE_SIZE = 8;
 const HISTORY_INITIAL_SIZE = 24;
-const PULL_REFRESH_THRESHOLD = 68;
+const PULL_REFRESH_THRESHOLD = 42;
 const PULL_REFRESH_READY_DELAY = 250;
 const PULL_REFRESH_REQUEST_DELAY = 220;
 const PULL_REFRESH_MIN_VISIBLE = 760;
@@ -1563,6 +1563,30 @@ function setPullRefreshIndicator({visible = false, ready = false, refreshing = f
         : t("actions.pullToRefresh");
 }
 
+function renderPullRefreshFrame() {
+    if (!pullRefresh?.active || state.pullRefreshing) return;
+    const delta = pullRefresh.targetOffset - pullRefresh.renderedOffset;
+    pullRefresh.renderedOffset += delta * .26;
+    if (Math.abs(delta) < .35) {
+        pullRefresh.renderedOffset = pullRefresh.targetOffset;
+    }
+    setPullRefreshIndicator({
+        visible: true,
+        ready: pullRefresh.armed,
+        offset: pullRefresh.renderedOffset,
+    });
+    if (pullRefresh.renderedOffset !== pullRefresh.targetOffset) {
+        pullRefresh.frame = window.requestAnimationFrame(renderPullRefreshFrame);
+        return;
+    }
+    pullRefresh.frame = null;
+}
+
+function schedulePullRefreshFrame() {
+    if (!pullRefresh || pullRefresh.frame) return;
+    pullRefresh.frame = window.requestAnimationFrame(renderPullRefreshFrame);
+}
+
 function canStartPullRefresh(event) {
     if (!["dashboard", "history"].includes(state.tab)) return false;
     if (state.pullRefreshing || state.savingWorkout || state.deletingWorkout) return false;
@@ -1582,15 +1606,24 @@ function bindPullToRefresh() {
         pullRefresh.readyTimer = null;
     };
 
+    const cancelPullFrame = () => {
+        if (!pullRefresh?.frame) return;
+        window.cancelAnimationFrame(pullRefresh.frame);
+        pullRefresh.frame = null;
+    };
+
     window.addEventListener("touchstart", event => {
         if (event.touches.length !== 1 || !canStartPullRefresh(event)) return;
         pullRefresh = {
             startY: event.touches[0].clientY,
             offset: 0,
+            targetOffset: 0,
+            renderedOffset: 0,
             active: false,
             thresholdReached: false,
             armed: false,
             readyTimer: null,
+            frame: null,
         };
     }, {passive: true});
 
@@ -1600,6 +1633,7 @@ function bindPullToRefresh() {
         const dy = event.touches[0].clientY - pullRefresh.startY;
         if (dy <= 0 && !pullRefresh.thresholdReached) {
             clearPullReadyTimer();
+            cancelPullFrame();
             setPullRefreshIndicator();
             pullRefresh = null;
             return;
@@ -1614,22 +1648,16 @@ function bindPullToRefresh() {
             pullRefresh.readyTimer = window.setTimeout(() => {
                 if (!pullRefresh || !pullRefresh.thresholdReached || state.pullRefreshing) return;
                 pullRefresh.armed = true;
-                setPullRefreshIndicator({
-                    visible: true,
-                    ready: true,
-                    offset: Math.max(pullRefresh.offset, PULL_REFRESH_THRESHOLD),
-                });
+                pullRefresh.targetOffset = Math.max(pullRefresh.offset, PULL_REFRESH_THRESHOLD);
+                schedulePullRefreshFrame();
             }, PULL_REFRESH_READY_DELAY);
         }
 
         const displayOffset = pullRefresh.thresholdReached
             ? Math.max(offset, PULL_REFRESH_THRESHOLD)
             : offset;
-        setPullRefreshIndicator({
-            visible: true,
-            ready: pullRefresh.armed,
-            offset: displayOffset,
-        });
+        pullRefresh.targetOffset = displayOffset;
+        schedulePullRefreshFrame();
         event.preventDefault();
     }, {passive: false});
 
@@ -1637,6 +1665,7 @@ function bindPullToRefresh() {
         if (!pullRefresh) return;
         const shouldRefresh = pullRefresh.active && pullRefresh.thresholdReached;
         clearPullReadyTimer();
+        cancelPullFrame();
         pullRefresh = null;
 
         if (!shouldRefresh) {
@@ -1664,6 +1693,7 @@ function bindPullToRefresh() {
 
     window.addEventListener("touchcancel", () => {
         clearPullReadyTimer();
+        cancelPullFrame();
         pullRefresh = null;
         if (!state.pullRefreshing) setPullRefreshIndicator();
     }, {passive: true});

@@ -1863,6 +1863,7 @@ body {
 .pull-refresh.visible {
     opacity: 1;
     transform: translate(-50%, min(var(--pull-offset, 0px), 34px)) scale(1);
+    transition: opacity .16s ease, color .16s ease;
 }
 
 .pull-refresh.ready {
@@ -1886,7 +1887,6 @@ body {
     border-radius: 999px;
     opacity: .9;
     transform: rotate(calc(var(--pull-progress, 0) * 360deg));
-    transition: transform .08s linear;
 }
 
 .pull-refresh.refreshing .pull-refresh-spinner {
