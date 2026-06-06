@@ -1467,10 +1467,14 @@ textarea {
 
 .progress-tabs {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
     gap: 0;
     margin: -2px -24px 4px;
     border-bottom: 1px solid var(--line);
+}
+
+.progress-tabs button[hidden] {
+    display: none;
 }
 
 .progress-tabs button {
@@ -1499,15 +1503,34 @@ textarea {
 }
 
 .progress-chart-wrap {
+    display: grid;
+    min-height: 252px;
     overflow: visible;
     margin: -2px -6px 0;
     background: transparent;
+}
+
+.progress-chart-wrap.empty {
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+    border-radius: 8px;
+    background: var(--surface);
 }
 
 .progress-chart-wrap svg {
     display: block;
     width: 100%;
     min-height: 252px;
+}
+
+.progress-chart-empty {
+    max-width: 280px;
+    padding: 24px;
+    color: var(--muted);
+    font-size: 18px;
+    font-weight: 820;
+    line-height: 1.28;
+    text-align: center;
 }
 
 .progress-summary-grid {

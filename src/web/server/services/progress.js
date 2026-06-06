@@ -33,7 +33,7 @@ export async function getProgress(user, exercise, period = "all") {
         date: row.date,
         label: formatDate(new Date(row.date), language, timezone, {month: "short", day: "numeric"}),
         sets: row.sets || 0,
-        weight: row.weight || 0,
+        weight: row.weight == null ? null : row.weight,
         repsOrTime: row.repsOrTime || 0,
         volume: volumeFor(row),
         isTime: row.isTime,
@@ -64,6 +64,7 @@ export async function getProgress(user, exercise, period = "all") {
             bestVolume,
             bestRepsOrTime,
             totalVolume,
+            hasWeight: points.some(point => point.weight != null),
             isTime: points.some(point => point.isTime),
         },
     };

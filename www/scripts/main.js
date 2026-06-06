@@ -899,8 +899,10 @@ function renderProgress() {
     $("#progress-content").hidden = isLoading;
     if (isLoading) return;
 
+    updateProgressMetricControls(data);
+
     if (!data?.points?.length) {
-        $("#progress-chart").innerHTML = `<text x="180" y="120" text-anchor="middle" fill="currentColor">${t("empty.progress")}</text>`;
+        renderProgressChartEmpty(t("empty.progress"));
         $("#progress-best").textContent = "0";
         $("#progress-latest").textContent = "0";
         $("#progress-pr").textContent = "0";
@@ -920,7 +922,56 @@ function renderProgress() {
     $("#progress-pr").textContent = `${Math.round(data.summary?.totalVolume || 0).toLocaleString()} kg`;
     $("#progress-pr-label").textContent = t("progress.total");
     renderProgressRecent(data.recent || []);
-    drawChart(data.points, metric);
+    if (data.points.length < 2) {
+        renderProgressChartEmpty(t("progress.notEnoughData"));
+    } else {
+        ensureProgressChart();
+        drawChart(data.points, metric);
+    }
+}
+
+function updateProgressMetricControls(data) {
+    const availableMetrics = progressAvailableMetrics(data);
+    if (!availableMetrics.includes(state.progressMetric)) {
+        state.progressMetric = availableMetrics[0] || "repsOrTime";
+    }
+
+    $$("#progress-metric button").forEach(button => {
+        const metric = button.dataset.metric;
+        const visible = availableMetrics.includes(metric);
+        button.hidden = !visible;
+        button.classList.toggle("active", metric === state.progressMetric);
+        if (metric === "repsOrTime") {
+            button.textContent = progressResultMetricLabel(data);
+        }
+    });
+}
+
+function progressAvailableMetrics(data) {
+    const points = data?.points || [];
+    const hasWeight = Boolean(data?.summary?.hasWeight) || points.some(point => point.weight != null && Number(point.weight) > 0);
+    return [
+        hasWeight ? "weight" : null,
+        "repsOrTime",
+        "sets",
+    ].filter(Boolean);
+}
+
+function progressResultMetricLabel(data) {
+    return data?.summary?.isTime ? t("progress.seconds") : t("progress.repsTime");
+}
+
+function ensureProgressChart() {
+    const wrap = $(".progress-chart-wrap");
+    if ($("#progress-chart")) return;
+    wrap.classList.remove("empty");
+    wrap.innerHTML = `<svg id="progress-chart" viewBox="0 0 360 246" role="img" aria-label="Progress chart"></svg>`;
+}
+
+function renderProgressChartEmpty(message) {
+    const wrap = $(".progress-chart-wrap");
+    wrap.classList.add("empty");
+    wrap.innerHTML = `<div class="progress-chart-empty">${escapeHtml(message)}</div>`;
 }
 
 function metricValue(point, metric) {
@@ -942,12 +993,13 @@ function formatMetric(value, metric) {
 function formatMetricWithUnit(value, metric) {
     const formatted = formatMetric(value, metric);
     if (metric === "weight" || metric === "volume") return `${formatted} kg`;
+    if (metric === "repsOrTime" && state.progress?.summary?.isTime) return `${formatted} ${t("units.sec")}`;
     return formatted;
 }
 
 function metricLabel(metric) {
     if (metric === "volume") return t("progress.volumeMetric");
-    if (metric === "repsOrTime") return t("progress.repsTime");
+    if (metric === "repsOrTime") return progressResultMetricLabel(state.progress);
     if (metric === "sets") return t("fields.sets");
     return t("progress.weight");
 }
@@ -1144,7 +1196,7 @@ function drawChart(points, metric) {
 function metricUnit(metric) {
     if (metric === "weight" || metric === "volume") return "kg";
     if (metric === "sets") return t("fields.sets").toLowerCase();
-    return t("progress.repsTime").toLowerCase();
+    return state.progress?.summary?.isTime ? t("units.sec") : t("progress.repsTime").toLowerCase();
 }
 
 function formatAxisValue(value, metric) {
@@ -1576,6 +1628,7 @@ function bindEvents() {
         if (state.user) state.user = {...state.user, language: $("#language-select").value};
         applyI18n();
         refreshWorkoutFormModes();
+        if (state.progressLoaded) renderProgress();
     });
 
     $("#logout-button").addEventListener("click", async () => {
