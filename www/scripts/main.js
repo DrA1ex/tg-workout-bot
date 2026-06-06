@@ -726,6 +726,7 @@ function closeSwipeRows(except = null) {
 
 function bindWorkoutSwipeActions() {
     document.addEventListener("pointerdown", event => {
+        if (event.target.closest("button, input, select, textarea, label, a")) return;
         const main = event.target.closest(".swipe-workout-main");
         if (!main || event.button !== 0) return;
 
@@ -899,10 +900,10 @@ function renderHistory() {
 
 function renderProgress() {
     const data = state.progress;
-    const isLoading = state.progressLoading || !state.progressLoaded;
-    $("#progress-skeleton").hidden = !isLoading;
-    $("#progress-content").hidden = isLoading;
-    if (isLoading) return;
+    const isInitialLoading = !state.progressLoaded;
+    $("#progress-skeleton").hidden = !isInitialLoading;
+    $("#progress-content").hidden = isInitialLoading;
+    if (isInitialLoading) return;
 
     updateProgressMetricControls(data);
 
@@ -1500,6 +1501,22 @@ function adjustNumberInput(input, delta) {
     input.dispatchEvent(new Event("change", {bubbles: true}));
 }
 
+function releaseNativeSelect(select) {
+    if (document.activeElement === select) select.blur();
+}
+
+function bindNativeSelectFocusRelease() {
+    document.addEventListener("pointerdown", event => {
+        const activeSelect = document.activeElement?.matches?.("select") ? document.activeElement : null;
+        if (!activeSelect) return;
+
+        const targetSelect = event.target.closest?.("select");
+        if (!targetSelect) {
+            activeSelect.blur();
+        }
+    }, {capture: true, passive: true});
+}
+
 async function loadProgress() {
     state.progressLoading = true;
     renderProgress();
@@ -1780,13 +1797,17 @@ function bindEvents() {
         }
     }));
 
-    $("#progress-exercise").addEventListener("change", loadProgress);
+    $("#progress-exercise").addEventListener("change", event => {
+        releaseNativeSelect(event.currentTarget);
+        loadProgress();
+    });
     $$("#progress-metric button").forEach(button => button.addEventListener("click", () => {
         state.progressMetric = button.dataset.metric;
         $$("#progress-metric button").forEach(item => item.classList.toggle("active", item === button));
         renderProgress();
     }));
     $("#progress-period").addEventListener("change", async event => {
+        releaseNativeSelect(event.currentTarget);
         state.progressPeriod = event.target.value;
         await loadProgress();
     });
@@ -1810,14 +1831,18 @@ function bindEvents() {
         await refreshAll();
         showToast("toast.settingsSaved");
     });
-    $("#theme-select").addEventListener("change", updateSettingsPreview);
+    $("#theme-select").addEventListener("change", event => {
+        releaseNativeSelect(event.currentTarget);
+        updateSettingsPreview();
+    });
     $("#accent-select").addEventListener("click", event => {
         const button = event.target.closest("[data-accent-color]");
         if (!button) return;
         $$("#accent-select [data-accent-color]").forEach(item => item.classList.toggle("active", item === button));
         updateSettingsPreview();
     });
-    $("#language-select").addEventListener("change", () => {
+    $("#language-select").addEventListener("change", event => {
+        releaseNativeSelect(event.currentTarget);
         if (state.user) state.user = {...state.user, language: $("#language-select").value};
         applyI18n();
         refreshWorkoutFormModes();
@@ -1841,8 +1866,12 @@ function bindEvents() {
         }
     });
 
-    $("#workout-exercise").addEventListener("change", () => {
+    $("#workout-exercise").addEventListener("change", event => {
+        releaseNativeSelect(event.currentTarget);
         updatePreviousWorkoutSummary().catch(console.error);
+    });
+    $("#edit-exercise").addEventListener("change", event => {
+        releaseNativeSelect(event.currentTarget);
     });
 
     document.addEventListener("click", event => {
@@ -1971,6 +2000,7 @@ setUnauthorizedHandler(showAuthScreen);
 bindViewportInsets();
 bindHistoryNavigation();
 bindEvents();
+bindNativeSelectFocusRelease();
 bindWorkoutSwipeActions();
 bindPullToRefresh();
 applyTheme();

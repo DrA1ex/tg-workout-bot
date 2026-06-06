@@ -104,6 +104,12 @@ textarea {
     font-size: max(16px, 1em);
 }
 
+input,
+select,
+textarea {
+    touch-action: auto;
+}
+
 button {
     cursor: pointer;
     touch-action: manipulation;
