@@ -427,11 +427,55 @@ function workoutDateInputValue(workout) {
 }
 
 function showToast(key) {
-    const toast = $("#toast");
+    const stack = $("#toast");
+    const toast = document.createElement("button");
+    toast.className = "toast-item";
+    toast.type = "button";
     toast.textContent = t(key);
-    toast.classList.add("visible");
-    window.clearTimeout(showToast.timeout);
-    showToast.timeout = window.setTimeout(() => toast.classList.remove("visible"), 2400);
+    stack.append(toast);
+
+    const dismiss = () => hideToast(toast);
+    toast.addEventListener("click", dismiss, {once: true});
+    toast.dismissTimer = window.setTimeout(dismiss, 2400);
+    requestAnimationFrame(() => toast.classList.add("visible"));
+}
+
+function animateToastStack(stack, previousPositions) {
+    Array.from(stack.children).forEach(item => {
+        const previousTop = previousPositions.get(item);
+        if (previousTop == null) return;
+
+        const delta = previousTop - item.getBoundingClientRect().top;
+        if (!delta) return;
+
+        item.classList.add("stack-moving");
+        const animation = item.animate([
+            {transform: `translateY(${delta}px)`},
+            {transform: "translateY(0)"},
+        ], {
+            duration: 180,
+            easing: "cubic-bezier(.22, 1, .36, 1)",
+        });
+        animation.finished.finally(() => item.classList.remove("stack-moving"));
+    });
+}
+
+function hideToast(toast) {
+    if (!toast || toast.dataset.removing === "true") return;
+    toast.dataset.removing = "true";
+    window.clearTimeout(toast.dismissTimer);
+    toast.classList.remove("visible");
+    const stack = toast.parentElement;
+    const finish = () => {
+        if (!toast.isConnected) return;
+        const previousPositions = new Map(Array.from(stack.children)
+            .filter(item => item !== toast)
+            .map(item => [item, item.getBoundingClientRect().top]));
+        toast.remove();
+        requestAnimationFrame(() => animateToastStack(stack, previousPositions));
+    };
+    toast.addEventListener("transitionend", finish, {once: true});
+    window.setTimeout(finish, 240);
 }
 
 function setAddMode(mode) {
@@ -1298,6 +1342,7 @@ function bindEvents() {
         state.accentColor = data.user.accentColor || state.accentColor;
         applyTheme();
         await refreshAll();
+        showToast("toast.settingsSaved");
     });
     $("#theme-select").addEventListener("change", updateSettingsPreview);
     $("#accent-select").addEventListener("click", event => {
