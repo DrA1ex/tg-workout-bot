@@ -12,10 +12,12 @@ let historyObserver = null;
 let deleteWorkoutConfirmResolve = null;
 let sheetAnimationSeq = 0;
 let addScreenCloseTimer = null;
+let workoutSwipe = null;
 
 const HISTORY_PAGE_SIZE = 8;
 const HISTORY_INITIAL_SIZE = 24;
 const VALID_TABS = new Set(["dashboard", "history", "add", "progress", "exercises", "settings"]);
+const WORKOUT_SWIPE_WIDTH = 104;
 
 function tabFromUrl() {
     const tab = new URL(window.location.href).searchParams.get("tab");
@@ -52,29 +54,35 @@ function workoutRow(workout) {
     const detail = workoutDetail(workout);
 
     return `
-        <article class="workout-row" data-workout-id="${workout.id}">
-            <div>
-                <h3>${escapeHtml(workout.exercise)}</h3>
-                <p>${escapeHtml(detail)}${workout.notes ? ` · ${escapeHtml(workout.notes)}` : ""}</p>
-            </div>
-            <div class="row-actions">
-                <span class="pill">${escapeHtml(workout.dateLabel || "")}</span>
-                <button class="row-action" type="button" data-edit-workout="${workout.id}" aria-label="${t("actions.edit")}">✎</button>
-                <button class="row-action danger" type="button" data-delete-workout="${workout.id}" aria-label="${t("actions.delete")}">×</button>
-            </div>
+        <article class="workout-row swipe-workout-row" data-workout-id="${workout.id}">
+            <button class="swipe-workout-main" type="button" data-edit-workout="${workout.id}">
+                <span class="swipe-workout-body">
+                    <h3>${escapeHtml(workout.exercise)}</h3>
+                    <p>${escapeHtml(detail)}${workout.notes ? ` · ${escapeHtml(workout.notes)}` : ""}</p>
+                </span>
+                <span class="swipe-workout-chevron" aria-hidden="true">›</span>
+            </button>
+            <button class="swipe-delete-action" type="button" data-delete-workout="${workout.id}">
+                ${escapeHtml(t("actions.delete"))}
+            </button>
         </article>
     `;
 }
 
 function dashboardWorkoutRow(workout) {
     return `
-        <button class="dashboard-workout-row" type="button" data-edit-workout="${workout.id}">
-            <div class="dashboard-workout-body">
-                <h3>${escapeHtml(workout.exercise)}</h3>
-                <p>${escapeHtml(dashboardWorkoutDetail(workout))}</p>
-            </div>
-            <span class="dashboard-workout-chevron" aria-hidden="true">›</span>
-        </button>
+        <article class="swipe-workout-row dashboard-swipe-row" data-workout-id="${workout.id}">
+            <button class="dashboard-workout-row swipe-workout-main" type="button" data-edit-workout="${workout.id}">
+                <span class="dashboard-workout-body">
+                    <h3>${escapeHtml(workout.exercise)}</h3>
+                    <p>${escapeHtml(dashboardWorkoutDetail(workout))}</p>
+                </span>
+                <span class="dashboard-workout-chevron" aria-hidden="true">›</span>
+            </button>
+            <button class="swipe-delete-action" type="button" data-delete-workout="${workout.id}">
+                ${escapeHtml(t("actions.delete"))}
+            </button>
+        </article>
     `;
 }
 
@@ -690,6 +698,78 @@ async function deleteWorkout(id) {
     await refreshAll();
     showToast("toast.deleted");
     return true;
+}
+
+function closeSwipeRows(except = null) {
+    $$(".swipe-workout-row.open").forEach(row => {
+        if (row !== except) row.classList.remove("open");
+    });
+}
+
+function bindWorkoutSwipeActions() {
+    document.addEventListener("pointerdown", event => {
+        const main = event.target.closest(".swipe-workout-main");
+        if (!main || event.button !== 0) return;
+
+        const row = main.closest(".swipe-workout-row");
+        if (!row) return;
+
+        closeSwipeRows(row);
+        workoutSwipe = {
+            row,
+            main,
+            action: row.querySelector(".swipe-delete-action"),
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            startProgress: row.classList.contains("open") ? 1 : 0,
+            currentProgress: row.classList.contains("open") ? 1 : 0,
+            active: false,
+        };
+        main.setPointerCapture?.(event.pointerId);
+    });
+
+    document.addEventListener("pointermove", event => {
+        if (!workoutSwipe || event.pointerId !== workoutSwipe.pointerId) return;
+
+        const dx = event.clientX - workoutSwipe.startX;
+        const dy = event.clientY - workoutSwipe.startY;
+        if (!workoutSwipe.active) {
+            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
+                workoutSwipe = null;
+                return;
+            }
+            if (Math.abs(dx) < 8) return;
+            workoutSwipe.active = true;
+            workoutSwipe.row.classList.add("swiping");
+        }
+
+        event.preventDefault();
+        const progress = Math.min(1, Math.max(0, workoutSwipe.startProgress - dx / WORKOUT_SWIPE_WIDTH));
+        workoutSwipe.currentProgress = progress;
+        workoutSwipe.main.style.transform = `translateX(${-18 * progress}px)`;
+        if (workoutSwipe.action) {
+            workoutSwipe.action.style.transform = `translateX(${(1 - progress) * 100}%)`;
+        }
+    }, {passive: false});
+
+    const finishSwipe = event => {
+        if (!workoutSwipe || event.pointerId !== workoutSwipe.pointerId) return;
+
+        const {row, main, action, currentProgress, active} = workoutSwipe;
+        row.classList.remove("swiping");
+        main.style.transform = "";
+        if (action) action.style.transform = "";
+        row.classList.toggle("open", active && currentProgress > .5);
+        if (active) {
+            row.dataset.suppressClick = "true";
+            window.setTimeout(() => delete row.dataset.suppressClick, 180);
+        }
+        workoutSwipe = null;
+    };
+
+    document.addEventListener("pointerup", finishSwipe);
+    document.addEventListener("pointercancel", finishSwipe);
 }
 
 async function saveEditedWorkout() {
@@ -1435,12 +1515,6 @@ function bindEvents() {
         event.preventDefault();
         await saveEditedWorkout();
     });
-    $("#edit-delete").addEventListener("click", async () => {
-        const id = $("#edit-id").value;
-        if (await deleteWorkout(id)) {
-            closeSheetDialog($("#edit-dialog"));
-        }
-    });
     $("#delete-workout-cancel").addEventListener("click", () => {
         $("#delete-workout-dialog").close();
         resolveDeleteWorkoutConfirmation(false);
@@ -1471,8 +1545,21 @@ function bindEvents() {
             return;
         }
 
+        const deleteButton = event.target.closest("[data-delete-workout]");
+        if (deleteButton) {
+            closeSwipeRows();
+            await deleteWorkout(deleteButton.dataset.deleteWorkout);
+            return;
+        }
+
         const editButton = event.target.closest("[data-edit-workout]");
         if (editButton) {
+            const swipeRow = editButton.closest(".swipe-workout-row");
+            if (swipeRow?.dataset.suppressClick === "true") return;
+            if (swipeRow?.classList.contains("open")) {
+                swipeRow.classList.remove("open");
+                return;
+            }
             const workout = findWorkout(editButton.dataset.editWorkout);
             if (workout) {
                 try {
@@ -1482,12 +1569,6 @@ function bindEvents() {
                     showToast("toast.editOpenFailed");
                 }
             }
-            return;
-        }
-
-        const deleteButton = event.target.closest("[data-delete-workout]");
-        if (deleteButton) {
-            await deleteWorkout(deleteButton.dataset.deleteWorkout);
             return;
         }
 
@@ -1529,6 +1610,7 @@ setUnauthorizedHandler(showAuthScreen);
 bindViewportInsets();
 bindHistoryNavigation();
 bindEvents();
+bindWorkoutSwipeActions();
 applyTheme();
 registerServiceWorker();
 ensureAuth().catch(async error => {
