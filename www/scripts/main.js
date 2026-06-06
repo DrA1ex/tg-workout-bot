@@ -13,9 +13,14 @@ let deleteWorkoutConfirmResolve = null;
 let sheetAnimationSeq = 0;
 let addScreenCloseTimer = null;
 let workoutSwipe = null;
+let pullRefresh = null;
 
 const HISTORY_PAGE_SIZE = 8;
 const HISTORY_INITIAL_SIZE = 24;
+const PULL_REFRESH_THRESHOLD = 68;
+const PULL_REFRESH_READY_DELAY = 250;
+const PULL_REFRESH_REQUEST_DELAY = 220;
+const PULL_REFRESH_MIN_VISIBLE = 760;
 const VALID_TABS = new Set(["dashboard", "history", "add", "progress", "exercises", "settings"]);
 const WORKOUT_SWIPE_WIDTH = 104;
 
@@ -1269,6 +1274,44 @@ async function refreshAll() {
     }
 }
 
+async function refreshDashboardOnly() {
+    const [recentExercises, dashboard] = await Promise.all([
+        api("exercises/recent?limit=10"),
+        api("dashboard"),
+    ]);
+    state.recentExercises = recentExercises.exercises || [];
+    state.dashboard = dashboard;
+    renderDashboard();
+    renderExercises();
+}
+
+async function refreshHistoryOnly() {
+    const data = await api(`history?offset=0&limit=${HISTORY_INITIAL_SIZE}`);
+    state.history = {
+        groups: data.groups || [],
+        hasMore: Boolean(data.hasMore),
+        nextOffset: data.nextOffset || 0,
+        loading: false,
+        loaded: true,
+    };
+    renderHistory();
+}
+
+async function refreshActivePullTab() {
+    await delay(PULL_REFRESH_REQUEST_DELAY);
+    if (state.tab === "dashboard") {
+        await refreshDashboardOnly();
+        return;
+    }
+    if (state.tab === "history") {
+        await refreshHistoryOnly();
+    }
+}
+
+function delay(ms) {
+    return new Promise(resolve => window.setTimeout(resolve, ms));
+}
+
 function ensureHistoryLoaded() {
     if (state.history?.loaded || state.history?.loading) return;
     if (!state.user) {
@@ -1504,6 +1547,126 @@ function bindHistoryNavigation() {
     window.addEventListener("popstate", () => {
         navigateTab(tabFromUrl(), {updateUrl: false, force: true});
     });
+}
+
+function setPullRefreshIndicator({visible = false, ready = false, refreshing = false, offset = 0} = {}) {
+    const indicator = $("#pull-refresh");
+    indicator.classList.toggle("visible", visible || refreshing);
+    indicator.classList.toggle("ready", ready);
+    indicator.classList.toggle("refreshing", refreshing);
+    indicator.style.setProperty("--pull-offset", `${Math.round(offset)}px`);
+    indicator.style.setProperty("--pull-progress", String(Math.min(offset / PULL_REFRESH_THRESHOLD, 1)));
+    $(".pull-refresh-label").textContent = refreshing
+        ? t("actions.refreshing")
+        : ready
+        ? t("actions.releaseToRefresh")
+        : t("actions.pullToRefresh");
+}
+
+function canStartPullRefresh(event) {
+    if (!["dashboard", "history"].includes(state.tab)) return false;
+    if (state.pullRefreshing || state.savingWorkout || state.deletingWorkout) return false;
+    if (document.body.classList.contains("sheet-open")) return false;
+    if (window.scrollY > 0) return false;
+
+    const target = event.target;
+    if (target?.closest?.("button, input, select, textarea, dialog, .bottom-nav, .toast-stack")) return false;
+    if (state.tab === "history" && state.history?.loading) return false;
+    return true;
+}
+
+function bindPullToRefresh() {
+    const clearPullReadyTimer = () => {
+        if (!pullRefresh?.readyTimer) return;
+        window.clearTimeout(pullRefresh.readyTimer);
+        pullRefresh.readyTimer = null;
+    };
+
+    window.addEventListener("touchstart", event => {
+        if (event.touches.length !== 1 || !canStartPullRefresh(event)) return;
+        pullRefresh = {
+            startY: event.touches[0].clientY,
+            offset: 0,
+            active: false,
+            thresholdReached: false,
+            armed: false,
+            readyTimer: null,
+        };
+    }, {passive: true});
+
+    window.addEventListener("touchmove", event => {
+        if (!pullRefresh || event.touches.length !== 1) return;
+
+        const dy = event.touches[0].clientY - pullRefresh.startY;
+        if (dy <= 0 && !pullRefresh.thresholdReached) {
+            clearPullReadyTimer();
+            setPullRefreshIndicator();
+            pullRefresh = null;
+            return;
+        }
+
+        if (!pullRefresh.active && dy < 10) return;
+        pullRefresh.active = true;
+        const offset = Math.min(96, dy * .48);
+        pullRefresh.offset = offset;
+        if (offset >= PULL_REFRESH_THRESHOLD && !pullRefresh.thresholdReached) {
+            pullRefresh.thresholdReached = true;
+            pullRefresh.readyTimer = window.setTimeout(() => {
+                if (!pullRefresh || !pullRefresh.thresholdReached || state.pullRefreshing) return;
+                pullRefresh.armed = true;
+                setPullRefreshIndicator({
+                    visible: true,
+                    ready: true,
+                    offset: Math.max(pullRefresh.offset, PULL_REFRESH_THRESHOLD),
+                });
+            }, PULL_REFRESH_READY_DELAY);
+        }
+
+        const displayOffset = pullRefresh.thresholdReached
+            ? Math.max(offset, PULL_REFRESH_THRESHOLD)
+            : offset;
+        setPullRefreshIndicator({
+            visible: true,
+            ready: pullRefresh.armed,
+            offset: displayOffset,
+        });
+        event.preventDefault();
+    }, {passive: false});
+
+    window.addEventListener("touchend", async () => {
+        if (!pullRefresh) return;
+        const shouldRefresh = pullRefresh.active && pullRefresh.thresholdReached;
+        clearPullReadyTimer();
+        pullRefresh = null;
+
+        if (!shouldRefresh) {
+            setPullRefreshIndicator();
+            return;
+        }
+
+        state.pullRefreshing = true;
+        setPullRefreshIndicator({refreshing: true, offset: PULL_REFRESH_THRESHOLD});
+        const startedAt = performance.now();
+        try {
+            await refreshActivePullTab();
+        } catch (error) {
+            console.error(error);
+            showToast("toast.refreshFailed");
+        } finally {
+            const elapsed = performance.now() - startedAt;
+            if (elapsed < PULL_REFRESH_MIN_VISIBLE) {
+                await delay(PULL_REFRESH_MIN_VISIBLE - elapsed);
+            }
+            state.pullRefreshing = false;
+            setPullRefreshIndicator();
+        }
+    }, {passive: true});
+
+    window.addEventListener("touchcancel", () => {
+        clearPullReadyTimer();
+        pullRefresh = null;
+        if (!state.pullRefreshing) setPullRefreshIndicator();
+    }, {passive: true});
 }
 
 function bindEvents() {
@@ -1779,6 +1942,7 @@ bindViewportInsets();
 bindHistoryNavigation();
 bindEvents();
 bindWorkoutSwipeActions();
+bindPullToRefresh();
 applyTheme();
 registerServiceWorker();
 ensureAuth().catch(async error => {

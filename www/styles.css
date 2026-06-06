@@ -1835,6 +1835,75 @@ body {
     background: var(--bg);
 }
 
+.pull-refresh {
+    position: fixed;
+    top: calc(8px + env(safe-area-inset-top) + var(--tg-content-safe-area-top));
+    left: 50%;
+    z-index: 90;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 48px;
+    max-width: min(calc(100% - 32px), 340px);
+    padding: 10px 18px;
+    border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface) 96%, transparent);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, .14), 0 1px 0 rgba(255, 255, 255, .62) inset;
+    color: var(--muted);
+    font-size: 16px;
+    font-weight: 650;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, calc(-54px + var(--pull-offset, 0px))) scale(.96);
+    transition: opacity .16s ease, transform .18s cubic-bezier(.22, 1, .36, 1);
+}
+
+.pull-refresh.visible {
+    opacity: 1;
+    transform: translate(-50%, min(var(--pull-offset, 0px), 34px)) scale(1);
+}
+
+.pull-refresh.ready {
+    color: var(--primary);
+}
+
+.pull-refresh.refreshing {
+    opacity: 1;
+    color: var(--text);
+    transform: translate(-50%, 34px) scale(1);
+}
+
+.pull-refresh-spinner {
+    display: block;
+    box-sizing: border-box;
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
+    border: 4px solid color-mix(in srgb, currentColor 24%, transparent);
+    border-top-color: currentColor;
+    border-radius: 999px;
+    opacity: .9;
+    transform: rotate(calc(var(--pull-progress, 0) * 360deg));
+    transition: transform .08s linear;
+}
+
+.pull-refresh.refreshing .pull-refresh-spinner {
+    animation: pull-refresh-spin .55s linear infinite;
+    transition: none;
+}
+
+@keyframes pull-refresh-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .telegram-webapp .auth-screen {
     padding-top: var(--tg-content-safe-area-top);
 }
