@@ -1761,37 +1761,34 @@ body {
 
 .dashboard-skeleton {
     display: grid;
-    gap: 12px;
-}
-
-.skeleton-card {
-    display: grid;
-    gap: 14px;
-    padding: 15px;
+    gap: 0;
 }
 
 .skeleton-streak-card {
-    min-height: 150px;
+    pointer-events: none;
 }
 
 .skeleton-today-card {
-    min-height: 126px;
-}
-
-.skeleton-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 58px;
-    align-items: center;
-    gap: 14px;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    min-height: 116px;
+    pointer-events: none;
 }
 
 .skeleton-line,
 .skeleton-number,
 .skeleton-icon,
+.skeleton-info-dot,
 .skeleton-button,
 .skeleton-settings-field,
-.skeleton-week-strip span,
-.skeleton-insight-row::before {
+.skeleton-today-icon,
+.skeleton-week-strip i,
+.skeleton-week-strip b,
+.skeleton-week-strip small,
+.skeleton-stat-icon,
+.skeleton-chevron {
     position: relative;
     overflow: hidden;
     border-radius: 999px;
@@ -1801,10 +1798,15 @@ body {
 .skeleton-line,
 .skeleton-number,
 .skeleton-icon,
+.skeleton-info-dot,
 .skeleton-button,
 .skeleton-settings-field,
-.skeleton-week-strip span,
-.skeleton-insight-row::before {
+.skeleton-today-icon,
+.skeleton-week-strip i,
+.skeleton-week-strip b,
+.skeleton-week-strip small,
+.skeleton-stat-icon,
+.skeleton-chevron {
     background-image: linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface) 68%, transparent), transparent);
     background-size: 220% 100%;
     animation: skeleton-shimmer 1.25s ease-in-out infinite;
@@ -1813,7 +1815,7 @@ body {
 .skeleton-line {
     display: block;
     width: 58%;
-    height: 16px;
+    height: 14px;
 }
 
 .skeleton-line.wide {
@@ -1829,19 +1831,57 @@ body {
 }
 
 .skeleton-number {
-    width: 116px;
-    height: 38px;
+    display: block;
+    width: 54px;
+    height: 36px;
 }
 
 .skeleton-icon {
+    width: 58px;
+    height: 58px;
+    background: color-mix(in srgb, var(--primary) 7%, var(--surface-soft));
+}
+
+.skeleton-info-dot {
+    display: inline-grid;
+    width: 14px;
+    height: 14px;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+.skeleton-streak-label {
+    display: inline-block;
+    width: 112px;
+    height: 16px;
+    vertical-align: middle;
+}
+
+.skeleton-unit {
     width: 54px;
-    height: 54px;
+    height: 17px;
 }
 
 .skeleton-button {
-    width: min(220px, 72%);
+    grid-column: 1 / -1;
+    width: min(220px, 100%);
     height: 44px;
     justify-self: center;
+    margin-top: 5px;
+}
+
+.skeleton-today-icon {
+    width: 40px;
+    height: 40px;
+}
+
+.skeleton-today-card .skeleton-line {
+    margin-top: 3px;
+}
+
+.skeleton-today-card .skeleton-line.wide {
+    margin-top: 10px;
+    width: min(210px, 82%);
 }
 
 .skeleton-week-strip {
@@ -1851,21 +1891,63 @@ body {
 }
 
 .skeleton-week-strip span {
+    display: grid;
+    justify-self: center;
+    justify-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.skeleton-week-strip i,
+.skeleton-week-strip small {
+    display: block;
+    width: 28px;
+    height: 9px;
+}
+
+.skeleton-week-strip b {
+    display: block;
     width: 31px;
     height: 31px;
-    justify-self: center;
 }
 
 .skeleton-insight-row {
-    min-height: 72px;
     pointer-events: none;
 }
 
-.skeleton-insight-row::before {
-    grid-column: 1 / -1;
+.skeleton-insight-row .skeleton-line {
     width: 100%;
-    height: 20px;
-    content: "";
+}
+
+.skeleton-insight-row .dashboard-insight-copy small {
+    width: 92px;
+    height: 12px;
+}
+
+.skeleton-insight-row .dashboard-insight-copy strong {
+    width: 126px;
+    height: 18px;
+}
+
+.skeleton-insight-row .dashboard-insight-copy em {
+    width: 150px;
+    height: 12px;
+}
+
+.skeleton-insight-row .dashboard-row-meta {
+    width: 54px;
+    height: 12px;
+}
+
+.skeleton-stat-icon {
+    width: 32px;
+    height: 32px;
+}
+
+.skeleton-chevron {
+    width: 10px;
+    height: 24px;
+    border-radius: 6px;
 }
 
 .settings-skeleton {
