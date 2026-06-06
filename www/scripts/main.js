@@ -1202,15 +1202,18 @@ function todayInputValue() {
 
 function updateViewportInsets() {
     const viewport = window.visualViewport;
-    const bottomOffset = viewport
-        ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
-        : 0;
-    document.documentElement.style.setProperty("--viewport-bottom-offset", `${Math.round(bottomOffset)}px`);
+    const active = document.activeElement;
+    const inputFocused = active?.matches?.("input, textarea, select, [contenteditable='true']");
+    const viewportLoss = viewport ? window.innerHeight - viewport.height : 0;
+    document.body.classList.toggle("keyboard-open", Boolean(inputFocused && viewportLoss > 120));
+    document.documentElement.style.setProperty("--viewport-bottom-offset", "0px");
 }
 
 function bindViewportInsets() {
     updateViewportInsets();
     window.addEventListener("resize", updateViewportInsets, {passive: true});
+    window.addEventListener("focusin", updateViewportInsets, {passive: true});
+    window.addEventListener("focusout", () => window.setTimeout(updateViewportInsets, 0), {passive: true});
     window.visualViewport?.addEventListener("resize", updateViewportInsets, {passive: true});
     window.visualViewport?.addEventListener("scroll", updateViewportInsets, {passive: true});
 }

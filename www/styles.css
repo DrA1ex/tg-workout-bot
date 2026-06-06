@@ -884,7 +884,7 @@ textarea {
 .workout-sheet-dialog .sticky-form-actions {
     position: absolute;
     right: 16px;
-    bottom: calc(var(--viewport-bottom-offset) - 1px);
+    bottom: -1px;
     left: 16px;
     z-index: 5;
     display: grid;
@@ -1583,7 +1583,8 @@ textarea {
     padding: 7px 14px calc(7px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--line);
     background: var(--surface);
-    transform: translateZ(0);
+    transform: translate3d(0, 0, 0);
+    transition: opacity .16s ease, transform .18s cubic-bezier(.4, 0, 1, 1);
     touch-action: none;
     -webkit-user-select: none;
     user-select: none;
@@ -1605,6 +1606,12 @@ textarea {
     border-radius: 12px;
     color: var(--muted);
     touch-action: manipulation;
+}
+
+body.keyboard-open .bottom-nav {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate3d(0, calc(100% + 12px), 0);
 }
 
 .bottom-nav button.active {
@@ -2625,7 +2632,7 @@ body {
 .bottom-nav {
     width: min(100%, 430px);
     height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
-    bottom: var(--viewport-bottom-offset);
+    bottom: -1px;
     z-index: 120;
     padding: 7px 16px calc(7px + env(safe-area-inset-bottom));
     border-top-color: color-mix(in srgb, var(--line) 70%, transparent);
