@@ -478,16 +478,6 @@ function hideToast(toast) {
     window.setTimeout(finish, 240);
 }
 
-function setAddMode(mode) {
-    state.mode = mode;
-    $$(".add-reps-control [data-mode]").forEach(item => item.classList.toggle("active", item.dataset.mode === mode));
-}
-
-function setEditMode(mode) {
-    state.editMode = mode;
-    $$(".edit-reps-control [data-mode]").forEach(item => item.classList.toggle("active", item.dataset.mode === mode));
-}
-
 function workoutFormFields(prefix) {
     return {
         date: $(`#${prefix}-date`),
@@ -497,7 +487,36 @@ function workoutFormFields(prefix) {
         reps: $(`#${prefix}-reps`),
         notes: $(`#${prefix}-notes`),
         notesCount: $(`#${prefix}-notes-count`),
+        hasWeight: $(`#${prefix}-has-weight`),
+        isTime: $(`#${prefix}-is-time`),
+        controls: $(`#${prefix}-sets`).closest(".add-controls"),
+        weightControl: $(`#${prefix}-weight`).closest(".weight-control"),
+        repsControl: $(`#${prefix}-reps`).closest(".reps-control"),
     };
+}
+
+function setWorkoutFormMode(prefix, {hasWeight = true, isTime = false} = {}) {
+    const fields = workoutFormFields(prefix);
+    fields.hasWeight.checked = Boolean(hasWeight);
+    fields.isTime.checked = Boolean(isTime);
+    fields.controls.classList.toggle("no-weight", !fields.hasWeight.checked);
+    fields.weight.disabled = !fields.hasWeight.checked;
+    if (!fields.hasWeight.checked) fields.weight.value = "";
+
+    const resultLabel = fields.repsControl.querySelector(":scope > span");
+    const resultUnit = fields.repsControl.querySelector(".stepper-unit");
+    const resultLabelKey = fields.isTime.checked ? "fields.time" : "fields.reps";
+    const resultUnitKey = fields.isTime.checked ? "units.sec" : "units.reps";
+    resultLabel.dataset.i18n = resultLabelKey;
+    resultUnit.dataset.i18n = resultUnitKey;
+    resultLabel.textContent = t(resultLabelKey);
+    resultUnit.textContent = t(resultUnitKey);
+
+    fields.hasWeight.closest(".option-check").querySelector("strong").textContent = t(fields.hasWeight.checked ? "fields.weight" : "fields.noWeight");
+    fields.isTime.closest(".option-check").querySelector("strong").textContent = t(fields.isTime.checked ? "fields.time" : "fields.reps");
+
+    if (prefix === "workout") state.mode = fields.isTime.checked ? "time" : "reps";
+    if (prefix === "edit") state.editMode = fields.isTime.checked ? "time" : "reps";
 }
 
 function setWorkoutFormValues(prefix, workout) {
@@ -509,25 +528,38 @@ function setWorkoutFormValues(prefix, workout) {
     fields.reps.value = workout.repsOrTime || "";
     fields.notes.value = workout.notes || "";
     fields.notesCount.textContent = String(fields.notes.value.length);
+    setWorkoutFormMode(prefix, {
+        hasWeight: workout.weight !== "" && workout.weight != null,
+        isTime: Boolean(workout.isTime),
+    });
 }
 
-function readWorkoutFormValues(prefix, isTime) {
+function readWorkoutFormValues(prefix) {
     const fields = workoutFormFields(prefix);
     return {
         date: fields.date.value,
         exercise: fields.exercise.value,
         sets: fields.sets.value,
-        weight: fields.weight.value,
+        weight: fields.hasWeight.checked ? fields.weight.value : "",
         repsOrTime: fields.reps.value,
-        isTime,
+        isTime: fields.isTime.checked,
         notes: fields.notes.value,
     };
+}
+
+function refreshWorkoutFormModes() {
+    ["workout", "edit"].forEach(prefix => {
+        const fields = workoutFormFields(prefix);
+        setWorkoutFormMode(prefix, {
+            hasWeight: fields.hasWeight.checked,
+            isTime: fields.isTime.checked,
+        });
+    });
 }
 
 function openEditDialog(workout) {
     $("#edit-id").value = workout.id;
     setWorkoutFormValues("edit", workout);
-    setEditMode(workout.isTime ? "time" : "reps");
     openSheetDialog($("#edit-dialog"));
 }
 
@@ -664,7 +696,7 @@ async function saveEditedWorkout() {
     const id = $("#edit-id").value;
     await api(`workouts/${id}`, {
         method: "PATCH",
-        body: JSON.stringify(readWorkoutFormValues("edit", state.editMode === "time")),
+        body: JSON.stringify(readWorkoutFormValues("edit")),
     });
     closeSheetDialog($("#edit-dialog"));
     await refreshAll();
@@ -985,6 +1017,7 @@ async function refreshAll() {
     renderDashboard();
     renderExercises();
     applyI18n();
+    refreshWorkoutFormModes();
     ensureHistoryLoaded();
     ensureProgressLoaded();
     if (state.tab === "add") {
@@ -1062,6 +1095,7 @@ function clearWorkoutInputs() {
     $("#workout-reps").value = "12";
     $("#workout-notes").value = "";
     $("#notes-count").textContent = "0";
+    setWorkoutFormMode("workout", {hasWeight: true, isTime: false});
     state.previousWorkout = null;
     state.previousWorkoutExercise = "";
     state.previousWorkoutLoaded = false;
@@ -1162,7 +1196,10 @@ async function applyPreviousWorkoutValues() {
     $("#workout-sets").value = previous.sets || "3";
     $("#workout-weight").value = previous.weight || "";
     $("#workout-reps").value = previous.repsOrTime || "12";
-    setAddMode(previous.isTime ? "time" : "reps");
+    setWorkoutFormMode("workout", {
+        hasWeight: previous.weight !== "" && previous.weight != null,
+        isTime: Boolean(previous.isTime),
+    });
     setPreviousWorkoutSummary(previous, $("#workout-exercise").value);
 }
 
@@ -1229,10 +1266,6 @@ function bindEvents() {
     $$("[data-tab]").forEach(button => button.addEventListener("click", () => navigateTab(button.dataset.tab)));
     setupHistoryInfiniteScroll();
 
-    $$(".add-reps-control [data-mode]").forEach(button => button.addEventListener("click", () => {
-        setAddMode(button.dataset.mode);
-    }));
-
     $("#workout-notes").addEventListener("input", event => {
         $("#notes-count").textContent = String(event.target.value.length);
     });
@@ -1252,15 +1285,7 @@ function bindEvents() {
         try {
             await api("workouts", {
                 method: "POST",
-                body: JSON.stringify({
-                    date: $("#workout-date").value,
-                    exercise: $("#workout-exercise").value,
-                    sets: $("#workout-sets").value,
-                    weight: $("#workout-weight").value,
-                    repsOrTime: $("#workout-reps").value,
-                    isTime: state.mode === "time",
-                    notes: $("#workout-notes").value,
-                }),
+                body: JSON.stringify(readWorkoutFormValues("workout")),
             });
             clearWorkoutInputs();
             await refreshAll();
@@ -1357,6 +1382,7 @@ function bindEvents() {
     $("#language-select").addEventListener("change", () => {
         if (state.user) state.user = {...state.user, language: $("#language-select").value};
         applyI18n();
+        refreshWorkoutFormModes();
     });
 
     $("#logout-button").addEventListener("click", async () => {
@@ -1388,7 +1414,16 @@ function bindEvents() {
         if (input) adjustNumberInput(input, Number.parseFloat(stepButton.dataset.step));
     });
 
-    $$(".edit-reps-control [data-mode]").forEach(button => button.addEventListener("click", () => setEditMode(button.dataset.mode)));
+    ["workout", "edit"].forEach(prefix => {
+        workoutFormFields(prefix).hasWeight.addEventListener("change", () => setWorkoutFormMode(prefix, {
+            hasWeight: workoutFormFields(prefix).hasWeight.checked,
+            isTime: workoutFormFields(prefix).isTime.checked,
+        }));
+        workoutFormFields(prefix).isTime.addEventListener("change", () => setWorkoutFormMode(prefix, {
+            hasWeight: workoutFormFields(prefix).hasWeight.checked,
+            isTime: workoutFormFields(prefix).isTime.checked,
+        }));
+    });
     bindSheetDialog("#edit-dialog", "#edit-close");
     $("#edit-form").addEventListener("submit", async event => {
         event.preventDefault();
@@ -1480,6 +1515,7 @@ function registerServiceWorker() {
 }
 
 $("#workout-date").value = todayInputValue();
+setWorkoutFormMode("workout", {hasWeight: true, isTime: false});
 state.tab = tabFromUrl();
 setTab(state.tab, {force: true, updateUrl: false, animate: false});
 configureAuth({applyTheme, refreshAll});

@@ -2933,6 +2933,78 @@ body[data-tab="add"] main {
     outline: 0;
 }
 
+.workout-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin-top: -2px;
+}
+
+.option-check {
+    cursor: pointer;
+}
+
+.option-check input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+.option-check > span {
+    display: grid;
+    min-height: 44px;
+    align-content: center;
+    border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+    border-radius: 13px;
+    background: var(--surface);
+    padding: 8px 10px 8px 34px;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, .035), 0 1px 0 rgba(255, 255, 255, .76) inset;
+    color: var(--muted);
+    position: relative;
+    transition: border-color .18s ease, background .18s ease, color .18s ease;
+}
+
+.option-check > span::before {
+    content: "";
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    margin-top: -8px;
+    border: 1.5px solid color-mix(in srgb, var(--muted) 46%, transparent);
+    border-radius: 5px;
+    background: var(--surface);
+}
+
+.option-check input:checked + span {
+    border-color: color-mix(in srgb, var(--primary) 44%, var(--line));
+    background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+    color: var(--text);
+}
+
+.option-check input:checked + span::before {
+    content: "✓";
+    display: grid;
+    place-items: center;
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--primary-ink);
+    font-size: 12px;
+    font-weight: 850;
+    line-height: 1;
+}
+
+.option-check strong {
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 820;
+    line-height: 1.12;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .field-chevron {
     display: grid;
     width: 24px;
@@ -2945,6 +3017,15 @@ body[data-tab="add"] main {
     display: grid;
     grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
     gap: 12px;
+}
+
+.add-controls.no-weight {
+    grid-template-columns: 1fr;
+    justify-content: start;
+}
+
+.add-controls.no-weight .weight-control {
+    display: none;
 }
 
 .add-form .stepper {

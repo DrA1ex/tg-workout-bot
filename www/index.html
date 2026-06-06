@@ -193,6 +193,20 @@
                             <span>›</span>
                         </button>
                     </section>
+                    <div class="workout-options" aria-label="Workout options">
+                        <label class="option-check">
+                            <input id="workout-has-weight" type="checkbox" checked>
+                            <span>
+                                <strong data-option-on="fields.weight" data-option-off="fields.noWeight">Weight</strong>
+                            </span>
+                        </label>
+                        <label class="option-check">
+                            <input id="workout-is-time" type="checkbox">
+                            <span>
+                                <strong data-option-on="fields.time" data-option-off="fields.reps">Reps</strong>
+                            </span>
+                        </label>
+                    </div>
                     <div class="add-controls">
                         <label class="add-field compact-control">
                             <span data-i18n="fields.sets">Sets</span>
@@ -202,7 +216,7 @@
                                 <button type="button" data-step-target="workout-sets" data-step="1">+</button>
                             </div>
                         </label>
-                        <label class="add-field number-control">
+                        <label class="add-field number-control weight-control">
                             <span data-i18n="fields.weight">Weight</span>
                         <div class="stepper">
                             <button type="button" data-step-target="workout-weight" data-step="-2.5">−</button>
@@ -213,7 +227,7 @@
                     </label>
                 </div>
                     <label class="add-field number-control reps-control add-reps-control">
-                        <span data-i18n="fields.repsTime">Reps / Time</span>
+                        <span data-i18n="fields.reps">Reps</span>
                         <div class="stepper">
                             <button type="button" data-step-target="workout-reps" data-step="-1">−</button>
                             <input id="workout-reps" name="repsOrTime" type="number" min="1" step="1" inputmode="numeric" required>
@@ -453,6 +467,20 @@
                         </div>
                     </label>
                 </section>
+                <div class="workout-options" aria-label="Workout options">
+                    <label class="option-check">
+                        <input id="edit-has-weight" type="checkbox" checked>
+                        <span>
+                            <strong data-option-on="fields.weight" data-option-off="fields.noWeight">Weight</strong>
+                        </span>
+                    </label>
+                    <label class="option-check">
+                        <input id="edit-is-time" type="checkbox">
+                        <span>
+                            <strong data-option-on="fields.time" data-option-off="fields.reps">Reps</strong>
+                        </span>
+                    </label>
+                </div>
                 <div class="add-controls">
                     <label class="add-field compact-control">
                     <span data-i18n="fields.sets">Sets</span>
@@ -462,7 +490,7 @@
                             <button type="button" data-step-target="edit-sets" data-step="1">+</button>
                         </div>
                     </label>
-                    <label class="add-field number-control">
+                    <label class="add-field number-control weight-control">
                         <span data-i18n="fields.weight">Weight</span>
                         <div class="stepper">
                             <button type="button" data-step-target="edit-weight" data-step="-2.5">−</button>
@@ -473,7 +501,7 @@
                     </label>
                 </div>
                 <label class="add-field number-control reps-control edit-reps-control">
-                    <span data-i18n="fields.repsTime">Reps / Time</span>
+                    <span data-i18n="fields.reps">Reps</span>
                     <div class="stepper">
                         <button type="button" data-step-target="edit-reps" data-step="-1">−</button>
                         <input id="edit-reps" type="number" min="1" step="1" inputmode="numeric" required>
