@@ -447,6 +447,23 @@ label span {
     min-width: 0;
 }
 
+.swipe-workout-body h3,
+.swipe-workout-body p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.swipe-workout-row.open .swipe-workout-main {
+    padding-right: calc(104px + 12px);
+}
+
+.swipe-workout-row.open .swipe-workout-body h3,
+.swipe-workout-row.open .swipe-workout-body p,
+.swipe-workout-row.swiping .swipe-workout-body h3,
+.swipe-workout-row.swiping .swipe-workout-body p {
+    white-space: nowrap;
+}
+
 .swipe-workout-chevron {
     color: var(--text);
     font-size: 28px;
@@ -2383,8 +2400,15 @@ body {
     color: var(--text);
     font-size: 17px;
     font-weight: 750;
-    line-height: 1.1;
+    line-height: 1.15;
     text-overflow: ellipsis;
+    white-space: normal;
+}
+
+.dashboard-swipe-row.open .dashboard-workout-body h3,
+.dashboard-swipe-row.open .dashboard-workout-body p,
+.dashboard-swipe-row.swiping .dashboard-workout-body h3,
+.dashboard-swipe-row.swiping .dashboard-workout-body p {
     white-space: nowrap;
 }
 
@@ -2878,6 +2902,30 @@ body[data-tab="add"] main {
 .confirm-actions .danger-button {
     min-height: 50px;
     border-radius: 12px;
+}
+
+.confirm-actions .danger-button.loading {
+    position: relative;
+    display: grid;
+    place-items: center;
+    padding-right: 30px;
+    padding-left: 30px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.confirm-actions .danger-button.loading::before {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    width: 15px;
+    height: 15px;
+    margin-top: -7.5px;
+    border: 2px solid rgba(255, 255, 255, .48);
+    border-top-color: #ffffff;
+    border-radius: 999px;
+    content: "";
+    animation: button-spin .8s linear infinite;
 }
 
 [data-theme="dark"] .add-sheet {

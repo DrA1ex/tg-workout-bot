@@ -18,6 +18,7 @@ export const state = {
     mode: "reps",
     saveMode: "next",
     savingWorkout: false,
+    deletingWorkout: false,
     theme: localStorage.getItem("theme") || "system",
     accentColor: localStorage.getItem("accentColor") || "blue",
     editMode: "reps",

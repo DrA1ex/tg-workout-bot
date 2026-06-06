@@ -694,10 +694,19 @@ function confirmWorkoutDelete() {
 
 async function deleteWorkout(id) {
     if (!await confirmWorkoutDelete()) return false;
-    await api(`workouts/${id}`, {method: "DELETE"});
-    await refreshAll();
-    showToast("toast.deleted");
-    return true;
+    try {
+        await api(`workouts/${id}`, {method: "DELETE"});
+        $("#delete-workout-dialog").close();
+        removeWorkoutFromLoadedState(id);
+        showToast("toast.deleted");
+        return true;
+    } catch (error) {
+        console.error(error);
+        showToast("toast.deleteFailed");
+        return false;
+    } finally {
+        setDeleteWorkoutPending(false);
+    }
 }
 
 function closeSwipeRows(except = null) {
@@ -951,6 +960,57 @@ function renderProgressRecent(rows) {
             </button>
         `).join("")
         : `<div class="empty">${t("empty.progress")}</div>`;
+}
+
+function removeWorkoutFromLoadedState(id) {
+    const workoutId = String(id);
+    const removeFromArray = rows => (rows || []).filter(row => String(row.id) !== workoutId);
+
+    if (state.dashboard) {
+        const nextRecent = removeFromArray(state.dashboard.recent);
+        state.dashboard = {
+            ...state.dashboard,
+            today: {
+                ...state.dashboard.today,
+                workouts: removeFromArray(state.dashboard.today?.workouts),
+            },
+            recent: nextRecent,
+            lastSession: String(state.dashboard.lastSession?.id) === workoutId ? (nextRecent[0] || null) : state.dashboard.lastSession,
+        };
+        renderDashboard();
+    }
+
+    if (state.history?.groups?.length) {
+        state.history = {
+            ...state.history,
+            groups: state.history.groups
+                .map(group => ({
+                    ...group,
+                    workouts: removeFromArray(group.workouts),
+                }))
+                .filter(group => group.workouts.length),
+        };
+        renderHistory();
+    }
+
+    if (state.progress) {
+        state.progress = {
+            ...state.progress,
+            points: removeFromArray(state.progress.points),
+            recent: removeFromArray(state.progress.recent),
+        };
+        renderProgress();
+    }
+}
+
+function setDeleteWorkoutPending(pending) {
+    state.deletingWorkout = pending;
+    const cancelButton = $("#delete-workout-cancel");
+    const confirmButton = $("#delete-workout-confirm");
+    cancelButton.disabled = pending;
+    confirmButton.disabled = pending;
+    confirmButton.classList.toggle("loading", pending);
+    confirmButton.textContent = pending ? t("actions.deleting") : t("actions.delete");
 }
 
 function renderSettings() {
@@ -1516,14 +1576,22 @@ function bindEvents() {
         await saveEditedWorkout();
     });
     $("#delete-workout-cancel").addEventListener("click", () => {
+        if (state.deletingWorkout) return;
         $("#delete-workout-dialog").close();
         resolveDeleteWorkoutConfirmation(false);
     });
     $("#delete-workout-confirm").addEventListener("click", () => {
-        $("#delete-workout-dialog").close();
+        if (state.deletingWorkout) return;
+        setDeleteWorkoutPending(true);
         resolveDeleteWorkoutConfirmation(true);
     });
+    $("#delete-workout-dialog").addEventListener("cancel", event => {
+        if (!state.deletingWorkout) return;
+        event.preventDefault();
+    });
     $("#delete-workout-dialog").addEventListener("close", () => {
+        if (state.deletingWorkout) return;
+        setDeleteWorkoutPending(false);
         resolveDeleteWorkoutConfirmation(false);
     });
     $("#exercise-add-open").addEventListener("click", openExerciseAddDialog);
