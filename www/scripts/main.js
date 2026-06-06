@@ -851,7 +851,13 @@ function metricLabel(metric) {
 
 function renderProgressRecent(rows) {
     const data = state.progress;
-    const bestMetricValue = Math.max(...(data?.points || []).map(point => metricValue(point, state.progressMetric)), 0);
+    const metric = state.progressMetric;
+    const metricValues = (data?.points || []).map(point => metricValue(point, metric));
+    const uniqueMetricValues = new Set(metricValues);
+    const bestMetricValue = Math.max(...metricValues, 0);
+    const prPoint = uniqueMetricValues.size > 1
+        ? (data?.points || []).find(point => metricValue(point, metric) === bestMetricValue)
+        : null;
     $("#progress-recent").innerHTML = rows.length
         ? rows.map(row => `
             <button class="progress-record-row" type="button" data-edit-workout="${row.id}">
@@ -860,7 +866,7 @@ function renderProgressRecent(rows) {
                     <strong>${escapeHtml(row.dateLabel)}</strong>
                     <small>${escapeHtml(workoutDetail(row))}</small>
                 </span>
-                ${metricValue(row, state.progressMetric) === bestMetricValue ? `<span class="progress-pr-badge">${t("progress.pr")}</span>` : ""}
+                ${prPoint?.id === row.id ? `<span class="progress-pr-badge">${t("progress.pr")}</span>` : ""}
                 <span class="progress-record-chevron">›</span>
             </button>
         `).join("")
