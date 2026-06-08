@@ -726,7 +726,6 @@ function closeSwipeRows(except = null) {
 
 function bindWorkoutSwipeActions() {
     document.addEventListener("pointerdown", event => {
-        if (event.target.closest("button, input, select, textarea, label, a")) return;
         const main = event.target.closest(".swipe-workout-main");
         if (!main || event.button !== 0) return;
 
