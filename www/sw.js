@@ -1,11 +1,18 @@
-const CACHE_NAME = "workout-log-shell-v19";
+const CACHE_NAME = "workout-log-shell-v20";
+
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/styles.css",
   "/assets/app.js",
   "/manifest.webmanifest",
-  "/icons/icon.svg"
+
+  "/pwa-assets/icon.svg",
+  "/pwa-assets/apple-touch-icon.png",
+  "/pwa-assets/icon-192.png",
+  "/pwa-assets/icon-512.png",
+  "/pwa-assets/maskable-192.png",
+  "/pwa-assets/maskable-512.png"
 ];
 
 self.addEventListener("install", event => {
@@ -32,8 +39,11 @@ self.addEventListener("fetch", event => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+        }
+
         return response;
       })
       .catch(() => caches.match(event.request))

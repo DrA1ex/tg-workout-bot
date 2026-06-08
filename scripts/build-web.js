@@ -1,7 +1,9 @@
-import {cp, mkdir, rm} from "node:fs/promises";
+import {cp, mkdir, readFile, rm, writeFile} from "node:fs/promises";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import * as esbuild from "esbuild";
+
+import {generatePwaAssets, getStartupImageLinks} from './pwa-assets.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const srcDir = path.join(root, "www");
@@ -9,7 +11,14 @@ const outDir = path.join(root, "dist");
 
 await rm(outDir, {recursive: true, force: true});
 await mkdir(path.join(outDir, "assets"), {recursive: true});
-await cp(path.join(srcDir, "index.html"), path.join(outDir, "index.html"));
+await generatePwaAssets(outDir);
+
+const sourceHtml = await readFile(path.join(srcDir, "index.html"), "utf8");
+const html = sourceHtml.replace(
+    "    <!-- IOS_STARTUP_IMAGES -->",
+    getStartupImageLinks(),
+);
+await writeFile(path.join(outDir, "index.html"), html);
 await cp(path.join(srcDir, "styles.css"), path.join(outDir, "styles.css"));
 await cp(path.join(srcDir, "manifest.webmanifest"), path.join(outDir, "manifest.webmanifest"));
 await cp(path.join(srcDir, "sw.js"), path.join(outDir, "sw.js"));

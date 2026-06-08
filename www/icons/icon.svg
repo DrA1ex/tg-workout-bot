@@ -1,5 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#1155f6"/>
-  <path d="M144 270h-38v-68h38v-42h48v152h-48zm70 10h42v-24h74v24h42v-88h-42v24h-74v-24h-42zm154-118h48v42h38v68h-38v42h-48z" fill="#fff"/>
-  <path d="M150 370h212c30 0 54-24 54-54v-20h-48v20c0 4-4 8-8 8H150c-4 0-8-4-8-8v-20H94v20c0 30 24 54 56 54z" fill="#b9d5ff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Workout app icon">
+  <defs>
+    <linearGradient id="bg" x1="96" y1="64" x2="416" y2="448" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2f7cff"/>
+      <stop offset="1" stop-color="#0d48d8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- bar -->
+  <rect x="142" y="238" width="228" height="36" rx="18" fill="#ffffff"/>
+
+  <!-- left plates -->
+  <rect x="82" y="210" width="26" height="92" rx="13" fill="#ffffff"/>
+  <rect x="116" y="184" width="38" height="144" rx="19" fill="#ffffff"/>
+  <rect x="164" y="202" width="30" height="108" rx="15" fill="#ffffff"/>
+
+  <!-- right plates -->
+  <rect x="404" y="210" width="26" height="92" rx="13" fill="#ffffff"/>
+  <rect x="358" y="184" width="38" height="144" rx="19" fill="#ffffff"/>
+  <rect x="318" y="202" width="30" height="108" rx="15" fill="#ffffff"/>
+
+  <!-- bottom mark -->
+  <path
+    d="M144 384
+       H368
+       C386 384 400 370 400 352
+       V334
+       H352
+       V344
+       C352 350 348 354 342 354
+       H170
+       C164 354 160 350 160 344
+       V334
+       H112
+       V352
+       C112 370 126 384 144 384Z"
+    fill="#b9d5ff"
+    opacity="0.95"
+  />
 </svg>
