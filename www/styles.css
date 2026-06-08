@@ -1152,10 +1152,6 @@ textarea {
     font-weight: 800;
 }
 
-.day-group .list {
-    gap: 8px;
-}
-
 #screen-history {
     padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--viewport-bottom-offset) + 36px);
     scroll-padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--viewport-bottom-offset) + 36px);
@@ -1204,19 +1200,45 @@ textarea {
 }
 
 .history-workout-list {
-    gap: 8px;
-}
-
-.history-workout-list .workout-row {
-    min-height: 72px;
-    border-color: color-mix(in srgb, var(--line) 80%, transparent);
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
     border-radius: 14px;
+    background: var(--surface);
     box-shadow: 0 2px 12px rgba(15, 23, 42, .035);
 }
 
+.history-workout-list .workout-row {
+    min-height: 64px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.history-workout-list .workout-row + .workout-row {
+    border-top: 0;
+}
+
+.history-workout-list .workout-row + .workout-row .swipe-workout-main::before {
+    position: absolute;
+    top: 0;
+    right: 12px;
+    left: 12px;
+    height: 1px;
+    content: "";
+    background: color-mix(in srgb, var(--line) 80%, transparent);
+}
+
 .history-workout-list .swipe-workout-main {
-    min-height: 72px;
-    padding: 12px;
+    min-height: 64px;
+    padding: 8px 12px;
+    border-radius: 0;
+    background: var(--surface);
+}
+
+.history-workout-list .swipe-workout-row {
+    overflow: hidden;
 }
 
 .history-workout-list .workout-row h3 {
