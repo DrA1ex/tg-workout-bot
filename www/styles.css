@@ -1,3 +1,4 @@
+/* Design tokens */
 :root {
     color-scheme: light;
     --bottom-nav-height: 62px;
@@ -11,18 +12,19 @@
     --tg-content-safe-area-right: 0px;
     --tg-content-safe-area-bottom: 0px;
     --tg-content-safe-area-left: 0px;
-    --bg: #f6f8fb;
+    --bg: #ffffff;
     --surface: #ffffff;
-    --surface-soft: #eef3f8;
-    --text: #17202a;
-    --muted: #667085;
-    --line: #d9e2ec;
-    --primary: #2563eb;
+    --surface-soft: #f8fafc;
+    --text: #111827;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --primary: #1155f6;
     --primary-ink: #ffffff;
-    --success: #10b981;
+    --success: #14b8a6;
+    --success-soft: #dff8f3;
     --warning: #f59e0b;
     --danger: #ef4444;
-    --shadow: 0 14px 42px rgba(33, 44, 64, .10);
+    --shadow: 0 10px 26px rgba(15, 23, 42, .05);
 }
 
 [data-theme="dark"] {
@@ -42,6 +44,43 @@
     --shadow: 0 18px 48px rgba(0, 0, 0, .32);
 }
 
+/* Accent palettes */
+:root[data-accent="blue"] {
+    --primary: #1155f6;
+    --primary-ink: #ffffff;
+}
+
+:root[data-accent="cyan"] {
+    --primary: #0891b2;
+    --primary-ink: #ffffff;
+}
+
+:root[data-accent="green"] {
+    --primary: #16a34a;
+    --primary-ink: #ffffff;
+}
+
+:root[data-accent="pink"] {
+    --primary: #db2777;
+    --primary-ink: #ffffff;
+}
+
+:root[data-accent="red"] {
+    --primary: #dc2626;
+    --primary-ink: #ffffff;
+}
+
+:root[data-accent="purple"] {
+    --primary: #7c3aed;
+    --primary-ink: #ffffff;
+}
+
+:root[data-accent="orange"] {
+    --primary: #ea580c;
+    --primary-ink: #ffffff;
+}
+
+/* Reset and document base */
 * {
     box-sizing: border-box;
 }
@@ -66,7 +105,7 @@ body {
     min-width: 0;
     min-height: 100vh;
     min-height: 100dvh;
-    overflow-x: clip;
+    overflow-x: hidden;
     background: var(--bg);
     color: var(--text);
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -113,10 +152,12 @@ button {
 
 .app-shell {
     width: min(100%, var(--app-max-width));
+    max-width: var(--app-max-width);
     min-height: 100vh;
     min-height: 100dvh;
     margin: 0 auto;
-    padding: 18px 16px calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--viewport-bottom-offset) + 18px);
+    padding: calc(max(18px, env(safe-area-inset-top)) + var(--tg-content-safe-area-top)) 24px calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--viewport-bottom-offset) + 18px);
+    background: var(--bg);
 }
 
 .eyebrow {
@@ -142,6 +183,7 @@ h2 {
     font-size: 18px;
 }
 
+/* Auth screen */
 .auth-screen {
     display: grid;
     min-height: 100vh;
@@ -190,6 +232,7 @@ h2 {
     text-decoration: none;
 }
 
+/* Shared controls and generic cards */
 .icon-button,
 .row-action,
 .bottom-nav button {
@@ -395,6 +438,7 @@ label span {
     padding: 9px 12px;
 }
 
+/* Lists and workout rows */
 .list {
     display: grid;
     gap: 10px;
@@ -624,6 +668,7 @@ textarea:disabled {
     margin-top: 10px;
 }
 
+/* Forms */
 .form-stack {
     display: grid;
     gap: 14px;
@@ -839,6 +884,7 @@ textarea {
     font-weight: 850;
 }
 
+/* Toasts */
 .toast-stack {
     position: fixed;
     top: calc(12px + env(safe-area-inset-top) + var(--tg-content-safe-area-top));
@@ -882,6 +928,7 @@ textarea {
     transition: opacity .18s ease;
 }
 
+/* Dialogs and sheets */
 .modal {
     width: min(calc(100% - 24px), 500px);
     max-height: calc(100dvh - 28px);
@@ -1139,6 +1186,7 @@ textarea {
     grid-template-columns: 1fr 1fr;
 }
 
+/* History */
 .day-group {
     padding: 12px;
 }
@@ -1199,7 +1247,11 @@ textarea {
     text-align: center;
 }
 
-.history-workout-list {
+/* Compact workout lists: history, dashboard and progress */
+.history-workout-list,
+.progress-records-list,
+.workout-log-card {
+    display: grid;
     gap: 0;
     overflow: hidden;
     border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
@@ -1208,19 +1260,64 @@ textarea {
     box-shadow: 0 2px 12px rgba(15, 23, 42, .035);
 }
 
-.history-workout-list .workout-row {
+.dashboard-workout-list {
+    display: grid;
+    gap: 0;
+    min-width: 0;
+}
+
+.workout-log-card .dashboard-empty {
+    padding: 14px 12px;
+}
+
+.history-workout-list .workout-row,
+.dashboard-workout-list .dashboard-swipe-row {
+    position: relative;
+    display: block;
     min-height: 64px;
+    padding: 0;
+    overflow: hidden;
     border: 0;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
 }
 
-.history-workout-list .workout-row + .workout-row {
-    border-top: 0;
+.history-workout-list .swipe-workout-main,
+.dashboard-workout-list .dashboard-workout-row,
+.progress-record-row {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    align-items: center;
+    width: 100%;
+    min-height: 64px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 0;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: none;
+    text-align: left;
 }
 
-.history-workout-list .workout-row + .workout-row .swipe-workout-main::before {
+.history-workout-list .swipe-workout-main,
+.dashboard-workout-list .dashboard-workout-row {
+    grid-template-columns: minmax(0, 1fr) 20px;
+    gap: 10px;
+    touch-action: pan-y;
+    transition: transform .22s cubic-bezier(.22, 1, .36, 1);
+}
+
+.progress-record-row {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    gap: 10px;
+}
+
+.history-workout-list .workout-row + .workout-row .swipe-workout-main::before,
+.dashboard-workout-list .dashboard-swipe-row + .dashboard-swipe-row .dashboard-workout-row::before,
+.dashboard-workout-list > .dashboard-workout-row + .dashboard-workout-row::before,
+.progress-record-row + .progress-record-row::before {
     position: absolute;
     top: 0;
     right: 12px;
@@ -1230,30 +1327,58 @@ textarea {
     background: color-mix(in srgb, var(--line) 80%, transparent);
 }
 
-.history-workout-list .swipe-workout-main {
-    min-height: 64px;
-    padding: 8px 12px;
-    border-radius: 0;
-    background: var(--surface);
+.swipe-workout-body,
+.dashboard-workout-body,
+.progress-record-body {
+    min-width: 0;
 }
 
-.history-workout-list .swipe-workout-row {
+.dashboard-workout-body {
+    display: block;
+}
+
+.swipe-workout-body h3,
+.swipe-workout-body p,
+.dashboard-workout-body h3,
+.dashboard-workout-body p,
+.progress-record-body strong,
+.progress-record-body small {
     overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.history-workout-list .workout-row h3 {
-    margin-bottom: 5px;
+.history-workout-list .workout-row h3,
+.dashboard-workout-body h3,
+.progress-record-body strong {
+    margin: 0 0 5px;
     color: var(--text);
     font-size: 16px;
+    font-weight: 760;
     line-height: 1.12;
+    white-space: nowrap;
 }
 
-.history-workout-list .workout-row p {
+.history-workout-list .workout-row p,
+.dashboard-workout-body p,
+.progress-record-body small {
+    display: block;
     max-width: 100%;
+    margin: 0;
     color: var(--muted);
     font-size: 13px;
     font-weight: 650;
     line-height: 1.35;
+    white-space: nowrap;
+}
+
+.swipe-workout-chevron,
+.dashboard-workout-chevron,
+.progress-record-chevron {
+    color: var(--text);
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1;
+    text-align: right;
 }
 
 .history-workout-list .pill {
@@ -1275,6 +1400,38 @@ textarea {
     border-radius: 999px;
     background: var(--surface-soft);
     font-size: 15px;
+}
+
+.dashboard-swipe-row.open .dashboard-workout-row {
+    padding-right: calc(104px + 12px);
+}
+
+.dashboard-swipe-row.swiping .dashboard-workout-row,
+.dashboard-swipe-row.swiping .swipe-delete-action {
+    transition: none;
+}
+
+.dashboard-swipe-row.open .dashboard-workout-row,
+.dashboard-swipe-row.swiping .dashboard-workout-row {
+    height: var(--swipe-main-height, auto);
+    overflow: hidden;
+}
+
+.dashboard-swipe-row.open .dashboard-workout-body h3,
+.dashboard-swipe-row.swiping .dashboard-workout-body h3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--swipe-title-lines, 2);
+    white-space: normal;
+}
+
+.dashboard-swipe-row.open .dashboard-workout-body p,
+.dashboard-swipe-row.swiping .dashboard-workout-body p {
+    white-space: nowrap;
+}
+
+.dashboard-swipe-row.open .swipe-delete-action {
+    transform: translateX(0);
 }
 
 .history-sentinel {
@@ -1343,6 +1500,7 @@ textarea {
     font-weight: 850;
 }
 
+/* Progress screen */
 #progress-chart {
     display: block;
     width: 100%;
@@ -1619,33 +1777,6 @@ textarea {
     font-weight: 850;
 }
 
-.progress-records-list {
-    display: grid;
-    overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
-    border-radius: 8px;
-    background: var(--surface);
-    box-shadow: 0 5px 18px rgba(15, 23, 42, .04);
-}
-
-.progress-record-row {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
-    align-items: center;
-    gap: 12px;
-    min-height: 74px;
-    padding: 12px 14px;
-    border: 0;
-    border-bottom: 1px solid var(--line);
-    background: transparent;
-    color: var(--text);
-    text-align: left;
-}
-
-.progress-record-row:last-child {
-    border-bottom: 0;
-}
-
 .progress-record-clock {
     display: grid;
     width: 28px;
@@ -1656,46 +1787,16 @@ textarea {
     line-height: 1;
 }
 
-.progress-record-body {
-    min-width: 0;
-}
-
-.progress-record-body strong,
-.progress-record-body small {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.progress-record-body strong {
-    font-size: 15px;
-    font-weight: 850;
-}
-
-.progress-record-body small {
-    margin-top: 4px;
-    color: var(--muted);
-    font-size: 15px;
-    font-weight: 650;
-}
-
 .progress-pr-badge {
     display: inline-grid;
-    min-width: 44px;
-    min-height: 34px;
+    min-width: 42px;
+    min-height: 30px;
     place-items: center;
     border: 1px solid color-mix(in srgb, #eab308 42%, var(--line));
     border-radius: 999px;
     color: #ca8a04;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 850;
-}
-
-.progress-record-chevron {
-    color: var(--muted);
-    font-size: 34px;
-    line-height: 1;
 }
 
 [data-theme="dark"] .progress-summary-card,
@@ -1719,10 +1820,11 @@ textarea {
     }
 }
 
+/* Bottom navigation */
 .bottom-nav {
     position: fixed;
     right: 0;
-    bottom: calc(var(--viewport-bottom-offset) - 1px);
+    bottom: -1px;
     left: 0;
     z-index: 120;
     display: grid;
@@ -1730,9 +1832,10 @@ textarea {
     width: min(100%, var(--app-max-width));
     height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
     margin: 0 auto;
-    padding: 7px 14px calc(7px + env(safe-area-inset-bottom));
-    border-top: 1px solid var(--line);
+    padding: 7px 16px calc(7px + env(safe-area-inset-bottom));
+    border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
     background: var(--surface);
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, .04);
     transform: translate3d(0, 0, 0);
     transition: opacity .16s ease, transform .18s cubic-bezier(.4, 0, 1, 1);
     touch-action: none;
@@ -1754,6 +1857,7 @@ textarea {
     min-width: 0;
     min-height: 48px;
     border-radius: 12px;
+    background: transparent;
     color: var(--muted);
     touch-action: manipulation;
 }
@@ -1765,7 +1869,7 @@ body.keyboard-open .bottom-nav {
 }
 
 .bottom-nav button.active {
-    background: var(--surface-soft);
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
     color: var(--primary);
 }
 
@@ -1786,77 +1890,7 @@ body.keyboard-open .bottom-nav {
     text-align: center;
 }
 
-@media (min-width: 760px) {
-    .app-shell {
-        padding-top: 28px;
-    }
-}
-
-/* Dashboard reference styling */
-:root:not([data-theme="dark"]) {
-    --bg: #ffffff;
-    --surface: #ffffff;
-    --surface-soft: #f8fafc;
-    --text: #111827;
-    --muted: #6b7280;
-    --line: #e5e7eb;
-    --primary: #1155f6;
-    --primary-ink: #ffffff;
-    --success: #14b8a6;
-    --success-soft: #dff8f3;
-    --shadow: 0 10px 26px rgba(15, 23, 42, .05);
-}
-
-:root[data-accent="blue"] {
-    --primary: #1155f6;
-    --primary-ink: #ffffff;
-}
-
-:root[data-accent="cyan"] {
-    --primary: #0891b2;
-    --primary-ink: #ffffff;
-}
-
-:root[data-accent="green"] {
-    --primary: #16a34a;
-    --primary-ink: #ffffff;
-}
-
-:root[data-accent="pink"] {
-    --primary: #db2777;
-    --primary-ink: #ffffff;
-}
-
-:root[data-accent="red"] {
-    --primary: #dc2626;
-    --primary-ink: #ffffff;
-}
-
-:root[data-accent="purple"] {
-    --primary: #7c3aed;
-    --primary-ink: #ffffff;
-}
-
-:root[data-accent="orange"] {
-    --primary: #ea580c;
-    --primary-ink: #ffffff;
-}
-
-body {
-    background: var(--bg);
-    overflow-x: hidden;
-}
-
-.app-shell {
-    width: min(100%, var(--app-max-width));
-    max-width: var(--app-max-width);
-    padding:
-        calc(max(18px, env(safe-area-inset-top)) + var(--tg-content-safe-area-top))
-        24px
-        calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--viewport-bottom-offset) + 18px);
-    background: var(--bg);
-}
-
+/* Dashboard and pull-to-refresh */
 .pull-refresh {
     position: fixed;
     top: calc(8px + env(safe-area-inset-top) + var(--tg-content-safe-area-top));
@@ -2025,20 +2059,6 @@ body {
     overflow: hidden;
     border-radius: 999px;
     background: color-mix(in srgb, var(--line) 58%, var(--surface));
-}
-
-.skeleton-line,
-.skeleton-number,
-.skeleton-icon,
-.skeleton-info-dot,
-.skeleton-button,
-.skeleton-settings-field,
-.skeleton-today-icon,
-.skeleton-week-strip i,
-.skeleton-week-strip b,
-.skeleton-week-strip small,
-.skeleton-stat-icon,
-.skeleton-chevron {
     background-image: linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface) 68%, transparent), transparent);
     background-size: 220% 100%;
     animation: skeleton-shimmer 1.25s ease-in-out infinite;
@@ -2266,7 +2286,7 @@ body {
 }
 
 .workout-log-card {
-    padding: 10px 12px;
+    padding: 0;
 }
 
 .weekly-streak-card {
@@ -2487,87 +2507,7 @@ body {
     line-height: 0;
 }
 
-.dashboard-workout-list {
-    display: grid;
-    gap: 9px;
-}
-
-.dashboard-workout-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    min-height: 64px;
-    padding: 12px 14px;
-    border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
-    border-radius: 14px;
-    background: var(--surface);
-    color: var(--text);
-    box-shadow: 0 2px 10px rgba(15, 23, 42, .025);
-    text-align: left;
-}
-
-.dashboard-swipe-row .dashboard-workout-row {
-    position: relative;
-    z-index: 1;
-    touch-action: pan-y;
-}
-
-
-.dashboard-workout-body {
-    display: grid;
-    min-width: 0;
-    gap: 5px;
-}
-
-.dashboard-workout-body h3 {
-    overflow: hidden;
-    margin: 0;
-    color: var(--text);
-    font-size: 17px;
-    font-weight: 750;
-    line-height: 1.15;
-    text-overflow: ellipsis;
-    white-space: normal;
-}
-
-.dashboard-swipe-row.open .dashboard-workout-body h3,
-.dashboard-swipe-row.swiping .dashboard-workout-body h3 {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: var(--swipe-title-lines, 2);
-    white-space: normal;
-}
-
-.dashboard-swipe-row.open .dashboard-workout-body p,
-.dashboard-swipe-row.swiping .dashboard-workout-body p {
-    white-space: nowrap;
-}
-
-.dashboard-swipe-row.open .dashboard-workout-row,
-.dashboard-swipe-row.swiping .dashboard-workout-row {
-    height: var(--swipe-main-height, auto);
-    overflow: hidden;
-}
-
-.dashboard-workout-body p {
-    overflow: hidden;
-    margin: 0;
-    color: var(--muted);
-    font-size: 14px;
-    font-weight: 590;
-    line-height: 1.25;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.dashboard-workout-chevron {
-    color: var(--text);
-    font-size: 28px;
-    font-weight: 300;
-    line-height: 1;
-}
+/* Dashboard workout rows use the shared compact workout list styles above. */
 
 .dashboard-empty {
     display: grid;
@@ -2828,7 +2768,7 @@ body {
     }
 
     .workout-log-card {
-        padding: 10px 12px;
+        padding: 0;
     }
 
     .dashboard-empty {
@@ -2874,31 +2814,9 @@ body {
     }
 }
 
-.bottom-nav {
-    width: min(100%, var(--app-max-width));
-    height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
-    bottom: -1px;
-    z-index: 120;
-    padding: 7px 16px calc(7px + env(safe-area-inset-bottom));
-    border-top-color: color-mix(in srgb, var(--line) 70%, transparent);
-    background: var(--surface);
-    box-shadow: 0 -8px 24px rgba(15, 23, 42, .04);
-}
-
-.bottom-nav button {
-    min-height: 48px;
-    color: var(--muted);
-    background: transparent;
-}
-
 .bottom-nav button:disabled {
     pointer-events: none;
     opacity: .42;
-}
-
-.bottom-nav button.active {
-    background: color-mix(in srgb, var(--primary) 8%, transparent);
-    color: var(--primary);
 }
 
 .bottom-nav #nav-add span {
@@ -2930,6 +2848,7 @@ body[data-tab="add"] main {
     overflow: hidden;
 }
 
+/* Add and edit workout sheet */
 .add-modal-screen.active {
     position: relative;
     display: grid;
@@ -3497,6 +3416,7 @@ body[data-tab="add"] .sticky-form-actions {
     }
 }
 
+/* Responsive overrides */
 @media (min-width: 600px) {
     .app-shell {
         padding-right: 32px;
@@ -3509,15 +3429,15 @@ body[data-tab="add"] .sticky-form-actions {
     }
 
     .weekly-streak-card,
-    .workout-log-card,
-    .dashboard-card {
+    .dashboard-card:not(.workout-log-card) {
         padding-right: 20px;
         padding-left: 20px;
     }
 
-    .dashboard-workout-row,
-    .dashboard-insight-row,
-    .history-workout-list .swipe-workout-main {
+    .history-workout-list .swipe-workout-main,
+    .dashboard-workout-list .dashboard-workout-row,
+    .progress-record-row,
+    .dashboard-insight-row {
         padding-right: 18px;
         padding-left: 18px;
     }
