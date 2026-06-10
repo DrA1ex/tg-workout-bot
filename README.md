@@ -4,6 +4,10 @@ TG Workout Bot is an interactive Telegram bot for tracking bodybuilding, fitness
 for a smooth user experience, it leverages Telegram's rich interface features to make logging and viewing workouts
 intuitive and fast.
 
+## WebUI
+
+<img width="400" alt="Screenshot" src="https://github.com/user-attachments/assets/ec8e3c45-374d-4a83-99d4-42e2f255cf7a" />
+
 ## Features
 
 - **Main Menu Keyboard:** Instantly access core actions (Add Workout, Add Exercise, View Progress, etc.) from a
