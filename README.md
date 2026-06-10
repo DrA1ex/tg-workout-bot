@@ -6,7 +6,7 @@ intuitive and fast.
 
 ## WebUI
 
-<img width="400" alt="Screenshot" src="https://github.com/user-attachments/assets/ec8e3c45-374d-4a83-99d4-42e2f255cf7a" />
+<img width="400" alt="Screenshot" src="https://github.com/user-attachments/assets/21538094-16ea-497c-ac2e-7303b95c1b94" />
 
 ## Features
 
