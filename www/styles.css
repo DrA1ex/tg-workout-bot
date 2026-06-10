@@ -2289,6 +2289,10 @@ body.keyboard-open .bottom-nav {
     padding: 0;
 }
 
+.dashboard-skeleton .skeleton-today-card {
+    padding: 10px 12px;
+}
+
 .weekly-streak-card {
     display: grid;
     gap: 15px;
