@@ -2298,11 +2298,24 @@ body.keyboard-open .bottom-nav {
     gap: 15px;
     margin-bottom: 12px;
     padding: 15px 15px 14px;
-    background: var(--surface);
+    background: radial-gradient(circle at 86% 12%, rgba(255, 255, 255, .22), transparent 30%),
+        radial-gradient(circle at 16% -12%, rgba(255, 255, 255, .18), transparent 32%),
+        linear-gradient(135deg,
+        color-mix(in srgb, var(--primary) 88%, #7c3aed) 0%,
+        color-mix(in srgb, var(--primary) 72%, #4c1d95) 100%);
+    position: relative;
+    isolation: isolate;
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0px 1px 16px color-mix(in srgb, var(--primary) 28%, transparent);
 }
 
 .weekly-streak-card.at-risk {
-    background: var(--surface);
+    background: radial-gradient(circle at 86% 12%, rgba(255, 255, 255, .22), transparent 30%),
+        linear-gradient(135deg,
+        color-mix(in srgb, var(--danger) 84%, #7c2d12) 0%,
+        color-mix(in srgb, var(--danger) 62%, #3b0764) 100%);
+    box-shadow: 0 18px 42px color-mix(in srgb, var(--danger) 24%, transparent);
 }
 
 .weekly-streak-heading {
@@ -2335,11 +2348,13 @@ body.keyboard-open .bottom-nav {
     place-items: center;
     border: 1px solid color-mix(in srgb, var(--muted) 42%, transparent);
     border-radius: 999px;
-    color: var(--muted);
+    color: rgba(255, 255, 255, .82);
     font-size: 9px;
     font-weight: 750;
     line-height: 1;
     cursor: help;
+    border-color: rgba(255, 255, 255, .42);
+    background: rgba(255, 255, 255, .12);
 }
 
 .weekly-streak-info::after {
@@ -2365,6 +2380,7 @@ body.keyboard-open .bottom-nav {
     transform: translate(-50%, 4px);
     transition: opacity .16s ease, transform .16s ease;
     white-space: normal;
+    border-color: color-mix(in srgb, var(--line) 78%, transparent);
 }
 
 .weekly-streak-info:hover::after,
@@ -2411,9 +2427,10 @@ body.keyboard-open .bottom-nav {
     height: 58px;
     place-items: center;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--primary) 7%, var(--surface-soft));
-    color: var(--primary);
+    background: rgba(255, 255, 255, .15);
+    color: #ffffff;
     font-size: 29px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18);
 }
 
 .weekly-streak-badge {
@@ -2424,8 +2441,8 @@ body.keyboard-open .bottom-nav {
     padding: 7px 10px;
     overflow: hidden;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--success) 13%, var(--surface));
-    color: var(--success);
+    background: rgba(255, 255, 255, .14);
+    color: #ffffff;
     font-size: 12px;
     font-weight: 840;
     text-overflow: ellipsis;
@@ -2435,7 +2452,12 @@ body.keyboard-open .bottom-nav {
 .streak-week-strip {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 6px;
+    gap: 7px;
+    padding: 10px 9px;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10);
 }
 
 .streak-week {
@@ -2463,16 +2485,18 @@ body.keyboard-open .bottom-nav {
     place-items: center;
     border: 1px solid var(--line);
     border-radius: 999px;
-    background: var(--surface);
-    color: var(--muted);
+    background: rgba(255, 255, 255, .08);
+    color: rgba(255, 255, 255, .72);
     font-size: 16px;
     font-weight: 760;
+    border-color: rgba(255, 255, 255, .38);
 }
 
 .streak-week.active strong {
     border-color: transparent;
-    background: var(--primary);
-    color: #ffffff;
+    background: #ffffff;
+    color: var(--primary);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, .18);
 }
 
 .workout-log-heading {
@@ -3418,6 +3442,55 @@ body[data-tab="add"] .sticky-form-actions {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Dashboard accent hero card */
+
+
+.weekly-streak-card::before {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    content: "";
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, .16), transparent 42%),
+        radial-gradient(circle at 55% 35%, rgba(255, 255, 255, .12), transparent 3px),
+        radial-gradient(circle at 62% 26%, rgba(255, 255, 255, .10), transparent 3px),
+        radial-gradient(circle at 70% 44%, rgba(255, 255, 255, .10), transparent 3px);
+    pointer-events: none;
+}
+
+
+.weekly-streak-label,
+.weekly-streak-heading strong,
+.weekly-streak-card:not(.at-risk) .weekly-streak-heading strong span:first-child {
+    color: #ffffff;
+}
+
+.weekly-streak-heading strong em,
+.weekly-streak-heading p,
+.streak-week span,
+.streak-week small {
+    color: rgba(255, 255, 255, .72);
+}
+
+
+.dashboard-skeleton .skeleton-streak-card {
+    border-color: color-mix(in srgb, var(--line) 86%, transparent);
+    background: var(--surface);
+    box-shadow: 0 2px 10px rgba(15, 23, 42, .025);
+}
+
+.dashboard-skeleton .skeleton-streak-card::before {
+    content: none;
+}
+
+.dashboard-skeleton .skeleton-streak-card .streak-week-strip,
+.dashboard-skeleton .skeleton-streak-card .skeleton-week-strip {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
 }
 
 /* Responsive overrides */
