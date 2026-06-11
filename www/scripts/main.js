@@ -57,13 +57,14 @@ function setHeadingSkeleton(visible) {
 
 function workoutRow(workout) {
     const detail = workoutDetail(workout);
+    const note = workout.notes || exerciseNote(workout.exercise);
 
     return `
         <article class="workout-row swipe-workout-row" data-workout-id="${workout.id}">
             <button class="swipe-workout-main" type="button" data-edit-workout="${workout.id}">
                 <span class="swipe-workout-body">
                     <h3>${escapeHtml(workout.exercise)}</h3>
-                    <p>${escapeHtml(detail)}${workout.notes ? ` · ${escapeHtml(workout.notes)}` : ""}</p>
+                    <p>${escapeHtml(detail)}${note ? ` · ${escapeHtml(note)}` : ""}</p>
                 </span>
                 <span class="swipe-workout-chevron" aria-hidden="true">›</span>
             </button>
@@ -75,12 +76,14 @@ function workoutRow(workout) {
 }
 
 function dashboardWorkoutRow(workout) {
+    const note = workout.notes || exerciseNote(workout.exercise);
+
     return `
         <article class="swipe-workout-row dashboard-swipe-row" data-workout-id="${workout.id}">
             <button class="dashboard-workout-row swipe-workout-main" type="button" data-edit-workout="${workout.id}">
                 <span class="dashboard-workout-body">
                     <h3>${escapeHtml(workout.exercise)}</h3>
-                    <p>${escapeHtml(dashboardWorkoutDetail(workout))}</p>
+                    <p>${escapeHtml(dashboardWorkoutDetail(workout))}${note ? ` · ${escapeHtml(note)}` : ""}</p>
                 </span>
                 <span class="dashboard-workout-chevron" aria-hidden="true">›</span>
             </button>
@@ -109,6 +112,10 @@ function dashboardWorkoutDetail(workout) {
             : `${formatMetricNumber(workout.repsOrTime || 0)} ${t("units.reps")}`,
         `${workout.sets || 0} ${t("units.sets")}`,
     ].filter(Boolean).join(" · ");
+}
+
+function exerciseNote(name) {
+    return state.exercises.find(exercise => exercise.name === name)?.notes || "";
 }
 
 function workoutVolume(workout) {
@@ -802,12 +809,12 @@ function bindWorkoutSwipeActions() {
 
 async function saveEditedWorkout() {
     const id = $("#edit-id").value;
-    await api(`workouts/${id}`, {
+    const workout = await api(`workouts/${id}`, {
         method: "PATCH",
         body: JSON.stringify(readWorkoutFormValues("edit")),
     });
     closeSheetDialog($("#edit-dialog"));
-    await refreshAll();
+    updateWorkoutInLoadedState(workout);
     showToast("toast.saved");
 }
 
@@ -815,10 +822,20 @@ function findExercise(name) {
     return state.exercises.find(ex => ex.name === name);
 }
 
+function syncExerciseState(exercises) {
+    state.exercises = exercises;
+    const byName = new Map(exercises.map(exercise => [exercise.name, exercise]));
+    state.recentExercises = (state.recentExercises || []).map(exercise => ({
+        ...exercise,
+        ...(byName.get(exercise.name) || {}),
+    }));
+}
+
 function openExerciseDialog(exercise) {
-    $("#exercise-edit-name").value = exercise.name;
-    $("#exercise-edit-title").textContent = exercise.name;
-    $("#exercise-edit-notes").value = exercise.notes || "";
+    const current = findExercise(exercise.name) || exercise;
+    $("#exercise-edit-name").value = current.name;
+    $("#exercise-edit-title").textContent = current.name;
+    $("#exercise-edit-notes").value = current.notes || "";
     openSheetDialog($("#exercise-dialog"));
 }
 
@@ -841,15 +858,17 @@ async function saveExerciseNotes() {
         method: "PATCH",
         body: JSON.stringify({notes: $("#exercise-edit-notes").value}),
     });
-    state.exercises = data.exercises;
+    syncExerciseState(data.exercises);
     closeSheetDialog($("#exercise-dialog"));
+    if (state.dashboard) renderDashboard();
+    if (state.history?.loaded) renderHistory();
     renderExercises();
     showToast("toast.exerciseSaved");
 }
 
 async function deleteExercise(name) {
     const data = await api(`exercises/${encodeURIComponent(name)}`, {method: "DELETE"});
-    state.exercises = data.exercises;
+    syncExerciseState(data.exercises);
     closeSheetDialog($("#exercise-dialog"));
     await refreshAll();
     showToast("toast.exerciseDeleted");
@@ -860,7 +879,7 @@ async function addGlobalExercise(name) {
         method: "POST",
         body: JSON.stringify({name, notes: ""}),
     });
-    state.exercises = data.exercises;
+    syncExerciseState(data.exercises);
     await loadGlobalExercises();
     await refreshAll();
     state.exerciseScope = "global";
@@ -1071,6 +1090,68 @@ function removeWorkoutFromLoadedState(id) {
             recent: removeFromArray(state.progress.recent),
         };
         renderProgress();
+    }
+}
+
+function replaceWorkoutInRows(rows, workout) {
+    return (rows || []).map(row => String(row.id) === String(workout.id) ? workout : row);
+}
+
+function upsertWorkoutInRows(rows, workout) {
+    const next = replaceWorkoutInRows(rows, workout);
+    return next.some(row => String(row.id) === String(workout.id)) ? next : [...next, workout];
+}
+
+function updateWorkoutInLoadedState(workout) {
+    const workoutId = String(workout.id);
+    const dateKey = workoutDateInputValue(workout);
+    const removeFromArray = rows => (rows || []).filter(row => String(row.id) !== workoutId);
+
+    if (state.dashboard) {
+        const recent = replaceWorkoutInRows(state.dashboard.recent, workout);
+        state.dashboard = {
+            ...state.dashboard,
+            today: {
+                ...state.dashboard.today,
+                workouts: dateKey === todayInputValue()
+                    ? upsertWorkoutInRows(state.dashboard.today?.workouts, workout)
+                    : removeFromArray(state.dashboard.today?.workouts),
+            },
+            recent,
+            lastSession: String(state.dashboard.lastSession?.id) === workoutId ? workout : state.dashboard.lastSession,
+        };
+        renderDashboard();
+    }
+
+    if (state.history?.groups?.length) {
+        state.history = {
+            ...state.history,
+            groups: state.history.groups
+                .map(group => {
+                    const withoutEdited = removeFromArray(group.workouts);
+                    if (group.date !== dateKey) return {...group, workouts: withoutEdited};
+                    return {
+                        ...group,
+                        workouts: [...withoutEdited, workout].sort((a, b) => Number(a.id) - Number(b.id)),
+                    };
+                })
+                .filter(group => group.workouts.length),
+        };
+        renderHistory();
+    }
+
+    if (state.progress) {
+        state.progress = {
+            ...state.progress,
+            points: replaceWorkoutInRows(state.progress.points, workout),
+            recent: replaceWorkoutInRows(state.progress.recent, workout),
+        };
+        renderProgress();
+    }
+
+    renderExercises();
+    if (state.tab === "add") {
+        updatePreviousWorkoutSummary().catch(console.error);
     }
 }
 
@@ -1780,7 +1861,7 @@ function bindEvents() {
                 notes: $("#exercise-notes").value,
             }),
         });
-        state.exercises = data.exercises;
+        syncExerciseState(data.exercises);
         $("#exercise-form").reset();
         closeSheetDialog($("#exercise-add-dialog"));
         await refreshAll();
