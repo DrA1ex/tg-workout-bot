@@ -283,7 +283,7 @@ export const i18n = {
         "settings.accentPurple": "Фиолетовый",
         "settings.accentOrange": "Оранжевый",
         "settings.manageExercises": "Упражнения",
-        "edit.title": "Изменить тренировку",
+        "edit.title": "Изменить",
         "toast.saved": "Тренировка сохранена.",
         "toast.added": "Тренировка добавлена.",
         "toast.deleted": "Тренировка удалена.",

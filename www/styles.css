@@ -1111,10 +1111,14 @@ textarea {
 }
 
 #settings-exercises-dialog .exercise-sheet-form {
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
     min-height: 0;
     overflow: hidden;
     padding-bottom: 0;
+}
+
+.settings-exercise-search {
+    gap: 7px;
 }
 
 .settings-exercise-scroll {
@@ -3578,7 +3582,7 @@ body[data-tab="add"] .sticky-form-actions {
     border-radius: 11px;
     background: var(--primary);
     color: var(--primary-ink);
-    box-shadow: 0 10px 24px color-mix(in srgb, var(--primary) 26%, transparent);
+    box-shadow: 0 4px 24px color-mix(in srgb, var(--primary) 26%, transparent);
     font-size: 20px;
     font-weight: 760;
 }

@@ -5,6 +5,7 @@ export const state = {
     globalExercises: [],
     exerciseScope: "mine",
     exerciseSearch: "",
+    settingsExerciseSearch: "",
     dashboard: null,
     appReady: false,
     history: {groups: [], hasMore: false, nextOffset: 0, loading: false, loaded: false},

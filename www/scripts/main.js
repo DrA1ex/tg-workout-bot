@@ -15,6 +15,8 @@ let dialogOpenSeq = 0;
 let addScreenCloseTimer = null;
 let workoutSwipe = null;
 let pullRefresh = null;
+let settingsExerciseSearchTimer = null;
+let pendingSettingsExerciseSearch = null;
 
 const HISTORY_PAGE_SIZE = 8;
 const HISTORY_INITIAL_SIZE = 24;
@@ -760,6 +762,11 @@ function bindSheetDialog(dialogSelector, closeSelector) {
     dialog.addEventListener("close", () => {
         dialog.classList.remove("sheet-closing", "sheet-opening");
         delete dialog.dataset.dialogOpenOrder;
+        if (dialog.id === "settings-exercises-dialog") {
+            window.clearTimeout(settingsExerciseSearchTimer);
+            settingsExerciseSearchTimer = null;
+            pendingSettingsExerciseSearch = null;
+        }
         document.body.classList.remove("sheet-open");
     });
 }
@@ -951,7 +958,6 @@ function openExerciseDialog(exercise) {
     const current = findExercise(exercise.name) || exercise;
     $("#exercise-edit-name").value = current.name;
     $("#exercise-edit-new-name").value = current.name;
-    $("#exercise-edit-title").textContent = current.name;
     $("#exercise-edit-notes").value = current.notes || "";
     setExerciseEditPending(false);
     openModalDialog($("#exercise-dialog"));
@@ -1374,14 +1380,33 @@ function renderSettingsExerciseSummary() {
 function renderSettingsExercises() {
     const list = $("#settings-exercise-list");
     if (!list) return;
-    list.innerHTML = state.exercises.length
-        ? state.exercises.map(userExerciseRow).join("")
-        : `<div class="empty">${t("empty.exercises")}</div>`;
+    const query = state.settingsExerciseSearch.toLowerCase();
+    const filtered = query
+        ? state.exercises.filter(exercise =>
+            exercise.name.toLowerCase().includes(query) ||
+            (exercise.notes || "").toLowerCase().includes(query)
+        )
+        : state.exercises;
+
+    list.innerHTML = filtered.length
+        ? filtered.map(userExerciseRow).join("")
+        : `<div class="empty">${t(state.exercises.length ? "exercises.noMatches" : "empty.exercises")}</div>`;
 }
 
 function openSettingsExercisesDialog() {
+    window.clearTimeout(settingsExerciseSearchTimer);
+    settingsExerciseSearchTimer = null;
+    pendingSettingsExerciseSearch = null;
+    state.settingsExerciseSearch = "";
+    const search = $("#settings-exercise-search");
+    if (search) search.value = "";
     renderSettingsExercises();
     openSheetDialog($("#settings-exercises-dialog"));
+}
+
+function applySettingsExerciseSearch(query) {
+    state.settingsExerciseSearch = query;
+    renderSettingsExercises();
 }
 
 function renderSettings() {
@@ -2152,6 +2177,22 @@ function bindEvents() {
     $("#settings-exercises-open").addEventListener("click", openSettingsExercisesDialog);
     bindSheetDialog("#settings-exercises-dialog", "#settings-exercises-close");
     $("#settings-exercise-add-open").addEventListener("click", openExerciseAddDialog);
+    $("#settings-exercise-search").addEventListener("input", event => {
+        const query = event.target.value.trim();
+        if (settingsExerciseSearchTimer) {
+            pendingSettingsExerciseSearch = query;
+            return;
+        }
+
+        applySettingsExerciseSearch(query);
+        settingsExerciseSearchTimer = window.setTimeout(() => {
+            settingsExerciseSearchTimer = null;
+            if (pendingSettingsExerciseSearch === null) return;
+            const nextQuery = pendingSettingsExerciseSearch;
+            pendingSettingsExerciseSearch = null;
+            applySettingsExerciseSearch(nextQuery);
+        }, 120);
+    });
 
     $("#logout-button").addEventListener("click", async () => {
         await authApi("logout", {method: "POST"});
