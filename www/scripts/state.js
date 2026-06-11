@@ -18,6 +18,8 @@ export const state = {
     mode: "reps",
     saveMode: "next",
     savingWorkout: false,
+    savingEditedWorkout: false,
+    savingExercise: false,
     deletingWorkout: false,
     pullRefreshing: false,
     theme: localStorage.getItem("theme") || "system",

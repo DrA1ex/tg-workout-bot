@@ -189,13 +189,7 @@ export async function handleApi(req, res, url, config) {
 
         const updated = Object.keys(updates).length ? await UserDAO.update(user.telegramId, updates) : user;
         return sendJson(res, 200, {
-            user: {
-                telegramId: updated.telegramId,
-                language: updated.language || "en",
-                timezone: updated.timezone || "UTC",
-                theme: updated.theme || "system",
-                accentColor: updated.accentColor || "blue",
-            },
+            user: authUserPayload(updated),
         });
     }
 

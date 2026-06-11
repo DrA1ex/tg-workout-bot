@@ -385,6 +385,7 @@ function renderExercises() {
     $("#add-empty").hidden = state.exercises.length > 0;
     updateWorkoutFormState();
     $("#exercise-list-title").textContent = state.exerciseScope === "mine" ? t("exercises.mine") : t("exercises.global");
+    $("#exercise-list").classList.toggle("history-workout-list", state.exerciseScope === "mine");
 
     if (state.exerciseScope === "mine") {
         const query = state.exerciseSearch.toLowerCase();
@@ -407,19 +408,20 @@ function renderExercises() {
 }
 
 function userExerciseRow(exercise) {
+    const note = String(exercise.notes || "").trim();
+
     return `
-        <article class="workout-row exercise-row">
-            <div>
-                <h3>${escapeHtml(exercise.name)}</h3>
-                <p>${escapeHtml(exercise.notes || t("exercises.note"))}</p>
-                <div class="exercise-meta">
-                    ${exercise.notes ? `<span class="tag">${t("exercises.note")}</span>` : ""}
-                </div>
-            </div>
-            <div class="row-actions">
-                <button class="row-action" type="button" data-edit-exercise="${escapeHtml(exercise.name)}" aria-label="${t("actions.edit")}">✎</button>
-                <button class="row-action danger" type="button" data-delete-exercise="${escapeHtml(exercise.name)}" aria-label="${t("actions.delete")}">×</button>
-            </div>
+        <article class="workout-row swipe-workout-row exercise-row" data-exercise-name="${escapeHtml(exercise.name)}">
+            <button class="swipe-workout-main" type="button" data-edit-exercise="${escapeHtml(exercise.name)}">
+                <span class="swipe-workout-body">
+                    <h3>${escapeHtml(exercise.name)}</h3>
+                    ${note ? `<p>${escapeHtml(note)}</p>` : ""}
+                </span>
+                <span class="swipe-workout-chevron" aria-hidden="true">›</span>
+            </button>
+            <button class="swipe-delete-action" type="button" data-delete-exercise="${escapeHtml(exercise.name)}">
+                ${escapeHtml(t("actions.delete"))}
+            </button>
         </article>
     `;
 }
@@ -703,20 +705,43 @@ function bindSheetDialog(dialogSelector, closeSelector) {
     });
 }
 
-function resolveDeleteWorkoutConfirmation(confirmed) {
+function openModalDialog(dialog) {
+    if (!dialog.open) dialog.showModal();
+}
+
+function closeModalDialog(dialog) {
+    if (dialog?.open) dialog.close();
+}
+
+function bindModalDialog(dialogSelector, closeSelector) {
+    const dialog = $(dialogSelector);
+    $(closeSelector).addEventListener("click", () => closeModalDialog(dialog));
+}
+
+function resolveDeleteConfirmation(confirmed) {
     if (!deleteWorkoutConfirmResolve) return;
     const resolve = deleteWorkoutConfirmResolve;
     deleteWorkoutConfirmResolve = null;
     resolve(confirmed);
 }
 
-function confirmWorkoutDelete() {
+function confirmDelete({titleKey, bodyKey}) {
     const dialog = $("#delete-workout-dialog");
     if (dialog.open) return Promise.resolve(false);
+    $("#delete-workout-title").textContent = t(titleKey);
+    $("#delete-workout-copy").textContent = t(bodyKey);
     dialog.showModal();
     return new Promise(resolve => {
         deleteWorkoutConfirmResolve = resolve;
     });
+}
+
+function confirmWorkoutDelete() {
+    return confirmDelete({titleKey: "deleteWorkout.title", bodyKey: "deleteWorkout.body"});
+}
+
+function confirmExerciseDelete() {
+    return confirmDelete({titleKey: "deleteExercise.title", bodyKey: "deleteExercise.body"});
 }
 
 async function deleteWorkout(id) {
@@ -852,6 +877,8 @@ function syncExerciseState(exercises) {
         ...exercise,
         ...(byName.get(exercise.name) || {}),
     }));
+    renderSettingsExerciseSummary();
+    renderSettingsExercises();
 }
 
 function openExerciseDialog(exercise) {
@@ -859,21 +886,34 @@ function openExerciseDialog(exercise) {
     $("#exercise-edit-name").value = current.name;
     $("#exercise-edit-title").textContent = current.name;
     $("#exercise-edit-notes").value = current.notes || "";
-    openSheetDialog($("#exercise-dialog"));
+    openModalDialog($("#exercise-dialog"));
 }
 
 function openExerciseAddDialog() {
     $("#exercise-form").reset();
-    openSheetDialog($("#exercise-add-dialog"));
+    openModalDialog($("#exercise-add-dialog"));
 }
 
 function setExerciseEditPending(pending) {
     state.savingExercise = pending;
     const saveButton = $("#exercise-edit-save");
-    const deleteButton = $("#exercise-delete");
     saveButton.disabled = pending;
-    deleteButton.disabled = pending;
     saveButton.classList.toggle("loading", pending);
+    saveButton.textContent = pending ? t("actions.saving") : t("actions.save");
+    $$("#exercise-edit-form input, #exercise-edit-form textarea, #exercise-edit-form button").forEach(node => {
+        if (node.id !== "exercise-edit-save") node.disabled = pending;
+    });
+}
+
+function setExerciseAddPending(pending) {
+    state.savingExercise = pending;
+    const saveButton = $("#exercise-add-save");
+    saveButton.disabled = pending;
+    saveButton.classList.toggle("loading", pending);
+    saveButton.textContent = pending ? t("actions.saving") : t("actions.addExercise");
+    $$("#exercise-form input, #exercise-form textarea, #exercise-form button").forEach(node => {
+        if (node.id !== "exercise-add-save") node.disabled = pending;
+    });
 }
 
 async function loadGlobalExercises() {
@@ -894,7 +934,7 @@ async function saveExerciseNotes() {
             body: JSON.stringify({notes: $("#exercise-edit-notes").value}),
         });
         syncExerciseState(data.exercises);
-        closeSheetDialog($("#exercise-dialog"));
+        closeModalDialog($("#exercise-dialog"));
         if (state.dashboard) renderDashboard();
         if (state.history?.loaded) renderHistory();
         renderExercises();
@@ -906,11 +946,20 @@ async function saveExerciseNotes() {
 
 async function deleteExercise(name) {
     if (state.savingExercise) return;
-    const data = await api(`exercises/${encodeURIComponent(name)}`, {method: "DELETE"});
-    syncExerciseState(data.exercises);
-    closeSheetDialog($("#exercise-dialog"));
-    await refreshAll();
-    showToast("toast.exerciseDeleted");
+    if (!await confirmExerciseDelete()) return;
+    try {
+        const data = await api(`exercises/${encodeURIComponent(name)}`, {method: "DELETE"});
+        syncExerciseState(data.exercises);
+        closeModalDialog($("#exercise-dialog"));
+        $("#delete-workout-dialog").close();
+        await refreshAll();
+        showToast("toast.exerciseDeleted");
+    } catch (error) {
+        console.error(error);
+        showToast("toast.exerciseDeleteFailed");
+    } finally {
+        setDeleteWorkoutPending(false);
+    }
 }
 
 async function addGlobalExercise(name) {
@@ -1243,6 +1292,24 @@ function setSettingsPending(pending) {
     saveButton.classList.toggle("loading", pending);
 }
 
+function renderSettingsExerciseSummary() {
+    const count = $("#settings-exercises-count");
+    if (count) count.textContent = String(state.exercises.length);
+}
+
+function renderSettingsExercises() {
+    const list = $("#settings-exercise-list");
+    if (!list) return;
+    list.innerHTML = state.exercises.length
+        ? state.exercises.map(userExerciseRow).join("")
+        : `<div class="empty">${t("empty.exercises")}</div>`;
+}
+
+function openSettingsExercisesDialog() {
+    renderSettingsExercises();
+    openSheetDialog($("#settings-exercises-dialog"));
+}
+
 function renderSettings() {
     const isLoading = !state.settingsLoaded;
     $("#settings-skeleton").hidden = !isLoading;
@@ -1255,6 +1322,7 @@ function renderSettings() {
     $$("#accent-select [data-accent-color]").forEach(button => {
         button.classList.toggle("active", button.dataset.accentColor === (state.accentColor || "blue"));
     });
+    renderSettingsExerciseSummary();
     setSettingsPending(Boolean(state.savingSettings));
 }
 
@@ -1901,18 +1969,24 @@ function bindEvents() {
 
     $("#exercise-form").addEventListener("submit", async event => {
         event.preventDefault();
-        const data = await api("exercises", {
-            method: "POST",
-            body: JSON.stringify({
-                name: $("#exercise-name").value,
-                notes: $("#exercise-notes").value,
-            }),
-        });
-        syncExerciseState(data.exercises);
-        $("#exercise-form").reset();
-        closeSheetDialog($("#exercise-add-dialog"));
-        await refreshAll();
-        showToast("toast.exerciseAdded");
+        if (state.savingExercise) return;
+        setExerciseAddPending(true);
+        try {
+            const data = await api("exercises", {
+                method: "POST",
+                body: JSON.stringify({
+                    name: $("#exercise-name").value,
+                    notes: $("#exercise-notes").value,
+                }),
+            });
+            syncExerciseState(data.exercises);
+            $("#exercise-form").reset();
+            closeModalDialog($("#exercise-add-dialog"));
+            await refreshAll();
+            showToast("toast.exerciseAdded");
+        } finally {
+            setExerciseAddPending(false);
+        }
     });
 
     let exerciseSearchTimer;
@@ -1994,6 +2068,10 @@ function bindEvents() {
         if (state.progressLoaded) renderProgress();
     });
 
+    $("#settings-exercises-open").addEventListener("click", openSettingsExercisesDialog);
+    bindSheetDialog("#settings-exercises-dialog", "#settings-exercises-close");
+    $("#settings-exercise-add-open").addEventListener("click", openExerciseAddDialog);
+
     $("#logout-button").addEventListener("click", async () => {
         await authApi("logout", {method: "POST"});
         state.user = null;
@@ -2057,12 +2135,12 @@ function bindEvents() {
     $("#delete-workout-cancel").addEventListener("click", () => {
         if (state.deletingWorkout) return;
         $("#delete-workout-dialog").close();
-        resolveDeleteWorkoutConfirmation(false);
+        resolveDeleteConfirmation(false);
     });
     $("#delete-workout-confirm").addEventListener("click", () => {
         if (state.deletingWorkout) return;
         setDeleteWorkoutPending(true);
-        resolveDeleteWorkoutConfirmation(true);
+        resolveDeleteConfirmation(true);
     });
     $("#delete-workout-dialog").addEventListener("cancel", event => {
         if (!state.deletingWorkout) return;
@@ -2071,11 +2149,11 @@ function bindEvents() {
     $("#delete-workout-dialog").addEventListener("close", () => {
         if (state.deletingWorkout) return;
         setDeleteWorkoutPending(false);
-        resolveDeleteWorkoutConfirmation(false);
+        resolveDeleteConfirmation(false);
     });
     $("#exercise-add-open").addEventListener("click", openExerciseAddDialog);
-    bindSheetDialog("#exercise-add-dialog", "#exercise-add-close");
-    bindSheetDialog("#exercise-dialog", "#exercise-close");
+    bindModalDialog("#exercise-add-dialog", "#exercise-add-close");
+    bindModalDialog("#exercise-dialog", "#exercise-close");
     $("#exercise-edit-form").addEventListener("submit", async event => {
         event.preventDefault();
         await saveExerciseNotes();
@@ -2084,10 +2162,6 @@ function bindEvents() {
         event.preventDefault();
         await saveExerciseNotes();
     });
-    $("#exercise-delete").addEventListener("click", async () => {
-        await deleteExercise($("#exercise-edit-name").value);
-    });
-
     document.addEventListener("click", async event => {
         const quickAddButton = event.target.closest("[data-action='quick-add']");
         if (quickAddButton) {
@@ -2125,6 +2199,12 @@ function bindEvents() {
 
         const editExerciseButton = event.target.closest("[data-edit-exercise]");
         if (editExerciseButton) {
+            const swipeRow = editExerciseButton.closest(".swipe-workout-row");
+            if (swipeRow?.dataset.suppressClick === "true") return;
+            if (swipeRow?.classList.contains("open")) {
+                swipeRow.classList.remove("open");
+                return;
+            }
             const exercise = findExercise(editExerciseButton.dataset.editExercise);
             if (exercise) openExerciseDialog(exercise);
             return;
@@ -2132,6 +2212,7 @@ function bindEvents() {
 
         const deleteExerciseButton = event.target.closest("[data-delete-exercise]");
         if (deleteExerciseButton) {
+            closeSwipeRows();
             await deleteExercise(deleteExerciseButton.dataset.deleteExercise);
             return;
         }

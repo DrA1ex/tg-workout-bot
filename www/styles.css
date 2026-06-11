@@ -795,6 +795,28 @@ textarea {
     color: var(--primary);
 }
 
+.settings-row-button {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    min-height: 52px;
+    padding: 10px 12px;
+    color: var(--text);
+    text-align: left;
+}
+
+.settings-row-button strong {
+    display: grid;
+    min-width: 28px;
+    height: 28px;
+    place-items: center;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 850;
+}
+
 .field-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1075,36 +1097,52 @@ textarea {
 
 .exercise-sheet-form {
     gap: 16px;
-    padding-bottom: 96px;
+}
+
+#settings-exercises-dialog .exercise-sheet {
+    display: flex;
+}
+
+#settings-exercises-dialog .exercise-sheet-form {
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+    overflow: hidden;
+    padding-bottom: 0;
+}
+
+.settings-exercise-scroll {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.settings-exercise-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.settings-exercise-bottom-spacer {
+    height: max(16px, env(safe-area-inset-bottom));
+}
+
+#settings-exercise-list {
+    align-content: start;
+}
+
+#settings-exercise-list .swipe-workout-main:focus,
+#settings-exercise-list .swipe-workout-main:focus-visible,
+#settings-exercise-list .swipe-delete-action:focus,
+#settings-exercise-list .swipe-delete-action:focus-visible,
+#exercise-list.history-workout-list .swipe-workout-main:focus,
+#exercise-list.history-workout-list .swipe-workout-main:focus-visible,
+#exercise-list.history-workout-list .swipe-delete-action:focus,
+#exercise-list.history-workout-list .swipe-delete-action:focus-visible {
+    outline: 0;
+    box-shadow: none;
 }
 
 .field-shell.single-field {
     grid-template-columns: minmax(0, 1fr);
-}
-
-.exercise-title-preview {
-    display: grid;
-    gap: 8px;
-    padding: 14px;
-    border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
-    border-radius: 15px;
-    background: var(--surface);
-    box-shadow: 0 2px 12px rgba(15, 23, 42, .035), 0 1px 0 rgba(255, 255, 255, .76) inset;
-}
-
-.exercise-title-preview span {
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 760;
-}
-
-.exercise-title-preview strong {
-    overflow: hidden;
-    color: var(--text);
-    font-size: 19px;
-    font-weight: 820;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 @keyframes ios-sheet-enter {
@@ -1184,6 +1222,51 @@ textarea {
 
 .modal-actions {
     grid-template-columns: 1fr 1fr;
+}
+
+.modal-actions.single-action {
+    grid-template-columns: 1fr;
+}
+
+.exercise-edit-dialog {
+    width: min(calc(100% - 32px), 420px);
+}
+
+.exercise-modal-card {
+    display: grid;
+    gap: 16px;
+    padding: 18px;
+    border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: 0 22px 60px rgba(15, 23, 42, .24);
+}
+
+.exercise-modal-card h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: 21px;
+    font-weight: 850;
+}
+
+.exercise-modal-card .modal-heading p {
+    overflow: hidden;
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.exercise-modal-card textarea {
+    min-height: 118px;
+}
+
+.exercise-modal-card .danger-button,
+.exercise-modal-card .save-button {
+    min-height: 52px;
+    border-radius: 12px;
 }
 
 /* History */
