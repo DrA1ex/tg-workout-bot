@@ -3468,9 +3468,9 @@ body[data-tab="add"] .sticky-form-actions {
     width: 100%;
     min-height: 58px;
     border-radius: 11px;
-    background: #0759ff;
-    color: #ffffff;
-    box-shadow: 0 10px 24px rgba(7, 89, 255, .26);
+    background: var(--primary);
+    color: var(--primary-ink);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--primary) 26%, transparent);
     font-size: 20px;
     font-weight: 760;
 }

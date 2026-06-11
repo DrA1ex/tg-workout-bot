@@ -442,14 +442,14 @@
                         </button>
                     </div>
                 </fieldset>
-                <button class="primary-button" type="submit" data-i18n="actions.saveSettings">Save settings</button>
+                <button class="primary-button save-button" id="settings-save-button" type="submit" data-i18n="actions.saveSettings">Save settings</button>
                 <button class="ghost-button" id="logout-button" type="button" data-i18n="actions.logout">Log out</button>
             </form>
         </section>
     </main>
 
     <dialog class="modal workout-sheet-dialog" id="edit-dialog">
-        <form class="add-sheet edit-sheet" id="edit-form" method="dialog">
+        <form class="add-sheet edit-sheet" id="edit-form">
             <div class="sheet-grabber" aria-hidden="true"></div>
             <header class="add-screen-header">
                 <button class="add-header-button" id="edit-close" type="button" aria-label="Close">×</button>
@@ -526,7 +526,7 @@
                     </div>
                 </label>
                 <div class="sticky-form-actions single-action">
-                    <button class="primary-button save-button" type="submit" data-i18n="actions.save">Save</button>
+                    <button class="primary-button save-button" id="edit-save-button" type="submit" data-i18n="actions.save">Save</button>
                 </div>
             </div>
         </form>
@@ -561,7 +561,7 @@
     </dialog>
 
     <dialog class="modal workout-sheet-dialog exercise-sheet-dialog" id="exercise-dialog">
-        <form class="add-sheet edit-sheet exercise-sheet" id="exercise-edit-form" method="dialog">
+        <form class="add-sheet edit-sheet exercise-sheet" id="exercise-edit-form">
             <div class="sheet-grabber" aria-hidden="true"></div>
             <header class="add-screen-header">
                 <button class="add-header-button" id="exercise-close" type="button" aria-label="Close">×</button>
@@ -583,7 +583,7 @@
             </div>
             <div class="sticky-form-actions edit-actions">
                 <button class="danger-button" id="exercise-delete" type="button" data-i18n="actions.delete">Delete</button>
-                <button class="primary-button save-button" type="submit" data-i18n="actions.save">Save</button>
+                <button class="primary-button save-button" id="exercise-edit-save" type="submit" data-i18n="actions.save">Save</button>
             </div>
         </form>
     </dialog>

@@ -265,6 +265,19 @@ function updateWorkoutFormState() {
     }
 }
 
+function updateEditWorkoutFormState() {
+    const disabled = Boolean(state.savingEditedWorkout);
+    $$("#edit-form input, #edit-form select, #edit-form textarea, #edit-form button").forEach(node => {
+        node.disabled = disabled;
+    });
+
+    const saveButton = $("#edit-save-button");
+    if (saveButton) {
+        saveButton.textContent = state.savingEditedWorkout ? t("actions.saving") : t("actions.save");
+        saveButton.classList.toggle("loading", state.savingEditedWorkout);
+    }
+}
+
 function weekUnitLabel(count) {
     const language = currentLocale();
     if (language === "ru") {
@@ -578,8 +591,10 @@ function refreshWorkoutFormModes() {
 }
 
 function openEditDialog(workout) {
+    state.savingEditedWorkout = false;
     $("#edit-id").value = workout.id;
     setWorkoutFormValues("edit", workout);
+    updateEditWorkoutFormState();
     openSheetDialog($("#edit-dialog"));
 }
 
@@ -808,14 +823,22 @@ function bindWorkoutSwipeActions() {
 }
 
 async function saveEditedWorkout() {
+    if (state.savingEditedWorkout) return;
     const id = $("#edit-id").value;
-    const workout = await api(`workouts/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(readWorkoutFormValues("edit")),
-    });
-    closeSheetDialog($("#edit-dialog"));
-    updateWorkoutInLoadedState(workout);
-    showToast("toast.saved");
+    state.savingEditedWorkout = true;
+    updateEditWorkoutFormState();
+    try {
+        const workout = await api(`workouts/${id}`, {
+            method: "PATCH",
+            body: JSON.stringify(readWorkoutFormValues("edit")),
+        });
+        closeSheetDialog($("#edit-dialog"));
+        updateWorkoutInLoadedState(workout);
+        showToast("toast.saved");
+    } finally {
+        state.savingEditedWorkout = false;
+        updateEditWorkoutFormState();
+    }
 }
 
 function findExercise(name) {
@@ -844,6 +867,15 @@ function openExerciseAddDialog() {
     openSheetDialog($("#exercise-add-dialog"));
 }
 
+function setExerciseEditPending(pending) {
+    state.savingExercise = pending;
+    const saveButton = $("#exercise-edit-save");
+    const deleteButton = $("#exercise-delete");
+    saveButton.disabled = pending;
+    deleteButton.disabled = pending;
+    saveButton.classList.toggle("loading", pending);
+}
+
 async function loadGlobalExercises() {
     const params = new URLSearchParams();
     if (state.exerciseSearch) params.set("search", state.exerciseSearch);
@@ -853,20 +885,27 @@ async function loadGlobalExercises() {
 }
 
 async function saveExerciseNotes() {
+    if (state.savingExercise) return;
     const name = $("#exercise-edit-name").value;
-    const data = await api(`exercises/${encodeURIComponent(name)}`, {
-        method: "PATCH",
-        body: JSON.stringify({notes: $("#exercise-edit-notes").value}),
-    });
-    syncExerciseState(data.exercises);
-    closeSheetDialog($("#exercise-dialog"));
-    if (state.dashboard) renderDashboard();
-    if (state.history?.loaded) renderHistory();
-    renderExercises();
-    showToast("toast.exerciseSaved");
+    setExerciseEditPending(true);
+    try {
+        const data = await api(`exercises/${encodeURIComponent(name)}`, {
+            method: "PATCH",
+            body: JSON.stringify({notes: $("#exercise-edit-notes").value}),
+        });
+        syncExerciseState(data.exercises);
+        closeSheetDialog($("#exercise-dialog"));
+        if (state.dashboard) renderDashboard();
+        if (state.history?.loaded) renderHistory();
+        renderExercises();
+        showToast("toast.exerciseSaved");
+    } finally {
+        setExerciseEditPending(false);
+    }
 }
 
 async function deleteExercise(name) {
+    if (state.savingExercise) return;
     const data = await api(`exercises/${encodeURIComponent(name)}`, {method: "DELETE"});
     syncExerciseState(data.exercises);
     closeSheetDialog($("#exercise-dialog"));
@@ -1197,6 +1236,13 @@ function setDeleteWorkoutPending(pending) {
     confirmButton.textContent = pending ? t("actions.deleting") : t("actions.delete");
 }
 
+function setSettingsPending(pending) {
+    state.savingSettings = pending;
+    const saveButton = $("#settings-save-button");
+    saveButton.disabled = pending;
+    saveButton.classList.toggle("loading", pending);
+}
+
 function renderSettings() {
     const isLoading = !state.settingsLoaded;
     $("#settings-skeleton").hidden = !isLoading;
@@ -1209,6 +1255,7 @@ function renderSettings() {
     $$("#accent-select [data-accent-color]").forEach(button => {
         button.classList.toggle("active", button.dataset.accentColor === (state.accentColor || "blue"));
     });
+    setSettingsPending(Boolean(state.savingSettings));
 }
 
 function updateSettingsPreview() {
@@ -1906,22 +1953,28 @@ function bindEvents() {
 
     $("#settings-form").addEventListener("submit", async event => {
         event.preventDefault();
+        if (state.savingSettings) return;
+        setSettingsPending(true);
         updateSettingsPreview();
-        const data = await api("settings", {
-            method: "PATCH",
-            body: JSON.stringify({
-                language: $("#language-select").value,
-                timezone: $("#timezone-input").value,
-                theme: state.theme,
-                accentColor: state.accentColor,
-            }),
-        });
-        state.user = data.user;
-        state.theme = data.user.theme || state.theme;
-        state.accentColor = data.user.accentColor || state.accentColor;
-        applyTheme();
-        await refreshAll();
-        showToast("toast.settingsSaved");
+        try {
+            const data = await api("settings", {
+                method: "PATCH",
+                body: JSON.stringify({
+                    language: $("#language-select").value,
+                    timezone: $("#timezone-input").value,
+                    theme: state.theme,
+                    accentColor: state.accentColor,
+                }),
+            });
+            state.user = data.user;
+            state.theme = data.user.theme || state.theme;
+            state.accentColor = data.user.accentColor || state.accentColor;
+            applyTheme();
+            await refreshAll();
+            showToast("toast.settingsSaved");
+        } finally {
+            setSettingsPending(false);
+        }
     });
     $("#theme-select").addEventListener("change", event => {
         releaseNativeSelect(event.currentTarget);
@@ -1997,6 +2050,10 @@ function bindEvents() {
         event.preventDefault();
         await saveEditedWorkout();
     });
+    $("#edit-save-button").addEventListener("click", async event => {
+        event.preventDefault();
+        await saveEditedWorkout();
+    });
     $("#delete-workout-cancel").addEventListener("click", () => {
         if (state.deletingWorkout) return;
         $("#delete-workout-dialog").close();
@@ -2020,6 +2077,10 @@ function bindEvents() {
     bindSheetDialog("#exercise-add-dialog", "#exercise-add-close");
     bindSheetDialog("#exercise-dialog", "#exercise-close");
     $("#exercise-edit-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        await saveExerciseNotes();
+    });
+    $("#exercise-edit-save").addEventListener("click", async event => {
         event.preventDefault();
         await saveExerciseNotes();
     });
