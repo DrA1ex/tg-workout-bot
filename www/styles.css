@@ -3071,7 +3071,11 @@ body[data-tab="add"] main {
     overflow-y: auto;
     padding-top: 10px;
     padding-bottom: 94px;
-    scrollbar-width: thin;
+    scrollbar-width: none;
+}
+
+.add-form::-webkit-scrollbar {
+    display: none;
 }
 
 .add-field {
@@ -3157,6 +3161,7 @@ body[data-tab="add"] main {
 }
 
 .option-check {
+    position: relative;
     cursor: pointer;
 }
 
@@ -3168,57 +3173,77 @@ body[data-tab="add"] main {
 }
 
 .option-check > span {
-    display: grid;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
     min-height: 44px;
-    align-content: center;
-    border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+    border: 1px solid color-mix(in srgb, var(--line) 92%, transparent);
     border-radius: 13px;
     background: var(--surface);
-    padding: 8px 10px 8px 34px;
+    overflow: hidden;
+    padding: 8px 58px 8px 16px;
     box-shadow: 0 2px 12px rgba(15, 23, 42, .035), 0 1px 0 rgba(255, 255, 255, .76) inset;
-    color: var(--muted);
-    position: relative;
-    transition: border-color .18s ease, background .18s ease, color .18s ease;
+    color: color-mix(in srgb, var(--muted) 88%, var(--text));
+    text-align: left;
+    transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease, padding .18s ease;
 }
 
 .option-check > span::before {
     content: "";
     position: absolute;
-    left: 11px;
-    top: 50%;
-    width: 16px;
-    height: 16px;
-    margin-top: -8px;
-    border: 1.5px solid color-mix(in srgb, var(--muted) 46%, transparent);
-    border-radius: 5px;
+    right: 3px;
+    left: auto;
+    top: 3px;
+    bottom: 3px;
+    width: 32px;
+    height: auto;
+    margin-top: 0;
+    border: 2px solid color-mix(in srgb, var(--muted) 34%, transparent);
+    border-radius: 14px;
     background: var(--surface);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .08);
+    transition: left .18s ease, right .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
 }
 
 .option-check input:checked + span {
-    border-color: color-mix(in srgb, var(--primary) 44%, var(--line));
-    background: color-mix(in srgb, var(--primary) 8%, var(--surface));
-    color: var(--text);
+    justify-content: flex-end;
+    border-color: color-mix(in srgb, var(--primary) 42%, var(--line));
+    background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+    box-shadow: 0 2px 12px color-mix(in srgb, var(--primary) 10%, transparent), 0 1px 0 rgba(255, 255, 255, .62) inset;
+    color: color-mix(in srgb, var(--primary) 72%, var(--text));
+    padding: 8px 16px 8px 58px;
+    text-align: right;
 }
 
 .option-check input:checked + span::before {
-    content: "✓";
-    display: grid;
-    place-items: center;
+    right: auto;
+    left: 3px;
     border-color: var(--primary);
-    background: var(--primary);
-    color: var(--primary-ink);
-    font-size: 12px;
-    font-weight: 850;
-    line-height: 1;
+    background: var(--surface);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 24%, transparent);
+}
+
+.option-check input:focus-visible + span {
+    outline: 3px solid color-mix(in srgb, var(--primary) 24%, transparent);
+    outline-offset: 2px;
 }
 
 .option-check strong {
     overflow: hidden;
+    min-width: 0;
     font-size: 14px;
     font-weight: 820;
     line-height: 1.12;
     text-overflow: ellipsis;
+    text-transform: uppercase;
     white-space: nowrap;
+}
+
+.option-check input:not(:checked) + span {
+    justify-content: flex-start;
+    padding: 8px 58px 8px 16px;
+    text-align: left;
 }
 
 .field-chevron {
