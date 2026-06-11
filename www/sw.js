@@ -1,4 +1,4 @@
-const CACHE_NAME = "workout-log-shell-v25";
+const CACHE_NAME = "workout-log-shell-v33";
 
 const STATIC_ASSETS = [
   "/",

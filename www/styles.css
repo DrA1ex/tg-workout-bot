@@ -1136,7 +1136,17 @@ textarea {
 #exercise-list.history-workout-list .swipe-workout-main:focus,
 #exercise-list.history-workout-list .swipe-workout-main:focus-visible,
 #exercise-list.history-workout-list .swipe-delete-action:focus,
-#exercise-list.history-workout-list .swipe-delete-action:focus-visible {
+#exercise-list.history-workout-list .swipe-delete-action:focus-visible,
+.history-workout-list .swipe-workout-main:focus,
+.history-workout-list .swipe-workout-main:focus-visible,
+.history-workout-list .swipe-delete-action:focus,
+.history-workout-list .swipe-delete-action:focus-visible,
+.dashboard-workout-list .swipe-workout-main:focus,
+.dashboard-workout-list .swipe-workout-main:focus-visible,
+.dashboard-workout-list .swipe-delete-action:focus,
+.dashboard-workout-list .swipe-delete-action:focus-visible,
+.progress-record-row:focus,
+.progress-record-row:focus-visible {
     outline: 0;
     box-shadow: none;
 }
