@@ -44,3 +44,54 @@ export async function setUserExerciseList(telegramId, exercises) {
     await UserDAO.updateExercises(telegramId, exercises);
     return exercises;
 }
+
+function apiError(message, status) {
+    const error = new Error(message);
+    error.status = status;
+    return error;
+}
+
+export async function updateUserExercise(telegramId, exerciseName, updates) {
+    const currentName = String(exerciseName || "").trim();
+    const nextName = String(updates.name || currentName).trim();
+    const nextNotes = String(updates.notes || "").trim();
+    if (!nextName) throw apiError("Exercise name is required", 400);
+
+    let nextExercises = [];
+    await models.User.sequelize.transaction(async transaction => {
+        const user = await models.User.findByPk(String(telegramId), {transaction});
+        if (!user) throw apiError("User not found", 404);
+
+        const exercises = JSON.parse(user.exercises || "[]").map(normalizeExercise);
+        const index = exercises.findIndex(exercise => exercise.name === currentName);
+        if (index === -1) throw apiError("Exercise not found", 404);
+
+        const hasDuplicate = exercises.some((exercise, exerciseIndex) =>
+            exerciseIndex !== index &&
+            exercise.name.toLowerCase() === nextName.toLowerCase()
+        );
+        if (hasDuplicate) throw apiError("Exercise already exists", 409);
+
+        exercises[index] = {name: nextName, notes: nextNotes};
+        exercises.sort((a, b) => a.name.localeCompare(b.name));
+
+        user.exercises = JSON.stringify(exercises);
+        await user.save({transaction});
+
+        if (nextName !== currentName) {
+            await models.Workout.update(
+                {exercise: nextName},
+                {where: {telegramId: String(telegramId), exercise: currentName}, transaction}
+            );
+            await models.GlobalExercise.findOrCreate({
+                where: {name: nextName},
+                defaults: {name: nextName},
+                transaction,
+            });
+        }
+
+        nextExercises = exercises;
+    });
+
+    return nextExercises;
+}

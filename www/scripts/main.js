@@ -11,6 +11,7 @@ let previousWorkoutRequestExercise = "";
 let historyObserver = null;
 let deleteWorkoutConfirmResolve = null;
 let sheetAnimationSeq = 0;
+let dialogOpenSeq = 0;
 let addScreenCloseTimer = null;
 let workoutSwipe = null;
 let pullRefresh = null;
@@ -465,10 +466,30 @@ function workoutDateInputValue(workout) {
     return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 10);
 }
 
-function showToast(key) {
-    const stack = $("#toast");
+function topOpenDialog() {
+    return $$("dialog[open]")
+        .sort((a, b) => Number(b.dataset.dialogOpenOrder || 0) - Number(a.dataset.dialogOpenOrder || 0))[0] || null;
+}
+
+function toastStack() {
+    const dialog = topOpenDialog();
+    if (!dialog) return $("#toast");
+
+    let stack = dialog.querySelector(":scope > .dialog-toast-stack");
+    if (!stack) {
+        stack = document.createElement("section");
+        stack.className = "toast-stack dialog-toast-stack";
+        stack.setAttribute("aria-live", "polite");
+        stack.setAttribute("aria-atomic", "false");
+        dialog.append(stack);
+    }
+    return stack;
+}
+
+function showToast(key, {variant = "default"} = {}) {
+    const stack = toastStack();
     const toast = document.createElement("button");
-    toast.className = "toast-item";
+    toast.className = `toast-item ${variant === "danger" ? "danger" : ""}`.trim();
     toast.type = "button";
     toast.textContent = t(key);
     stack.append(toast);
@@ -515,6 +536,21 @@ function hideToast(toast) {
     };
     toast.addEventListener("transitionend", finish, {once: true});
     window.setTimeout(finish, 240);
+}
+
+function generateDedupeToken() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    const random = window.crypto?.getRandomValues
+        ? Array.from(window.crypto.getRandomValues(new Uint32Array(4))).map(value => value.toString(36)).join("")
+        : Math.random().toString(36).slice(2);
+    return `${Date.now().toString(36)}-${random}`;
+}
+
+function currentWorkoutDedupeToken() {
+    if (!state.workoutDedupeToken) {
+        state.workoutDedupeToken = generateDedupeToken();
+    }
+    return state.workoutDedupeToken;
 }
 
 function workoutFormFields(prefix) {
@@ -695,6 +731,7 @@ function openSheetDialog(dialog) {
     dialog.classList.remove("sheet-closing", "sheet-opening");
     document.body.classList.add("sheet-open");
     dialog.showModal();
+    dialog.dataset.dialogOpenOrder = String(++dialogOpenSeq);
     dialog.classList.add("sheet-opening");
     animateSheetElement(sheet, "in", () => {
         dialog.classList.remove("sheet-opening");
@@ -722,12 +759,16 @@ function bindSheetDialog(dialogSelector, closeSelector) {
     });
     dialog.addEventListener("close", () => {
         dialog.classList.remove("sheet-closing", "sheet-opening");
+        delete dialog.dataset.dialogOpenOrder;
         document.body.classList.remove("sheet-open");
     });
 }
 
 function openModalDialog(dialog) {
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) {
+        dialog.showModal();
+        dialog.dataset.dialogOpenOrder = String(++dialogOpenSeq);
+    }
 }
 
 function closeModalDialog(dialog) {
@@ -737,6 +778,9 @@ function closeModalDialog(dialog) {
 function bindModalDialog(dialogSelector, closeSelector) {
     const dialog = $(dialogSelector);
     $(closeSelector).addEventListener("click", () => closeModalDialog(dialog));
+    dialog.addEventListener("close", () => {
+        delete dialog.dataset.dialogOpenOrder;
+    });
 }
 
 function resolveDeleteConfirmation(confirmed) {
@@ -752,6 +796,7 @@ function confirmDelete({titleKey, bodyKey}) {
     $("#delete-workout-title").textContent = t(titleKey);
     $("#delete-workout-copy").textContent = t(bodyKey);
     dialog.showModal();
+    dialog.dataset.dialogOpenOrder = String(++dialogOpenSeq);
     return new Promise(resolve => {
         deleteWorkoutConfirmResolve = resolve;
     });
@@ -905,13 +950,16 @@ function syncExerciseState(exercises) {
 function openExerciseDialog(exercise) {
     const current = findExercise(exercise.name) || exercise;
     $("#exercise-edit-name").value = current.name;
+    $("#exercise-edit-new-name").value = current.name;
     $("#exercise-edit-title").textContent = current.name;
     $("#exercise-edit-notes").value = current.notes || "";
+    setExerciseEditPending(false);
     openModalDialog($("#exercise-dialog"));
 }
 
 function openExerciseAddDialog() {
     $("#exercise-form").reset();
+    setExerciseAddPending(false);
     openModalDialog($("#exercise-add-dialog"));
 }
 
@@ -952,14 +1000,19 @@ async function saveExerciseNotes() {
     try {
         const data = await api(`exercises/${encodeURIComponent(name)}`, {
             method: "PATCH",
-            body: JSON.stringify({notes: $("#exercise-edit-notes").value}),
+            body: JSON.stringify({
+                name: $("#exercise-edit-new-name").value,
+                notes: $("#exercise-edit-notes").value,
+            }),
         });
         syncExerciseState(data.exercises);
         closeModalDialog($("#exercise-dialog"));
-        if (state.dashboard) renderDashboard();
-        if (state.history?.loaded) renderHistory();
+        await refreshAll();
         renderExercises();
         showToast("toast.exerciseSaved");
+    } catch (error) {
+        console.error(error);
+        showToast(error.status === 409 ? "toast.exerciseDuplicate" : "toast.saveFailed", {variant: "danger"});
     } finally {
         setExerciseEditPending(false);
     }
@@ -1594,6 +1647,7 @@ function setupHistoryInfiniteScroll() {
 
 function clearWorkoutInputs() {
     abortPreviousWorkoutRequest();
+    state.workoutDedupeToken = "";
     $("#workout-sets").value = "3";
     $("#workout-weight").value = "";
     $("#workout-reps").value = "12";
@@ -1968,7 +2022,10 @@ function bindEvents() {
             const workoutDate = $("#workout-date").value;
             const workout = await api("workouts", {
                 method: "POST",
-                body: JSON.stringify(readWorkoutFormValues("workout")),
+                body: JSON.stringify({
+                    ...readWorkoutFormValues("workout"),
+                    deduplicationToken: currentWorkoutDedupeToken(),
+                }),
             });
             addWorkoutToLoadedState(workout, workoutDate);
             clearWorkoutInputs();
@@ -2005,6 +2062,9 @@ function bindEvents() {
             closeModalDialog($("#exercise-add-dialog"));
             await refreshAll();
             showToast("toast.exerciseAdded");
+        } catch (error) {
+            console.error(error);
+            showToast(error.status === 409 ? "toast.exerciseDuplicate" : "toast.saveFailed", {variant: "danger"});
         } finally {
             setExerciseAddPending(false);
         }
@@ -2168,6 +2228,7 @@ function bindEvents() {
         event.preventDefault();
     });
     $("#delete-workout-dialog").addEventListener("close", () => {
+        delete $("#delete-workout-dialog").dataset.dialogOpenOrder;
         if (state.deletingWorkout) return;
         setDeleteWorkoutPending(false);
         resolveDeleteConfirmation(false);

@@ -946,6 +946,13 @@ textarea {
     transform: translateY(0) scale(1);
 }
 
+.toast-item.danger {
+    border-color: color-mix(in srgb, var(--danger) 44%, transparent);
+    background: color-mix(in srgb, var(--danger) 92%, #111827);
+    color: #ffffff;
+    box-shadow: 0 14px 38px color-mix(in srgb, var(--danger) 24%, transparent);
+}
+
 .toast-item.stack-moving {
     transition: opacity .18s ease;
 }

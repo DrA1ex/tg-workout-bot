@@ -18,7 +18,11 @@ export async function api(path, options = {}) {
     if (response.status === 401 && unauthorizedHandler) {
         await unauthorizedHandler(data.error);
     }
-    if (!response.ok) throw new Error(data.error || "Request failed");
+    if (!response.ok) {
+        const error = new Error(data.error || "Request failed");
+        error.status = response.status;
+        throw error;
+    }
     return data;
 }
 
@@ -32,6 +36,10 @@ export async function authApi(path, options = {}) {
         },
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Request failed");
+    if (!response.ok) {
+        const error = new Error(data.error || "Request failed");
+        error.status = response.status;
+        throw error;
+    }
     return data;
 }

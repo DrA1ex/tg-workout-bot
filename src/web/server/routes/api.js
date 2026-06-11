@@ -3,7 +3,7 @@ import {models} from "../../../db/index.js";
 import {resolveUser, authUserPayload} from "../auth/user.js";
 import {notFound, parseBody, sendJson} from "../http.js";
 import {getDashboard} from "../services/dashboard.js";
-import {getRecentUserExercises, getUserExercisesNormalized, setUserExerciseList} from "../services/exercises.js";
+import {getRecentUserExercises, getUserExercisesNormalized, setUserExerciseList, updateUserExercise} from "../services/exercises.js";
 import {getHistory} from "../services/history.js";
 import {getProgress} from "../services/progress.js";
 import {parseWorkoutBody, workoutPayload} from "../services/workouts.js";
@@ -11,6 +11,7 @@ import {handleAuthApi} from "./auth.js";
 
 const VALID_THEMES = new Set(["system", "light", "dark"]);
 const VALID_ACCENTS = new Set(["blue", "cyan", "green", "pink", "red", "purple", "orange"]);
+const MAX_DEDUPE_TOKEN_LENGTH = 120;
 
 function parseWorkoutId(pathname) {
     const match = pathname.match(/^\/api\/workouts\/(\d+)$/);
@@ -20,6 +21,12 @@ function parseWorkoutId(pathname) {
 function parseExerciseName(pathname) {
     const match = pathname.match(/^\/api\/exercises\/(.+)$/);
     return match ? decodeURIComponent(match[1]) : null;
+}
+
+function normalizeDedupeToken(value) {
+    const token = String(value || "").trim();
+    if (!token) return null;
+    return token.slice(0, MAX_DEDUPE_TOKEN_LENGTH);
 }
 
 export async function handleApi(req, res, url, config) {
@@ -111,12 +118,16 @@ export async function handleApi(req, res, url, config) {
 
     if (req.method === "PATCH" && exerciseName) {
         const body = await parseBody(req);
-        const exercises = await getUserExercisesNormalized(user.telegramId);
-        const current = exercises.find(ex => ex.name === exerciseName);
-        if (!current) return sendJson(res, 404, {error: "Exercise not found"});
-
-        current.notes = String(body.notes || "").trim();
-        return sendJson(res, 200, {exercises: await setUserExerciseList(user.telegramId, exercises)});
+        try {
+            return sendJson(res, 200, {
+                exercises: await updateUserExercise(user.telegramId, exerciseName, {
+                    name: body.name,
+                    notes: body.notes,
+                }),
+            });
+        } catch (error) {
+            return sendJson(res, error.status || 500, {error: error.message || "Could not update exercise"});
+        }
     }
 
     if (req.method === "DELETE" && exerciseName) {
@@ -129,6 +140,7 @@ export async function handleApi(req, res, url, config) {
 
     if (req.method === "POST" && url.pathname === "/api/workouts") {
         const body = await parseBody(req);
+        const dedupeToken = normalizeDedupeToken(body.deduplicationToken);
         let workoutData;
         try {
             workoutData = parseWorkoutBody(body);
@@ -136,12 +148,33 @@ export async function handleApi(req, res, url, config) {
             return sendJson(res, 400, {error: error.message});
         }
 
-        const workout = await WorkoutDAO.create({
-            telegramId: user.telegramId,
-            ...workoutData,
-        });
+        if (dedupeToken) {
+            const existing = await models.Workout.findOne({
+                where: {telegramId: user.telegramId, dedupeToken},
+            });
+            if (existing) {
+                return sendJson(res, 200, workoutPayload(existing, user.language || "en", user.timezone || "UTC"));
+            }
+        }
 
-        return sendJson(res, 201, workoutPayload(workout, user.language || "en", user.timezone || "UTC"));
+        let workout;
+        let status = 201;
+        try {
+            workout = await WorkoutDAO.create({
+                telegramId: user.telegramId,
+                dedupeToken,
+                ...workoutData,
+            });
+        } catch (error) {
+            if (!dedupeToken || error.name !== "SequelizeUniqueConstraintError") throw error;
+            workout = await models.Workout.findOne({
+                where: {telegramId: user.telegramId, dedupeToken},
+            });
+            if (!workout) throw error;
+            status = 200;
+        }
+
+        return sendJson(res, status, workoutPayload(workout, user.language || "en", user.timezone || "UTC"));
     }
 
     if (req.method === "PATCH" && workoutId) {

@@ -20,6 +20,7 @@ export default function initModels(sequelize) {
         weight: {type: DataTypes.FLOAT},
         repsOrTime: {type: DataTypes.FLOAT},
         isTime: {type: DataTypes.BOOLEAN, defaultValue: false},
+        dedupeToken: {type: DataTypes.STRING},
         notes: {type: DataTypes.TEXT}
     }, {tableName: 'workouts', timestamps: false});
 

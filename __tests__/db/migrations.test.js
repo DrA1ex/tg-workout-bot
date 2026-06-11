@@ -52,6 +52,10 @@ describeWithSilencedConsole('Database Migrations', ['warn', 'error', 'log'], () 
         expect(hasTimezone).toBe(true);
         expect(hasTheme).toBe(true);
         expect(hasAccentColor).toBe(true);
+
+        const [workoutCols] = await sequelize.query('PRAGMA table_info(workouts);');
+        const hasDedupeToken = workoutCols.some(col => col.name === 'dedupeToken');
+        expect(hasDedupeToken).toBe(true);
     });
 
     it('CLI applies pending migrations successfully', async () => {
@@ -74,4 +78,3 @@ describeWithSilencedConsole('Database Migrations', ['warn', 'error', 'log'], () 
         expect(rows.length).toBeGreaterThanOrEqual(1);
     });
 });
-
