@@ -2295,7 +2295,7 @@ body.keyboard-open .bottom-nav {
 
 .weekly-streak-card {
     display: grid;
-    gap: 15px;
+    gap: 17px;
     margin-bottom: 12px;
     padding: 15px 15px 14px;
     background: radial-gradient(circle at 86% 12%, rgba(255, 255, 255, .22), transparent 30%),
@@ -3093,8 +3093,7 @@ body[data-tab="add"] main {
 .quick-entry-panel {
     display: grid;
     gap: 12px;
-    margin: 0 -4px;
-    padding: 12px;
+    padding: 12px 8px;
     border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
     border-radius: 22px;
     background: color-mix(in srgb, var(--surface-soft) 46%, var(--surface));
@@ -3110,6 +3109,7 @@ body[data-tab="add"] main {
 }
 
 .field-shell {
+    position: relative;
     display: grid;
     grid-template-columns: 42px minmax(0, 1fr) 24px;
     align-items: center;
@@ -3141,10 +3141,32 @@ body[data-tab="add"] main {
     appearance: none;
 }
 
+.date-field .field-shell {
+    cursor: pointer;
+    grid-template-columns: 42px minmax(0, 1fr);
+}
+
+.date-field .field-shell input[type="date"] {
+    width: 100%;
+    cursor: pointer;
+    padding-right: 44px;
+}
+
 .field-shell input[type="date"]::-webkit-calendar-picker-indicator {
-    width: 0;
-    margin: 0;
+    width: 44px;
+    height: 56px;
+    margin: 0 -44px 0 0;
     opacity: 0;
+    cursor: pointer;
+}
+
+.date-field .field-chevron {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    width: 44px;
+    height: 56px;
+    transform: translateY(-50%);
 }
 
 .field-shell input:focus,
@@ -3192,15 +3214,15 @@ body[data-tab="add"] main {
 .option-check > span::before {
     content: "";
     position: absolute;
-    right: 3px;
+    right: 4px;
     left: auto;
-    top: 3px;
-    bottom: 3px;
-    width: 32px;
+    top: 4px;
+    bottom: 4px;
+    width: 30px;
     height: auto;
     margin-top: 0;
     border: 2px solid color-mix(in srgb, var(--muted) 34%, transparent);
-    border-radius: 14px;
+    border-radius: 12px;
     background: var(--surface);
     box-shadow: 0 2px 8px rgba(15, 23, 42, .08);
     transition: left .18s ease, right .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
@@ -3218,7 +3240,7 @@ body[data-tab="add"] main {
 
 .option-check input:checked + span::before {
     right: auto;
-    left: 3px;
+    left: 4px;
     border-color: var(--primary);
     background: var(--surface);
     box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 24%, transparent);

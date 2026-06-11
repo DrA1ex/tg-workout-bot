@@ -1504,6 +1504,18 @@ function releaseNativeSelect(select) {
     if (document.activeElement === select) select.blur();
 }
 
+function openDatePicker(input) {
+    if (!input) return;
+    input.focus();
+    if (typeof input.showPicker === "function") {
+        try {
+            input.showPicker();
+        } catch {
+            // Some browsers only allow showPicker for direct user gestures.
+        }
+    }
+}
+
 function bindNativeSelectFocusRelease() {
     document.addEventListener("pointerdown", event => {
         const activeSelect = document.activeElement?.matches?.("select") ? document.activeElement : null;
@@ -1871,6 +1883,14 @@ function bindEvents() {
     });
     $("#edit-exercise").addEventListener("change", event => {
         releaseNativeSelect(event.currentTarget);
+    });
+
+    $$(".date-field .field-shell").forEach(shell => {
+        shell.addEventListener("click", event => {
+            if (event.target.closest("input[type='date']")) return;
+            const input = event.currentTarget.querySelector("input[type='date']");
+            openDatePicker(input);
+        });
     });
 
     document.addEventListener("click", event => {
