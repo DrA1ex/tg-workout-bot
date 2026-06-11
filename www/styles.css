@@ -1155,6 +1155,14 @@ textarea {
     grid-template-columns: minmax(0, 1fr);
 }
 
+.field-shell.exercise-missing {
+    grid-template-columns: 42px minmax(0, 1fr);
+}
+
+.field-shell.exercise-missing .field-chevron {
+    display: none;
+}
+
 @keyframes ios-sheet-enter {
     from {
         opacity: .72;

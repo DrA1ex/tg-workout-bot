@@ -270,6 +270,10 @@ function updateEditWorkoutFormState() {
     $$("#edit-form input, #edit-form select, #edit-form textarea, #edit-form button").forEach(node => {
         node.disabled = disabled;
     });
+    const lockedExercise = $("#edit-exercise-locked");
+    if (lockedExercise && !lockedExercise.hidden) {
+        lockedExercise.disabled = true;
+    }
 
     const saveButton = $("#edit-save-button");
     if (saveButton) {
@@ -517,6 +521,7 @@ function workoutFormFields(prefix) {
     return {
         date: $(`#${prefix}-date`),
         exercise: $(`#${prefix}-exercise`),
+        exerciseLocked: $(`#${prefix}-exercise-locked`),
         sets: $(`#${prefix}-sets`),
         weight: $(`#${prefix}-weight`),
         reps: $(`#${prefix}-reps`),
@@ -556,8 +561,20 @@ function setWorkoutFormMode(prefix, {hasWeight = true, isTime = false} = {}) {
 
 function setWorkoutFormValues(prefix, workout) {
     const fields = workoutFormFields(prefix);
+    const isMissingEditExercise = prefix === "edit" &&
+        Boolean(workout.exercise) &&
+        !state.exercises.some(exercise => exercise.name === workout.exercise);
+
     fields.date.value = workoutDateInputValue(workout);
     fields.exercise.value = workout.exercise;
+    if (fields.exerciseLocked) {
+        const shell = fields.exercise.closest(".field-shell");
+        fields.exercise.hidden = isMissingEditExercise;
+        fields.exercise.required = !isMissingEditExercise;
+        fields.exerciseLocked.hidden = !isMissingEditExercise;
+        fields.exerciseLocked.value = isMissingEditExercise ? workout.exercise : "";
+        shell?.classList.toggle("exercise-missing", isMissingEditExercise);
+    }
     fields.sets.value = workout.sets || "";
     fields.weight.value = workout.weight || "";
     fields.reps.value = workout.repsOrTime || "";
@@ -571,9 +588,13 @@ function setWorkoutFormValues(prefix, workout) {
 
 function readWorkoutFormValues(prefix) {
     const fields = workoutFormFields(prefix);
+    const exercise = fields.exerciseLocked && !fields.exerciseLocked.hidden
+        ? fields.exerciseLocked.value
+        : fields.exercise.value;
+
     return {
         date: fields.date.value,
-        exercise: fields.exercise.value,
+        exercise,
         sets: fields.sets.value,
         weight: fields.hasWeight.checked ? fields.weight.value : "",
         repsOrTime: fields.reps.value,
