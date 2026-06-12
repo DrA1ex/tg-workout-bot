@@ -17,6 +17,9 @@ let workoutSwipe = null;
 let pullRefresh = null;
 let settingsExerciseSearchTimer = null;
 let pendingSettingsExerciseSearch = null;
+let onboardingExerciseSearchTimer = null;
+let onboardingLanguageTimer = null;
+let onboardingGlobalRequestSeq = 0;
 
 const HISTORY_PAGE_SIZE = 8;
 const HISTORY_INITIAL_SIZE = 24;
@@ -26,6 +29,7 @@ const PULL_REFRESH_REQUEST_DELAY = 220;
 const PULL_REFRESH_MIN_VISIBLE = 760;
 const VALID_TABS = new Set(["dashboard", "history", "add", "progress", "exercises", "settings"]);
 const WORKOUT_SWIPE_WIDTH = 104;
+const ONBOARDING_GLOBAL_PAGE_SIZE = 30;
 
 function tabFromUrl() {
     const tab = new URL(window.location.href).searchParams.get("tab");
@@ -952,6 +956,7 @@ function syncExerciseState(exercises) {
     }));
     renderSettingsExerciseSummary();
     renderSettingsExercises();
+    renderOnboardingGlobalExercises();
 }
 
 function openExerciseDialog(exercise) {
@@ -1409,6 +1414,190 @@ function applySettingsExerciseSearch(query) {
     renderSettingsExercises();
 }
 
+function onboardingSelectedSet() {
+    return new Set(state.onboardingSelectedExercises || []);
+}
+
+function onboardingExerciseByName(name) {
+    return state.exercises.find(exercise => exercise.name === name) ||
+        state.onboardingGlobalExercises.find(exercise => exercise.name === name) ||
+        {name, notes: ""};
+}
+
+function onboardingMatchesSearch(name) {
+    const query = state.onboardingSearch.toLowerCase();
+    return !query || name.toLowerCase().includes(query);
+}
+
+function onboardingExerciseRow(exercise, selected) {
+    const isSelected = selected.has(exercise.name);
+    const isAdded = exercise.added || state.exercises.some(userExercise => userExercise.name === exercise.name);
+    return `
+        <article class="workout-row onboarding-exercise-row ${isSelected ? "selected" : ""}">
+            <button class="onboarding-exercise-button" type="button" data-onboarding-exercise="${escapeHtml(exercise.name)}">
+                <span class="swipe-workout-body">
+                    <h3>${escapeHtml(exercise.name)}</h3>
+                    ${isAdded ? `<p>${escapeHtml(t("actions.added"))}</p>` : ""}
+                </span>
+                <span class="onboarding-check" aria-hidden="true">${isSelected ? "✓" : ""}</span>
+            </button>
+        </article>
+    `;
+}
+
+function onboardingSearchSpinner() {
+    return $("#onboarding-search-spinner");
+}
+
+function renderOnboardingSearchState() {
+    const spinner = onboardingSearchSpinner();
+    if (!spinner) return;
+    const loading = state.onboardingLoading || state.onboardingSearchPending;
+    spinner.hidden = !loading;
+    spinner.closest(".onboarding-search-shell")?.classList.toggle("loading", loading);
+}
+
+function onboardingEmptyMessage() {
+    if (state.onboardingSearch) return t("onboarding.noResults");
+    return t("onboarding.noChoices");
+}
+
+function renderOnboardingGlobalExercises() {
+    const list = $("#onboarding-exercise-list");
+    if (!list) return;
+    const selected = onboardingSelectedSet();
+    const selectedRows = [...selected]
+        .filter(onboardingMatchesSearch)
+        .map(onboardingExerciseByName);
+    const selectedNames = new Set(selectedRows.map(exercise => exercise.name));
+    const globalRows = state.onboardingGlobalExercises.filter(exercise => !selectedNames.has(exercise.name));
+    const rows = [...selectedRows, ...globalRows];
+
+    list.innerHTML = rows.length
+        ? rows.map(exercise => onboardingExerciseRow(exercise, selected)).join("")
+        : `<div class="empty">${escapeHtml(onboardingEmptyMessage())}</div>`;
+    renderOnboardingSearchState();
+    updateOnboardingStartState();
+}
+
+function updateOnboardingStartState() {
+    const button = $("#onboarding-start-button");
+    if (!button) return;
+    const selectedCount = state.onboardingSelectedExercises.length;
+    const canStart = selectedCount > 0;
+    button.disabled = state.onboardingSaving || !canStart;
+    button.classList.toggle("loading", state.onboardingSaving);
+    button.textContent = state.onboardingSaving ? t("actions.saving") : `${t("onboarding.start")} (${selectedCount})`;
+}
+
+async function loadOnboardingGlobalExercises({reset = false} = {}) {
+    if (state.onboardingLoading) return;
+    if (!reset && !state.onboardingHasMore) return;
+    const requestSeq = ++onboardingGlobalRequestSeq;
+    const requestSearch = state.onboardingSearch;
+    state.onboardingLoading = true;
+    state.onboardingSearchPending = false;
+    if (reset) {
+        state.onboardingNextOffset = 0;
+        state.onboardingHasMore = true;
+    }
+    renderOnboardingSearchState();
+
+    const params = new URLSearchParams();
+    params.set("limit", String(ONBOARDING_GLOBAL_PAGE_SIZE));
+    params.set("offset", String(reset ? 0 : state.onboardingNextOffset));
+    if (requestSearch) params.set("search", requestSearch);
+
+    try {
+        const data = await api(`exercises/global?${params.toString()}`);
+        if (requestSeq !== onboardingGlobalRequestSeq || requestSearch !== state.onboardingSearch) return;
+        const existingNames = new Set(reset ? [] : state.onboardingGlobalExercises.map(exercise => exercise.name));
+        const nextRows = (data.exercises || []).filter(exercise => !existingNames.has(exercise.name));
+        state.onboardingGlobalExercises = reset ? (data.exercises || []) : [...state.onboardingGlobalExercises, ...nextRows];
+        state.onboardingHasMore = Boolean(data.hasNext);
+        state.onboardingNextOffset = Number(data.nextOffset || state.onboardingGlobalExercises.length);
+    } catch (error) {
+        if (requestSeq !== onboardingGlobalRequestSeq) return;
+        console.error(error);
+        showToast("toast.refreshFailed", {variant: "danger"});
+    } finally {
+        if (requestSeq !== onboardingGlobalRequestSeq) return;
+        state.onboardingLoading = false;
+        renderOnboardingGlobalExercises();
+    }
+}
+
+function openOnboardingIfNeeded() {
+    if (!state.user || state.exercises.length > 0) return;
+    const dialog = $("#onboarding-dialog");
+    if (dialog.open) {
+        updateOnboardingStartState();
+        return;
+    }
+
+    state.onboardingSearch = "";
+    state.onboardingSearchPending = false;
+    onboardingGlobalRequestSeq += 1;
+    state.onboardingSelectedExercises = [];
+    state.onboardingGlobalExercises = [];
+    state.onboardingHasMore = true;
+    state.onboardingNextOffset = 0;
+    $("#onboarding-language-select").value = state.user.language || "en";
+    $("#onboarding-exercise-search").value = "";
+    renderOnboardingGlobalExercises();
+    openSheetDialog(dialog);
+    loadOnboardingGlobalExercises({reset: true}).catch(console.error);
+}
+
+async function saveOnboardingLanguage() {
+    if (!state.user) return;
+    try {
+        await api("settings", {
+            method: "PATCH",
+            body: JSON.stringify({
+                language: state.user.language,
+                timezone: state.user.timezone,
+                theme: state.theme,
+                accentColor: state.accentColor,
+            }),
+        });
+    } catch (error) {
+        console.error(error);
+        showToast("toast.saveFailed", {variant: "danger"});
+    }
+}
+
+async function completeOnboarding() {
+    if (state.onboardingSaving) return;
+    if (!state.onboardingSelectedExercises.length) return;
+    const selected = state.onboardingSelectedExercises
+        .filter(name => !state.exercises.some(exercise => exercise.name === name))
+        .map(name => ({name, notes: ""}));
+
+    state.onboardingSaving = true;
+    updateOnboardingStartState();
+    try {
+        window.clearTimeout(onboardingLanguageTimer);
+        await saveOnboardingLanguage();
+        if (selected.length) {
+            const data = await api("exercises/batch", {
+                method: "POST",
+                body: JSON.stringify({exercises: selected}),
+            });
+            syncExerciseState(data.exercises);
+        }
+        state.onboardingSelectedExercises = [];
+        await refreshAll();
+        closeSheetDialog($("#onboarding-dialog"));
+    } catch (error) {
+        console.error(error);
+        showToast(error.status === 409 ? "toast.exerciseDuplicate" : "toast.saveFailed", {variant: "danger"});
+    } finally {
+        state.onboardingSaving = false;
+        updateOnboardingStartState();
+    }
+}
+
 function renderSettings() {
     const isLoading = !state.settingsLoaded;
     $("#settings-skeleton").hidden = !isLoading;
@@ -1564,6 +1753,7 @@ async function refreshAll() {
     refreshWorkoutFormModes();
     ensureHistoryLoaded();
     ensureProgressLoaded();
+    openOnboardingIfNeeded();
     if (state.tab === "add") {
         updatePreviousWorkoutSummary().catch(console.error);
     }
@@ -2073,19 +2263,27 @@ function bindEvents() {
     $("#exercise-form").addEventListener("submit", async event => {
         event.preventDefault();
         if (state.savingExercise) return;
+        const createdName = $("#exercise-name").value.trim();
         setExerciseAddPending(true);
         try {
             const data = await api("exercises", {
                 method: "POST",
                 body: JSON.stringify({
-                    name: $("#exercise-name").value,
+                    name: createdName,
                     notes: $("#exercise-notes").value,
                 }),
             });
             syncExerciseState(data.exercises);
+            if ($("#onboarding-dialog").open && createdName) {
+                const selected = onboardingSelectedSet();
+                selected.add(createdName);
+                state.onboardingSelectedExercises = [...selected];
+                renderOnboardingGlobalExercises();
+            }
             $("#exercise-form").reset();
             closeModalDialog($("#exercise-add-dialog"));
             await refreshAll();
+            if ($("#onboarding-dialog").open) renderOnboardingGlobalExercises();
             showToast("toast.exerciseAdded");
         } catch (error) {
             console.error(error);
@@ -2177,6 +2375,57 @@ function bindEvents() {
     $("#settings-exercises-open").addEventListener("click", openSettingsExercisesDialog);
     bindSheetDialog("#settings-exercises-dialog", "#settings-exercises-close");
     $("#settings-exercise-add-open").addEventListener("click", openExerciseAddDialog);
+    $("#onboarding-dialog").addEventListener("cancel", event => event.preventDefault());
+    $("#onboarding-dialog").addEventListener("close", () => {
+        window.clearTimeout(onboardingExerciseSearchTimer);
+        window.clearTimeout(onboardingLanguageTimer);
+        delete $("#onboarding-dialog").dataset.dialogOpenOrder;
+        document.body.classList.remove("sheet-open");
+    });
+    $("#onboarding-language-select").addEventListener("change", event => {
+        releaseNativeSelect(event.currentTarget);
+        if (state.user) state.user = {...state.user, language: event.currentTarget.value};
+        $("#language-select").value = event.currentTarget.value;
+        applyI18n();
+        refreshWorkoutFormModes();
+        updateOnboardingStartState();
+        window.clearTimeout(onboardingLanguageTimer);
+        onboardingLanguageTimer = window.setTimeout(() => {
+            saveOnboardingLanguage().catch(console.error);
+        }, 200);
+    });
+    $("#onboarding-exercise-search").addEventListener("input", event => {
+        state.onboardingSearch = event.target.value.trim();
+        state.onboardingSearchPending = true;
+        state.onboardingLoading = false;
+        onboardingGlobalRequestSeq += 1;
+        renderOnboardingSearchState();
+        window.clearTimeout(onboardingExerciseSearchTimer);
+        onboardingExerciseSearchTimer = window.setTimeout(() => {
+            loadOnboardingGlobalExercises({reset: true}).catch(console.error);
+        }, 180);
+    });
+    $("#onboarding-exercise-scroll").addEventListener("scroll", event => {
+        const node = event.currentTarget;
+        if (node.scrollTop + node.clientHeight >= node.scrollHeight - 120) {
+            loadOnboardingGlobalExercises().catch(console.error);
+        }
+    }, {passive: true});
+    $("#onboarding-exercise-list").addEventListener("click", event => {
+        const button = event.target.closest("[data-onboarding-exercise]");
+        if (!button || button.disabled) return;
+        const selected = onboardingSelectedSet();
+        const name = button.dataset.onboardingExercise;
+        if (selected.has(name)) {
+            selected.delete(name);
+        } else {
+            selected.add(name);
+        }
+        state.onboardingSelectedExercises = [...selected];
+        renderOnboardingGlobalExercises();
+    });
+    $("#onboarding-exercise-add-open").addEventListener("click", openExerciseAddDialog);
+    $("#onboarding-start-button").addEventListener("click", () => completeOnboarding().catch(console.error));
     $("#settings-exercise-search").addEventListener("input", event => {
         const query = event.target.value.trim();
         if (settingsExerciseSearchTimer) {

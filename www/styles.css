@@ -1119,6 +1119,142 @@ textarea {
     padding-bottom: 0;
 }
 
+.onboarding-dialog .onboarding-sheet {
+    display: flex;
+    scrollbar-width: none;
+}
+
+.onboarding-dialog,
+.onboarding-dialog .onboarding-sheet,
+.onboarding-dialog .onboarding-form,
+.onboarding-dialog .settings-exercise-scroll {
+    scrollbar-width: none;
+}
+
+.onboarding-dialog::-webkit-scrollbar,
+.onboarding-dialog .onboarding-sheet::-webkit-scrollbar,
+.onboarding-dialog .onboarding-form::-webkit-scrollbar,
+.onboarding-dialog .settings-exercise-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.onboarding-dialog .onboarding-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+    overflow: hidden;
+    padding-bottom: 96px;
+}
+
+.onboarding-dialog .onboarding-form > .add-field,
+.onboarding-dialog .onboarding-form > .exercise-add-trigger {
+    flex: 0 0 auto;
+}
+
+.onboarding-dialog .onboarding-form > .settings-exercise-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.onboarding-dialog .settings-exercise-scroll {
+    margin-right: -4px;
+    padding-right: 8px;
+}
+
+.onboarding-search-shell {
+    position: relative;
+}
+
+.onboarding-search-shell input {
+    padding-right: 34px;
+}
+
+.onboarding-search-spinner {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    margin-top: -9px;
+    border: 2px solid color-mix(in srgb, var(--primary) 22%, transparent);
+    border-top-color: var(--primary);
+    border-radius: 999px;
+    pointer-events: none;
+    animation: button-spin .8s linear infinite;
+}
+
+.onboarding-search-spinner[hidden] {
+    display: none;
+}
+
+.onboarding-search-shell.loading input::-webkit-search-cancel-button {
+    display: none;
+}
+
+.onboarding-language-field .field-shell {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.onboarding-language-field select {
+    min-height: 56px;
+    border: 0;
+    appearance: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 650;
+}
+
+.onboarding-exercise-row {
+    display: block;
+    overflow: hidden;
+    padding: 0;
+}
+
+.onboarding-exercise-button {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 64px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 0;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.onboarding-check {
+    display: grid;
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border: 2px solid color-mix(in srgb, var(--muted) 34%, transparent);
+    border-radius: 10px;
+    color: transparent;
+    font-size: 20px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.onboarding-exercise-row.selected .onboarding-check {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--primary-ink);
+}
+
+.onboarding-actions {
+    grid-template-columns: 1fr;
+}
+
 .settings-exercise-search {
     gap: 7px;
 }
@@ -1146,6 +1282,8 @@ textarea {
 #settings-exercise-list .swipe-workout-main:focus-visible,
 #settings-exercise-list .swipe-delete-action:focus,
 #settings-exercise-list .swipe-delete-action:focus-visible,
+.onboarding-exercise-button:focus,
+.onboarding-exercise-button:focus-visible,
 #exercise-list.history-workout-list .swipe-workout-main:focus,
 #exercise-list.history-workout-list .swipe-workout-main:focus-visible,
 #exercise-list.history-workout-list .swipe-delete-action:focus,
@@ -1429,6 +1567,7 @@ textarea {
 }
 
 .history-workout-list .workout-row + .workout-row .swipe-workout-main::before,
+.history-workout-list .onboarding-exercise-row + .onboarding-exercise-row .onboarding-exercise-button::before,
 .dashboard-workout-list .dashboard-swipe-row + .dashboard-swipe-row .dashboard-workout-row::before,
 .dashboard-workout-list > .dashboard-workout-row + .dashboard-workout-row::before,
 .progress-record-row + .progress-record-row::before {
@@ -3130,6 +3269,7 @@ body[data-tab="add"] main {
 }
 
 .sheet-grabber {
+    flex: 0 0 5px;
     width: 42px;
     height: 5px;
     margin: 2px auto 8px;

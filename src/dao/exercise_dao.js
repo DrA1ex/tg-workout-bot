@@ -68,6 +68,68 @@ export class ExerciseDAO {
     }
 
     /**
+     * Add multiple exercises to user's list in one transaction
+     * @param {string} telegramId - User's Telegram ID
+     * @param {Array<Object>} exercisesToAdd - Exercise objects
+     * @returns {Promise<Array>} Updated exercises array
+     */
+    static async addUserExercisesBatch(telegramId, exercisesToAdd) {
+        const normalized = exercisesToAdd
+            .map(exercise => ({
+                name: String(exercise?.name || '').trim(),
+                notes: String(exercise?.notes || '').trim(),
+            }))
+            .filter(exercise => exercise.name);
+
+        if (!normalized.length) {
+            return await this.getUserExercises(telegramId);
+        }
+
+        try {
+            return await models.User.sequelize.transaction(async transaction => {
+                const user = await models.User.findByPk(String(telegramId), {transaction});
+                const exercises = user?.exercises ? JSON.parse(user.exercises) : [];
+                const existingNames = new Set(exercises.map(ex =>
+                    String(typeof ex === 'string' ? ex : ex.name).trim().toLowerCase()
+                ));
+                const incomingNames = new Set();
+
+                for (const exercise of normalized) {
+                    const key = exercise.name.toLowerCase();
+                    if (existingNames.has(key) || incomingNames.has(key)) {
+                        throw new AlreadyExistsError(`Exercise "${exercise.name}" already exists`);
+                    }
+                    incomingNames.add(key);
+                    exercises.push(exercise);
+                }
+
+                exercises.sort((a, b) => {
+                    const aName = typeof a === 'string' ? a : a.name;
+                    const bName = typeof b === 'string' ? b : b.name;
+                    return aName.localeCompare(bName);
+                });
+
+                await models.User.update(
+                    {exercises: JSON.stringify(exercises)},
+                    {where: {telegramId: String(telegramId)}, transaction}
+                );
+
+                await Promise.all(normalized.map(exercise =>
+                    models.GlobalExercise.upsert({name: exercise.name}, {transaction})
+                ));
+
+                return exercises;
+            });
+        } catch (error) {
+            if (!(error instanceof AlreadyExistsError)) {
+                console.error('Error adding user exercises batch:', error);
+            }
+
+            throw error;
+        }
+    }
+
+    /**
      * Search global exercises by name
      * @param {string} searchTerm - Search term
      * @param {number} limit - Maximum number of results

@@ -86,17 +86,38 @@ export async function handleApi(req, res, url, config) {
 
     if (req.method === "GET" && url.pathname === "/api/exercises/global") {
         const search = String(url.searchParams.get("search") || "").trim();
+        const limit = Math.min(Math.max(Number.parseInt(url.searchParams.get("limit") || "25", 10) || 25, 1), 250);
+        const offset = Math.max(Number.parseInt(url.searchParams.get("offset") || "0", 10) || 0, 0);
         const existing = new Set((await getUserExercisesNormalized(user.telegramId)).map(ex => ex.name));
-        const rows = search
-            ? await ExerciseDAO.searchGlobalExercises(search, 25)
-            : (await ExerciseDAO.getGlobalExercisesPageWithNext(0, 25)).items;
+        const page = search
+            ? {items: await ExerciseDAO.searchGlobalExercises(search, offset + limit + 1), hasNext: false}
+            : await ExerciseDAO.getGlobalExercisesPageWithNext(offset, limit);
+        const rows = search ? page.items.slice(offset, offset + limit) : page.items;
+        const hasNext = search ? page.items.length > offset + limit : page.hasNext;
 
         return sendJson(res, 200, {
             exercises: rows.map(row => ({
                 name: row.name,
                 added: existing.has(row.name),
             })),
+            hasNext,
+            nextOffset: offset + rows.length,
         });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/exercises/batch") {
+        const body = await parseBody(req);
+        const exercises = Array.isArray(body.exercises) ? body.exercises : [];
+        if (!exercises.length) return sendJson(res, 400, {error: "Exercises are required"});
+
+        try {
+            const nextExercises = await ExerciseDAO.addUserExercisesBatch(user.telegramId, exercises);
+            return sendJson(res, 201, {exercises: nextExercises.map(exercise =>
+                typeof exercise === "string" ? {name: exercise, notes: ""} : {name: exercise.name, notes: exercise.notes || ""}
+            )});
+        } catch (error) {
+            return sendJson(res, 409, {error: error.message || "Exercise already exists"});
+        }
     }
 
     if (req.method === "POST" && url.pathname === "/api/exercises") {

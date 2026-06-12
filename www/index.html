@@ -617,6 +617,48 @@
         </div>
     </dialog>
 
+    <dialog class="modal workout-sheet-dialog exercise-sheet-dialog onboarding-dialog" id="onboarding-dialog">
+        <div class="add-sheet edit-sheet exercise-sheet onboarding-sheet">
+            <div class="sheet-grabber" aria-hidden="true"></div>
+            <header class="add-screen-header">
+                <span class="add-header-spacer" aria-hidden="true"></span>
+                <h1 data-i18n="onboarding.title">Set up exercises</h1>
+                <span class="add-header-spacer" aria-hidden="true"></span>
+            </header>
+            <div class="add-form exercise-sheet-form onboarding-form">
+                <label class="add-field full-field onboarding-language-field">
+                    <span data-i18n="settings.language">Language</span>
+                    <div class="field-shell single-field">
+                        <select id="onboarding-language-select">
+                            <option value="en">English</option>
+                            <option value="ru">Русский</option>
+                            <option value="de">Deutsch</option>
+                            <option value="fr">Français</option>
+                        </select>
+                    </div>
+                </label>
+                <label class="add-field full-field settings-exercise-search">
+                    <span data-i18n="exercises.search">Search exercises</span>
+                    <div class="field-shell single-field onboarding-search-shell">
+                        <input id="onboarding-exercise-search" type="search" autocomplete="off" data-i18n-placeholder="exercises.search">
+                        <span class="onboarding-search-spinner" id="onboarding-search-spinner" aria-label="Loading" role="status" hidden></span>
+                    </div>
+                </label>
+                <button class="ghost-button exercise-add-trigger" id="onboarding-exercise-add-open" type="button">
+                    <span>＋</span>
+                    <span data-i18n="actions.addExercise">Add exercise</span>
+                </button>
+                <div class="settings-exercise-scroll" id="onboarding-exercise-scroll">
+                    <div class="list history-workout-list onboarding-exercise-list" id="onboarding-exercise-list"></div>
+                    <div class="settings-exercise-bottom-spacer" aria-hidden="true"></div>
+                </div>
+            </div>
+            <div class="sticky-form-actions single-action onboarding-actions">
+                <button class="primary-button save-button" id="onboarding-start-button" type="button" disabled data-i18n="onboarding.start">Start</button>
+            </div>
+        </div>
+    </dialog>
+
     <dialog class="modal confirm-dialog" id="delete-workout-dialog">
         <div class="confirm-card" role="alertdialog" aria-labelledby="delete-workout-title" aria-describedby="delete-workout-copy">
             <h2 id="delete-workout-title" data-i18n="deleteWorkout.title">Delete workout?</h2>
