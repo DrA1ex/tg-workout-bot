@@ -674,8 +674,10 @@ textarea:disabled {
     gap: 14px;
 }
 
-#workout-form {
-    padding-bottom: 84px;
+#workout-form,
+#edit-form > .add-form,
+#screen-progress {
+    padding-bottom: calc(118px + env(safe-area-inset-bottom, 0px));
 }
 
 label {
@@ -1070,7 +1072,7 @@ textarea {
     gap: 10px;
     width: auto;
     margin: 0;
-    padding: 12px 16px max(18px, env(safe-area-inset-bottom));
+    padding: 12px 16px 18px;
     background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--surface) 94%, transparent) 26%, color-mix(in srgb, var(--surface) 98%, transparent));
 }
 
@@ -1617,10 +1619,6 @@ textarea {
     display: block;
     width: 100%;
     height: auto;
-}
-
-#screen-progress {
-    padding-bottom: calc(18px + env(safe-area-inset-bottom));
 }
 
 .progress-screen {
@@ -3182,7 +3180,6 @@ body[data-tab="add"] main {
     overflow-x: hidden;
     overflow-y: auto;
     padding-top: 10px;
-    padding-bottom: 94px;
     scrollbar-width: none;
 }
 
@@ -3568,7 +3565,7 @@ body[data-tab="add"] .sticky-form-actions {
     display: block;
     width: auto;
     margin: 0;
-    padding: 12px 16px max(18px, env(safe-area-inset-bottom));
+    padding: 12px 16px 18px;
     background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--surface) 94%, transparent) 26%, color-mix(in srgb, var(--surface) 98%, transparent));
 }
 
