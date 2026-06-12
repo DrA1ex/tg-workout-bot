@@ -2,6 +2,7 @@ import {responseMarkdown} from "../runtime/primitives.js";
 import {getUserLanguage} from "../i18n/index.js";
 import {UserDAO} from "../dao/index.js";
 import {selectTimezoneCommon, timezones} from "./common.js";
+import {normalizeTimezoneOffset} from "../utils/timezone.js";
 
 
 /**
@@ -11,18 +12,20 @@ import {selectTimezoneCommon, timezones} from "./common.js";
  */
 export function getTimezoneOffset(timezone) {
     try {
+        const normalizedTimezone = normalizeTimezoneOffset(timezone);
+
         // For UTC offset format (+03:00, -05:00) - return as is
-        if (timezone.match(/^[+-](0[0-9]|1[0-2]):[0-5][0-9]$/)) {
-            return timezone;
+        if (normalizedTimezone.match(/^[+-](0[0-9]|1[0-2]):[0-5][0-9]$/)) {
+            return normalizedTimezone;
         }
 
         // For UTC return +00:00
-        if (timezone.toUpperCase() === 'UTC') {
+        if (normalizedTimezone.toUpperCase() === 'UTC') {
             return '+00:00';
         }
 
         // Check if it's in our known timezones list from common.js
-        const found = timezones[timezone];
+        const found = timezones[normalizedTimezone];
         if (found) {
             return found.offset;
         }
@@ -44,18 +47,20 @@ export function validateTimezone(timezone) {
         return false;
     }
 
-    if (timezone === 'UTC') {
+    const normalizedTimezone = normalizeTimezoneOffset(timezone);
+
+    if (normalizedTimezone === 'UTC') {
         return true;
     }
 
     // Check UTC offset format (e.g., +03:00, -05:00)
     const offsetRegex = /^[+-](0[0-9]|1[0-2]):[0-5][0-9]$/;
-    if (offsetRegex.test(timezone)) {
+    if (offsetRegex.test(normalizedTimezone)) {
         return true;
     }
 
     // Check if it's in our known timezones list from common.js
-    return timezones.hasOwnProperty(timezone);
+    return timezones.hasOwnProperty(normalizedTimezone);
 }
 
 export function* timezoneSettings(state) {

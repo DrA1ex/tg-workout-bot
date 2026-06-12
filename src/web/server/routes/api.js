@@ -8,6 +8,7 @@ import {getHistory} from "../services/history.js";
 import {getProgress} from "../services/progress.js";
 import {parseWorkoutBody, workoutPayload} from "../services/workouts.js";
 import {handleAuthApi} from "./auth.js";
+import {isValidTimezone, normalizeTimezoneOffset} from "../../../utils/timezone.js";
 
 const VALID_THEMES = new Set(["system", "light", "dark"]);
 const VALID_ACCENTS = new Set(["blue", "cyan", "green", "pink", "red", "purple", "orange"]);
@@ -173,7 +174,7 @@ export async function handleApi(req, res, url, config) {
         const dedupeToken = normalizeDedupeToken(body.deduplicationToken);
         let workoutData;
         try {
-            workoutData = parseWorkoutBody(body);
+            workoutData = parseWorkoutBody(body, new Date(), user.timezone || "UTC");
         } catch (error) {
             return sendJson(res, 400, {error: error.message});
         }
@@ -216,7 +217,7 @@ export async function handleApi(req, res, url, config) {
         const body = await parseBody(req);
         let workoutData;
         try {
-            workoutData = parseWorkoutBody(body, new Date(workout.date));
+            workoutData = parseWorkoutBody(body, new Date(workout.date), user.timezone || "UTC");
         } catch (error) {
             return sendJson(res, 400, {error: error.message});
         }
@@ -246,7 +247,12 @@ export async function handleApi(req, res, url, config) {
         const body = await parseBody(req);
         const updates = {};
         if (body.language) updates.language = String(body.language);
-        if (body.timezone) updates.timezone = String(body.timezone);
+        if (body.timezone) {
+            if (!isValidTimezone(body.timezone)) {
+                return sendJson(res, 400, {error: "Invalid timezone"});
+            }
+            updates.timezone = normalizeTimezoneOffset(body.timezone);
+        }
         if (VALID_THEMES.has(body.theme)) updates.theme = body.theme;
         if (VALID_ACCENTS.has(body.accentColor)) updates.accentColor = body.accentColor;
 

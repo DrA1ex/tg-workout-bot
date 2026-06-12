@@ -5,6 +5,7 @@
 import {cancelled, requestChoice, requestString, response} from "../runtime/primitives.js";
 import {getUserLanguage, setUserLanguage} from "../i18n/index.js";
 import {AlreadyExistsError, ExerciseDAO, UserDAO} from "../dao/index.js";
+import {normalizeTimezoneOffset} from "../utils/timezone.js";
 
 /**
  * Common function to add a new exercise
@@ -227,15 +228,17 @@ export function* selectTimezoneCommon(state) {
 
         if (!customOffset) return yield cancelled(state);
 
+        const normalizedOffset = normalizeTimezoneOffset(customOffset);
+
         // Validate custom offset format
         const offsetRegex = /^[+-](0[0-9]|1[0-2]):[0-5][0-9]$/;
-        if (!offsetRegex.test(customOffset)) {
+        if (!offsetRegex.test(normalizedOffset)) {
             yield response(state, _('timezone.invalidFormat'));
             return yield cancelled(state);
         }
 
-        timezoneToSave = customOffset;
-        selectedTimezone = customOffset;
+        timezoneToSave = normalizedOffset;
+        selectedTimezone = normalizedOffset;
     } else {
         // User selected from predefined list
         timezoneToSave = timezones[timezoneKey].offset;

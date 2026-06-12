@@ -32,6 +32,24 @@ const VALID_TABS = new Set(["dashboard", "history", "add", "progress", "exercise
 const WORKOUT_SWIPE_WIDTH = 104;
 const ONBOARDING_GLOBAL_PAGE_SIZE = 30;
 
+function normalizeTimezoneInputValue(value) {
+    const text = String(value || "").trim();
+    if (!text) return "";
+    if (text.toUpperCase() === "UTC") return "UTC";
+
+    const match = text.match(/^([+-])(\d{1,2}):([0-5][0-9])$/);
+    if (!match) return text;
+
+    const hours = Number.parseInt(match[2], 10);
+    if (hours > 12) return text;
+    return `${match[1]}${String(hours).padStart(2, "0")}:${match[3]}`;
+}
+
+function setFormControlValue(control, value) {
+    if (document.activeElement === control) return;
+    control.value = value ?? "";
+}
+
 function tabFromUrl() {
     const tab = new URL(window.location.href).searchParams.get("tab");
     return VALID_TABS.has(tab) ? tab : "dashboard";
@@ -1687,9 +1705,9 @@ function renderSettings() {
     $("#settings-form").hidden = isLoading;
     if (isLoading || !state.user) return;
 
-    $("#language-select").value = state.user.language;
-    $("#timezone-input").value = state.user.timezone;
-    $("#theme-select").value = state.theme;
+    setFormControlValue($("#language-select"), state.user.language);
+    setFormControlValue($("#timezone-input"), state.settingsDraft?.timezone ?? state.user.timezone);
+    setFormControlValue($("#theme-select"), state.theme);
     $$("#accent-select [data-accent-color]").forEach(button => {
         button.classList.toggle("active", button.dataset.accentColor === (state.accentColor || "blue"));
     });
@@ -2443,24 +2461,28 @@ function bindEvents() {
     $("#settings-form").addEventListener("submit", async event => {
         event.preventDefault();
         if (state.savingSettings) return;
+        const timezone = normalizeTimezoneInputValue($("#timezone-input").value);
         setSettingsPending(true);
-        updateSettingsPreview();
         try {
             const data = await api("settings", {
                 method: "PATCH",
                 body: JSON.stringify({
                     language: $("#language-select").value,
-                    timezone: $("#timezone-input").value,
+                    timezone,
                     theme: state.theme,
                     accentColor: state.accentColor,
                 }),
             });
             state.user = data.user;
+            state.settingsDraft = null;
             state.theme = data.user.theme || state.theme;
             state.accentColor = data.user.accentColor || state.accentColor;
+            updateSettingsPreview();
             applyTheme();
             await refreshAll();
             showToast("toast.settingsSaved");
+        } catch (error) {
+            showToast(error.status === 400 ? "toast.invalidTimezone" : "toast.saveFailed", {variant: "danger"});
         } finally {
             setSettingsPending(false);
         }
@@ -2481,6 +2503,13 @@ function bindEvents() {
         applyI18n();
         refreshWorkoutFormModes();
         if (state.progressLoaded) renderProgress();
+    });
+    $("#timezone-input").addEventListener("blur", event => {
+        event.currentTarget.value = normalizeTimezoneInputValue(event.currentTarget.value);
+        state.settingsDraft = {...(state.settingsDraft || {}), timezone: event.currentTarget.value};
+    });
+    $("#timezone-input").addEventListener("input", event => {
+        state.settingsDraft = {...(state.settingsDraft || {}), timezone: event.currentTarget.value};
     });
 
     $("#settings-exercises-open").addEventListener("click", openSettingsExercisesDialog);

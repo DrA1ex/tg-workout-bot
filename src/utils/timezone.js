@@ -1,5 +1,82 @@
 import {t} from '../i18n/index.js';
 
+const KNOWN_TIMEZONE_OFFSETS = Object.freeze({
+    'Asia/Kamchatka': '+12:00',
+    'Asia/Vladivostok': '+11:00',
+    'Australia/Sydney': '+10:00',
+    'Asia/Tokyo': '+09:00',
+    'Asia/Shanghai': '+08:00',
+    'Asia/Bangkok': '+07:00',
+    'Asia/Almaty': '+06:00',
+    'Asia/Kolkata': '+05:30',
+    'Asia/Yekaterinburg': '+05:00',
+    'Asia/Dubai': '+04:00',
+    'Europe/Moscow': '+03:00',
+    'Europe/Berlin': '+01:00',
+    'Europe/Paris': '+01:00',
+    'Europe/London': '+00:00',
+    'America/Sao_Paulo': '-03:00',
+    'America/Santiago': '-04:00',
+    'America/New_York': '-05:00',
+    'America/Chicago': '-06:00',
+    'America/Denver': '-07:00',
+    'America/Anchorage': '-09:00',
+    'Pacific/Honolulu': '-10:00',
+});
+
+export function normalizeTimezoneOffset(timezone) {
+    const value = String(timezone || '').trim();
+    if (!value) return '';
+    if (value.toUpperCase() === 'UTC') return 'UTC';
+    if (Object.hasOwn(KNOWN_TIMEZONE_OFFSETS, value)) return KNOWN_TIMEZONE_OFFSETS[value];
+
+    const match = value.match(/^([+-])(\d{1,2}):([0-5][0-9])$/);
+    if (!match) return value;
+
+    const hours = Number.parseInt(match[2], 10);
+    if (hours > 12) return value;
+    return `${match[1]}${String(hours).padStart(2, '0')}:${match[3]}`;
+}
+
+export function isValidTimezone(timezone) {
+    const normalizedTimezone = normalizeTimezoneOffset(timezone);
+    if (!normalizedTimezone) return false;
+    if (normalizedTimezone === 'UTC') return true;
+    return /^[+-](0[0-9]|1[0-2]):[0-5][0-9]$/.test(normalizedTimezone);
+}
+
+export function getTimezoneOffsetMinutes(timezone) {
+    const normalizedTimezone = normalizeTimezoneOffset(timezone);
+    if (!normalizedTimezone || normalizedTimezone === 'UTC') return 0;
+
+    const match = normalizedTimezone.match(/^([+-])(0[0-9]|1[0-2]):([0-5][0-9])$/);
+    if (!match) throw new Error("Invalid timezone");
+
+    const minutes = Number.parseInt(match[2], 10) * 60 + Number.parseInt(match[3], 10);
+    return match[1] === '+' ? minutes : -minutes;
+}
+
+export function dateFromUserDateInput(dateValue, timezone = 'UTC') {
+    const match = String(dateValue || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) throw new Error("Invalid date");
+
+    const year = Number.parseInt(match[1], 10);
+    const month = Number.parseInt(match[2], 10);
+    const day = Number.parseInt(match[3], 10);
+    const localNoonUtc = Date.UTC(year, month - 1, day, 12, 0, 0, 0);
+    const localNoon = new Date(localNoonUtc);
+
+    if (
+        localNoon.getUTCFullYear() !== year ||
+        localNoon.getUTCMonth() !== month - 1 ||
+        localNoon.getUTCDate() !== day
+    ) {
+        throw new Error("Invalid date");
+    }
+
+    return new Date(localNoonUtc - getTimezoneOffsetMinutes(timezone) * 60 * 1000);
+}
+
 /**
  * Convert UTC date to user's timezone
  * @param {Date} utcDate - UTC date
@@ -7,16 +84,17 @@ import {t} from '../i18n/index.js';
  * @returns {Date} Date in user's timezone
  */
 export function convertToUserTimezone(utcDate, timezone) {
-    if (!timezone || timezone === 'UTC') {
+    const normalizedTimezone = normalizeTimezoneOffset(timezone);
+    if (!normalizedTimezone || normalizedTimezone === 'UTC') {
         return utcDate;
     }
 
     try {
         // Handle UTC offset format (e.g., +03:00, -05:00)
-        if (timezone.match(/^[+-](0[0-9]|1[0-2]):[0-5][0-9]$/)) {
-            const sign = timezone[0];
-            const hours = parseInt(timezone.substring(1, 3));
-            const minutes = parseInt(timezone.substring(4, 6));
+        if (normalizedTimezone.match(/^[+-](0[0-9]|1[0-2]):[0-5][0-9]$/)) {
+            const sign = normalizedTimezone[0];
+            const hours = parseInt(normalizedTimezone.substring(1, 3));
+            const minutes = parseInt(normalizedTimezone.substring(4, 6));
             const offsetMs = (hours * 60 + minutes) * 60 * 1000;
 
             if (sign === '+') {
@@ -98,16 +176,17 @@ export function getEndOfDayInTimezone(date, timezone) {
  * @returns {string} SQL offset string (e.g., '+3 hours', '-5 hours')
  */
 export function getTimezoneOffsetSQL(timezone) {
-    if (!timezone) {
+    const normalizedTimezone = normalizeTimezoneOffset(timezone);
+    if (!normalizedTimezone) {
         return '+0 hours';
     }
 
     try {
         // For UTC offset format (+03:00, -05:00) - convert to SQL format
-        if (timezone.match(/^[+-](0[0-9]|1[0-2]):[0-5][0-9]$/)) {
-            const sign = timezone[0];
-            const hours = parseInt(timezone.substring(1, 3));
-            const minutes = parseInt(timezone.substring(4, 6));
+        if (normalizedTimezone.match(/^[+-](0[0-9]|1[0-2]):[0-5][0-9]$/)) {
+            const sign = normalizedTimezone[0];
+            const hours = parseInt(normalizedTimezone.substring(1, 3));
+            const minutes = parseInt(normalizedTimezone.substring(4, 6));
 
             if (minutes === 0) {
                 return `${sign}${hours} hours`;
@@ -117,7 +196,7 @@ export function getTimezoneOffsetSQL(timezone) {
         }
 
         // For UTC return +0 hours
-        if (timezone.toUpperCase() === 'UTC') {
+        if (normalizedTimezone.toUpperCase() === 'UTC') {
             return '+0 hours';
         }
 

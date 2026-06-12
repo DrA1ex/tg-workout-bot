@@ -1,0 +1,57 @@
+import {
+    convertToUserTimezone,
+    dateFromUserDateInput,
+    getTimezoneOffsetMinutes,
+    getTimezoneOffsetSQL,
+    isValidTimezone,
+    normalizeTimezoneOffset,
+} from "../../src/utils/timezone.js";
+
+describe("timezone utilities", () => {
+    it("normalizes one-digit hour UTC offsets", () => {
+        expect(normalizeTimezoneOffset("+5:00")).toBe("+05:00");
+        expect(normalizeTimezoneOffset("-3:30")).toBe("-03:30");
+        expect(normalizeTimezoneOffset("utc")).toBe("UTC");
+    });
+
+    it("normalizes known timezone names to offsets", () => {
+        expect(normalizeTimezoneOffset("Asia/Yekaterinburg")).toBe("+05:00");
+        expect(normalizeTimezoneOffset("Europe/Moscow")).toBe("+03:00");
+    });
+
+    it("validates timezone inputs", () => {
+        expect(isValidTimezone("UTC")).toBe(true);
+        expect(isValidTimezone("+5:00")).toBe(true);
+        expect(isValidTimezone("+05:00")).toBe(true);
+        expect(isValidTimezone("Asia/Yekaterinburg")).toBe(true);
+        expect(isValidTimezone("Europe/Mosc")).toBe(false);
+        expect(isValidTimezone("+13:00")).toBe(false);
+    });
+
+    it("uses normalized offsets for SQLite modifiers", () => {
+        expect(getTimezoneOffsetSQL("+5:00")).toBe("+5 hours");
+        expect(getTimezoneOffsetSQL("-3:30")).toBe("-3 hours 30 minutes");
+        expect(getTimezoneOffsetSQL("Asia/Yekaterinburg")).toBe("+5 hours");
+    });
+
+    it("calculates timezone offset minutes", () => {
+        expect(getTimezoneOffsetMinutes("UTC")).toBe(0);
+        expect(getTimezoneOffsetMinutes("+5:00")).toBe(300);
+        expect(getTimezoneOffsetMinutes("-3:30")).toBe(-210);
+        expect(getTimezoneOffsetMinutes("Asia/Yekaterinburg")).toBe(300);
+    });
+
+    it("creates UTC dates from user date input using user timezone noon", () => {
+        expect(dateFromUserDateInput("2026-06-12", "UTC").toISOString()).toBe("2026-06-12T12:00:00.000Z");
+        expect(dateFromUserDateInput("2026-06-12", "+5:00").toISOString()).toBe("2026-06-12T07:00:00.000Z");
+        expect(dateFromUserDateInput("2026-06-12", "Asia/Yekaterinburg").toISOString()).toBe("2026-06-12T07:00:00.000Z");
+        expect(dateFromUserDateInput("2026-06-12", "-03:30").toISOString()).toBe("2026-06-12T15:30:00.000Z");
+    });
+
+    it("uses normalized offsets for date conversion", () => {
+        const date = new Date("2026-06-11T20:00:00.000Z");
+
+        expect(convertToUserTimezone(date, "+5:00").toISOString()).toBe("2026-06-12T01:00:00.000Z");
+        expect(convertToUserTimezone(date, "Asia/Yekaterinburg").toISOString()).toBe("2026-06-12T01:00:00.000Z");
+    });
+});

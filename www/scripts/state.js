@@ -22,6 +22,7 @@ export const state = {
     progressLoading: false,
     progressLoaded: false,
     settingsLoaded: false,
+    settingsDraft: null,
     progressMetric: "weight",
     progressPeriod: "all",
     tab: "dashboard",

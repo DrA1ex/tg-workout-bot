@@ -1,4 +1,5 @@
 import {formatDate} from "../../../i18n/index.js";
+import {dateFromUserDateInput} from "../../../utils/timezone.js";
 
 export function workoutPayload(row, language, timezone) {
     return {
@@ -15,9 +16,9 @@ export function workoutPayload(row, language, timezone) {
     };
 }
 
-export function parseWorkoutBody(body, fallbackDate = new Date()) {
+export function parseWorkoutBody(body, fallbackDate = new Date(), timezone = "UTC") {
     const exercise = String(body.exercise || "").trim();
-    const date = body.date ? new Date(`${body.date}T12:00:00Z`) : fallbackDate;
+    const date = body.date ? dateFromUserDateInput(body.date, timezone) : fallbackDate;
     const sets = Number.parseInt(body.sets, 10);
     const repsOrTime = Number.parseFloat(body.repsOrTime);
 
