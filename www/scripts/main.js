@@ -19,6 +19,7 @@ let settingsExerciseSearchTimer = null;
 let pendingSettingsExerciseSearch = null;
 let onboardingExerciseSearchTimer = null;
 let onboardingLanguageTimer = null;
+let onboardingMoveTimer = null;
 let onboardingGlobalRequestSeq = 0;
 
 const HISTORY_PAGE_SIZE = 8;
@@ -1433,7 +1434,7 @@ function onboardingExerciseRow(exercise, selected) {
     const isSelected = selected.has(exercise.name);
     const isAdded = exercise.added || state.exercises.some(userExercise => userExercise.name === exercise.name);
     return `
-        <article class="workout-row onboarding-exercise-row ${isSelected ? "selected" : ""}">
+        <article class="workout-row onboarding-exercise-row ${isSelected ? "selected" : ""}" data-onboarding-row="${escapeHtml(exercise.name)}">
             <button class="onboarding-exercise-button" type="button" data-onboarding-exercise="${escapeHtml(exercise.name)}">
                 <span class="swipe-workout-body">
                     <h3>${escapeHtml(exercise.name)}</h3>
@@ -1462,20 +1463,60 @@ function onboardingEmptyMessage() {
     return t("onboarding.noChoices");
 }
 
-function renderOnboardingGlobalExercises() {
+function onboardingRowPositions(list) {
+    return new Map([...list.querySelectorAll("[data-onboarding-row]")]
+        .map(row => [row.dataset.onboardingRow, row.getBoundingClientRect()]));
+}
+
+function animateOnboardingRows(list, previousPositions) {
+    if (!previousPositions?.size) return;
+    list.querySelectorAll("[data-onboarding-row]").forEach(row => {
+        const previous = previousPositions.get(row.dataset.onboardingRow);
+        if (!previous) {
+            row.animate([
+                {opacity: 0, transform: "translateY(8px)"},
+                {opacity: 1, transform: "translateY(0)"}
+            ], {duration: 180, easing: "cubic-bezier(.22, 1, .36, 1)"});
+            return;
+        }
+
+        const current = row.getBoundingClientRect();
+        const dx = previous.left - current.left;
+        const dy = previous.top - current.top;
+        if (!dx && !dy) return;
+        row.animate([
+            {transform: `translate(${dx}px, ${dy}px)`},
+            {transform: "translate(0, 0)"}
+        ], {duration: 220, easing: "cubic-bezier(.22, 1, .36, 1)"});
+    });
+}
+
+function currentOnboardingRows(list) {
+    return [...list.querySelectorAll("[data-onboarding-row]")]
+        .map(row => onboardingExerciseByName(row.dataset.onboardingRow))
+        .filter(exercise => onboardingMatchesSearch(exercise.name));
+}
+
+function renderOnboardingGlobalExercises({animate = false, preserveOrder = false} = {}) {
     const list = $("#onboarding-exercise-list");
     if (!list) return;
+    const previousPositions = animate ? onboardingRowPositions(list) : null;
     const selected = onboardingSelectedSet();
-    const selectedRows = [...selected]
-        .filter(onboardingMatchesSearch)
-        .map(onboardingExerciseByName);
-    const selectedNames = new Set(selectedRows.map(exercise => exercise.name));
-    const globalRows = state.onboardingGlobalExercises.filter(exercise => !selectedNames.has(exercise.name));
-    const rows = [...selectedRows, ...globalRows];
+    const rows = preserveOrder
+        ? currentOnboardingRows(list)
+        : (() => {
+            const selectedRows = [...selected]
+                .filter(onboardingMatchesSearch)
+                .map(onboardingExerciseByName);
+            const selectedNames = new Set(selectedRows.map(exercise => exercise.name));
+            const globalRows = state.onboardingGlobalExercises.filter(exercise => !selectedNames.has(exercise.name));
+            return [...selectedRows, ...globalRows];
+        })();
 
     list.innerHTML = rows.length
         ? rows.map(exercise => onboardingExerciseRow(exercise, selected)).join("")
         : `<div class="empty">${escapeHtml(onboardingEmptyMessage())}</div>`;
+    if (animate) animateOnboardingRows(list, previousPositions);
     renderOnboardingSearchState();
     updateOnboardingStartState();
 }
@@ -2379,6 +2420,7 @@ function bindEvents() {
     $("#onboarding-dialog").addEventListener("close", () => {
         window.clearTimeout(onboardingExerciseSearchTimer);
         window.clearTimeout(onboardingLanguageTimer);
+        window.clearTimeout(onboardingMoveTimer);
         delete $("#onboarding-dialog").dataset.dialogOpenOrder;
         document.body.classList.remove("sheet-open");
     });
@@ -2422,7 +2464,11 @@ function bindEvents() {
             selected.add(name);
         }
         state.onboardingSelectedExercises = [...selected];
-        renderOnboardingGlobalExercises();
+        window.clearTimeout(onboardingMoveTimer);
+        renderOnboardingGlobalExercises({preserveOrder: true});
+        onboardingMoveTimer = window.setTimeout(() => {
+            renderOnboardingGlobalExercises({animate: true});
+        }, 160);
     });
     $("#onboarding-exercise-add-open").addEventListener("click", openExerciseAddDialog);
     $("#onboarding-start-button").addEventListener("click", () => completeOnboarding().catch(console.error));
