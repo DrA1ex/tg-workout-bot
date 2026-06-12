@@ -1154,14 +1154,14 @@ function progressResultMetricLabel(data) {
 }
 
 function ensureProgressChart() {
-    const wrap = $(".progress-chart-wrap");
+    const wrap = $("#progress-content .progress-chart-wrap");
     if ($("#progress-chart")) return;
     wrap.classList.remove("empty");
     wrap.innerHTML = `<svg id="progress-chart" viewBox="0 0 360 246" role="img" aria-label="Progress chart"></svg>`;
 }
 
 function renderProgressChartEmpty(message) {
-    const wrap = $(".progress-chart-wrap");
+    const wrap = $("#progress-content .progress-chart-wrap");
     wrap.classList.add("empty");
     wrap.innerHTML = `<div class="progress-chart-empty">${escapeHtml(message)}</div>`;
 }
