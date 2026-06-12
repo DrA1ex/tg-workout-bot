@@ -1147,8 +1147,7 @@ textarea {
     padding-bottom: 96px;
 }
 
-.onboarding-dialog .onboarding-form > .add-field,
-.onboarding-dialog .onboarding-form > .exercise-add-trigger {
+.onboarding-dialog .onboarding-form > .add-field {
     flex: 0 0 auto;
 }
 
@@ -1250,6 +1249,24 @@ textarea {
     border-color: var(--primary);
     background: var(--primary);
     color: var(--primary-ink);
+}
+
+.onboarding-add-row .onboarding-exercise-button {
+    color: var(--primary);
+}
+
+.onboarding-add-icon {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+    color: var(--primary);
+    font-size: 22px;
+    font-weight: 760;
+    line-height: 1;
 }
 
 .onboarding-actions {

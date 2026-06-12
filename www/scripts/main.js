@@ -975,6 +975,12 @@ function openExerciseAddDialog() {
     openModalDialog($("#exercise-add-dialog"));
 }
 
+function openExerciseAddDialogWithName(name = "") {
+    openExerciseAddDialog();
+    $("#exercise-name").value = name.trim();
+    if (name.trim()) $("#exercise-notes").focus();
+}
+
 function setExerciseEditPending(pending) {
     state.savingExercise = pending;
     const saveButton = $("#exercise-edit-save");
@@ -1420,7 +1426,8 @@ function onboardingSelectedSet() {
 }
 
 function onboardingExerciseByName(name) {
-    return state.exercises.find(exercise => exercise.name === name) ||
+    return state.onboardingCustomExercises.find(exercise => exercise.name === name) ||
+        state.exercises.find(exercise => exercise.name === name) ||
         state.onboardingGlobalExercises.find(exercise => exercise.name === name) ||
         {name, notes: ""};
 }
@@ -1432,7 +1439,9 @@ function onboardingMatchesSearch(name) {
 
 function onboardingExerciseRow(exercise, selected) {
     const isSelected = selected.has(exercise.name);
-    const isAdded = exercise.added || state.exercises.some(userExercise => userExercise.name === exercise.name);
+    const isAdded = exercise.added ||
+        exercise.onboardingCustom ||
+        state.exercises.some(userExercise => userExercise.name === exercise.name);
     return `
         <article class="workout-row onboarding-exercise-row ${isSelected ? "selected" : ""}" data-onboarding-row="${escapeHtml(exercise.name)}">
             <button class="onboarding-exercise-button" type="button" data-onboarding-exercise="${escapeHtml(exercise.name)}">
@@ -1459,8 +1468,32 @@ function renderOnboardingSearchState() {
 }
 
 function onboardingEmptyMessage() {
-    if (state.onboardingSearch) return t("onboarding.noResults");
     return t("onboarding.noChoices");
+}
+
+function shouldShowOnboardingAddSuggestion(rows) {
+    const query = state.onboardingSearch.trim();
+    if (!query || state.onboardingLoading || state.onboardingSearchPending) return false;
+    if (rows.length >= 5) return false;
+    return !rows.some(exercise => exercise.name.toLowerCase() === query.toLowerCase());
+}
+
+function onboardingAddSuggestionRow({hasResults}) {
+    const name = state.onboardingSearch.trim();
+    const title = interpolate(t("onboarding.addSearch"), {name});
+    const subtitle = hasResults ? t("onboarding.addSearchHint") : t("onboarding.noResults");
+
+    return `
+        <article class="workout-row onboarding-exercise-row onboarding-add-row">
+            <button class="onboarding-exercise-button" type="button" data-onboarding-add-search>
+                <span class="swipe-workout-body">
+                    <h3>${escapeHtml(title)}</h3>
+                    <p>${escapeHtml(subtitle)}</p>
+                </span>
+                <span class="onboarding-add-icon" aria-hidden="true">＋</span>
+            </button>
+        </article>
+    `;
 }
 
 function onboardingRowPositions(list) {
@@ -1513,8 +1546,13 @@ function renderOnboardingGlobalExercises({animate = false, preserveOrder = false
             return [...selectedRows, ...globalRows];
         })();
 
-    list.innerHTML = rows.length
-        ? rows.map(exercise => onboardingExerciseRow(exercise, selected)).join("")
+    const rowMarkup = rows.map(exercise => onboardingExerciseRow(exercise, selected));
+    if (shouldShowOnboardingAddSuggestion(rows)) {
+        rowMarkup.push(onboardingAddSuggestionRow({hasResults: rows.length > 0}));
+    }
+
+    list.innerHTML = rowMarkup.length
+        ? rowMarkup.join("")
         : `<div class="empty">${escapeHtml(onboardingEmptyMessage())}</div>`;
     if (animate) animateOnboardingRows(list, previousPositions);
     renderOnboardingSearchState();
@@ -1579,6 +1617,7 @@ function openOnboardingIfNeeded() {
     state.onboardingSearch = "";
     state.onboardingSearchPending = false;
     onboardingGlobalRequestSeq += 1;
+    state.onboardingCustomExercises = [];
     state.onboardingSelectedExercises = [];
     state.onboardingGlobalExercises = [];
     state.onboardingHasMore = true;
@@ -1613,7 +1652,10 @@ async function completeOnboarding() {
     if (!state.onboardingSelectedExercises.length) return;
     const selected = state.onboardingSelectedExercises
         .filter(name => !state.exercises.some(exercise => exercise.name === name))
-        .map(name => ({name, notes: ""}));
+        .map(name => {
+            const exercise = onboardingExerciseByName(name);
+            return {name: exercise.name, notes: exercise.notes || ""};
+        });
 
     state.onboardingSaving = true;
     updateOnboardingStartState();
@@ -2305,26 +2347,54 @@ function bindEvents() {
         event.preventDefault();
         if (state.savingExercise) return;
         const createdName = $("#exercise-name").value.trim();
+        const createdNotes = $("#exercise-notes").value.trim();
         setExerciseAddPending(true);
         try {
+            if ($("#onboarding-dialog").open) {
+                const duplicate = [
+                    ...state.exercises,
+                    ...state.onboardingGlobalExercises,
+                    ...state.onboardingCustomExercises,
+                ].some(exercise => exercise.name.toLowerCase() === createdName.toLowerCase());
+                if (duplicate) {
+                    showToast("toast.exerciseDuplicate", {variant: "danger"});
+                    return;
+                }
+
+                await api("exercises/global", {
+                    method: "POST",
+                    body: JSON.stringify({name: createdName}),
+                });
+
+                state.onboardingCustomExercises = [
+                    {name: createdName, notes: createdNotes, onboardingCustom: true},
+                    ...state.onboardingCustomExercises,
+                ];
+                state.onboardingGlobalExercises = [
+                    {name: createdName, added: false},
+                    ...state.onboardingGlobalExercises.filter(exercise => exercise.name !== createdName),
+                ];
+                const selected = onboardingSelectedSet();
+                selected.add(createdName);
+                state.onboardingSelectedExercises = [...selected];
+                $("#exercise-form").reset();
+                closeModalDialog($("#exercise-add-dialog"));
+                renderOnboardingGlobalExercises();
+                showToast("toast.exerciseAdded");
+                return;
+            }
+
             const data = await api("exercises", {
                 method: "POST",
                 body: JSON.stringify({
                     name: createdName,
-                    notes: $("#exercise-notes").value,
+                    notes: createdNotes,
                 }),
             });
             syncExerciseState(data.exercises);
-            if ($("#onboarding-dialog").open && createdName) {
-                const selected = onboardingSelectedSet();
-                selected.add(createdName);
-                state.onboardingSelectedExercises = [...selected];
-                renderOnboardingGlobalExercises();
-            }
             $("#exercise-form").reset();
             closeModalDialog($("#exercise-add-dialog"));
             await refreshAll();
-            if ($("#onboarding-dialog").open) renderOnboardingGlobalExercises();
             showToast("toast.exerciseAdded");
         } catch (error) {
             console.error(error);
@@ -2454,6 +2524,12 @@ function bindEvents() {
         }
     }, {passive: true});
     $("#onboarding-exercise-list").addEventListener("click", event => {
+        const addSearchButton = event.target.closest("[data-onboarding-add-search]");
+        if (addSearchButton) {
+            openExerciseAddDialogWithName(state.onboardingSearch);
+            return;
+        }
+
         const button = event.target.closest("[data-onboarding-exercise]");
         if (!button || button.disabled) return;
         const selected = onboardingSelectedSet();
@@ -2470,7 +2546,6 @@ function bindEvents() {
             renderOnboardingGlobalExercises({animate: true});
         }, 160);
     });
-    $("#onboarding-exercise-add-open").addEventListener("click", openExerciseAddDialog);
     $("#onboarding-start-button").addEventListener("click", () => completeOnboarding().catch(console.error));
     $("#settings-exercise-search").addEventListener("input", event => {
         const query = event.target.value.trim();

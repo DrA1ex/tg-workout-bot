@@ -4,6 +4,7 @@ export const state = {
     recentExercises: [],
     globalExercises: [],
     onboardingGlobalExercises: [],
+    onboardingCustomExercises: [],
     onboardingSelectedExercises: [],
     onboardingSearch: "",
     onboardingSearchPending: false,

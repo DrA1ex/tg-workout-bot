@@ -105,6 +105,15 @@ export async function handleApi(req, res, url, config) {
         });
     }
 
+    if (req.method === "POST" && url.pathname === "/api/exercises/global") {
+        const body = await parseBody(req);
+        const name = String(body.name || "").trim();
+        if (!name) return sendJson(res, 400, {error: "Exercise name is required"});
+
+        await ExerciseDAO.addGlobalExercise(name);
+        return sendJson(res, 201, {exercise: {name, added: false}});
+    }
+
     if (req.method === "POST" && url.pathname === "/api/exercises/batch") {
         const body = await parseBody(req);
         const exercises = Array.isArray(body.exercises) ? body.exercises : [];
