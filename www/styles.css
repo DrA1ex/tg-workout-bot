@@ -3,6 +3,7 @@
     color-scheme: light;
     --bottom-nav-height: 62px;
     --app-max-width: 720px;
+    --sheet-max-width: 560px;
     --viewport-bottom-offset: 0px;
     --tg-safe-area-top: 0px;
     --tg-safe-area-right: 0px;
@@ -980,7 +981,7 @@ textarea {
     height: 100dvh;
     max-height: none;
     margin: 0 auto;
-    padding: 34px 10px 10px;
+    padding: calc(22px + var(--tg-content-safe-area-top)) 10px 6px;
     overflow: hidden;
     isolation: isolate;
 }
@@ -988,6 +989,7 @@ textarea {
 .workout-sheet-dialog[open] {
     display: grid;
     align-items: end;
+    justify-items: center;
 }
 
 .workout-sheet-dialog.sheet-opening::before {
@@ -1017,31 +1019,36 @@ textarea {
     z-index: 0;
     content: "";
     background:
-        linear-gradient(180deg, rgba(246, 248, 251, .62), rgba(234, 238, 244, .88)),
-        radial-gradient(circle at 50% 5%, rgba(255, 255, 255, .92), transparent 34%),
+        linear-gradient(180deg, rgba(246, 248, 251, .58), rgba(234, 238, 244, .9)),
+        radial-gradient(circle at 50% 4%, rgba(255, 255, 255, .94), transparent 36%),
+        radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 38%),
         var(--bg);
 }
 
 .workout-sheet-dialog::after {
     position: fixed;
-    inset: 18px 16px auto;
+    top: calc(8px + var(--tg-content-safe-area-top));
+    left: 50%;
     z-index: 0;
-    height: 360px;
-    border-radius: 28px;
+    width: min(calc(100% - 54px), calc(var(--sheet-max-width) - 18px));
+    height: calc(100dvh - 20px - var(--tg-content-safe-area-top));
+    border-radius: 30px;
     content: "";
     background:
         linear-gradient(#ffffff, #ffffff) padding-box,
         linear-gradient(135deg, rgba(209, 213, 219, .74), rgba(255, 255, 255, .18)) border-box;
     border: 1px solid transparent;
     box-shadow: 0 18px 56px rgba(15, 23, 42, .08);
-    opacity: .52;
-    transform: scale(.94) translateY(-14px);
+    opacity: .58;
+    transform-origin: top center;
+    transform: translateX(-50%) scale(.965);
 }
 
 [data-theme="dark"] .workout-sheet-dialog::before {
     background:
         linear-gradient(180deg, rgba(14, 19, 26, .72), rgba(9, 12, 18, .9)),
         radial-gradient(circle at 50% 5%, rgba(46, 59, 74, .72), transparent 34%),
+        radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 38%),
         var(--bg);
 }
 
@@ -1054,7 +1061,7 @@ textarea {
 
 .edit-sheet {
     z-index: 1;
-    width: min(100%, var(--app-max-width));
+    width: min(100%, var(--sheet-max-width));
     max-width: 100%;
     margin: 0 auto;
     max-height: calc(100dvh - 44px);
@@ -1382,13 +1389,13 @@ textarea {
     }
 
     to {
-        opacity: .52;
+        opacity: .58;
     }
 }
 
 @keyframes ios-sheet-card-exit {
     from {
-        opacity: .52;
+        opacity: .58;
     }
 
     to {
@@ -3151,8 +3158,9 @@ body[data-tab="add"] main {
     max-width: 100%;
     min-height: 100dvh;
     overflow: hidden;
-    padding: calc(34px + var(--tg-content-safe-area-top)) 10px 10px;
+    padding: calc(22px + var(--tg-content-safe-area-top)) 10px 6px;
     align-items: end;
+    justify-items: center;
     isolation: isolate;
 }
 
@@ -3162,31 +3170,36 @@ body[data-tab="add"] main {
     z-index: -2;
     content: "";
     background:
-        linear-gradient(180deg, rgba(246, 248, 251, .62), rgba(234, 238, 244, .88)),
-        radial-gradient(circle at 50% 5%, rgba(255, 255, 255, .92), transparent 34%),
+        linear-gradient(180deg, rgba(246, 248, 251, .58), rgba(234, 238, 244, .9)),
+        radial-gradient(circle at 50% 4%, rgba(255, 255, 255, .94), transparent 36%),
+        radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 38%),
         var(--bg);
 }
 
 .add-modal-screen::after {
     position: fixed;
-    inset: 18px 16px auto;
+    top: calc(8px + var(--tg-content-safe-area-top));
+    left: 50%;
     z-index: -1;
-    height: 360px;
-    border-radius: 28px;
+    width: min(calc(100% - 54px), calc(var(--sheet-max-width) - 18px));
+    height: calc(100dvh - 20px - var(--tg-content-safe-area-top));
+    border-radius: 30px;
     content: "";
     background:
         linear-gradient(#ffffff, #ffffff) padding-box,
         linear-gradient(135deg, rgba(209, 213, 219, .74), rgba(255, 255, 255, .18)) border-box;
     border: 1px solid transparent;
     box-shadow: 0 18px 56px rgba(15, 23, 42, .08);
-    opacity: .52;
-    transform: scale(.94) translateY(-14px);
+    opacity: .58;
+    transform-origin: top center;
+    transform: translateX(-50%) scale(.965);
 }
 
 [data-theme="dark"] .add-modal-screen::before {
     background:
         linear-gradient(180deg, rgba(14, 19, 26, .72), rgba(9, 12, 18, .9)),
         radial-gradient(circle at 50% 5%, rgba(46, 59, 74, .72), transparent 34%),
+        radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 38%),
         var(--bg);
 }
 
@@ -3199,18 +3212,19 @@ body[data-tab="add"] main {
 
 .add-sheet {
     position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
-    width: 100%;
+    width: min(100%, var(--sheet-max-width));
     max-width: 100%;
-    height: calc(100dvh - 44px - var(--tg-content-safe-area-top));
-    max-height: calc(100dvh - 44px - var(--tg-content-safe-area-top));
+    height: calc(100dvh - 28px - var(--tg-content-safe-area-top));
+    max-height: calc(100dvh - 28px - var(--tg-content-safe-area-top));
     overflow: hidden;
     padding: 8px 16px 0;
-    border: 1px solid rgba(209, 213, 219, .82);
+    border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
     border-radius: 30px;
-    background: color-mix(in srgb, var(--surface) 96%, transparent);
-    box-shadow: 0 -18px 64px rgba(15, 23, 42, .18), 0 2px 0 rgba(255, 255, 255, .72) inset;
+    background: color-mix(in srgb, var(--surface) 97%, var(--surface-soft));
+    box-shadow: 0 -18px 64px rgba(15, 23, 42, .16), 0 18px 54px rgba(15, 23, 42, .10), 0 1px 0 rgba(255, 255, 255, .72) inset;
 }
 
 .confirm-dialog {
@@ -3283,16 +3297,45 @@ body[data-tab="add"] main {
 
 [data-theme="dark"] .add-sheet {
     border-color: rgba(71, 85, 105, .72);
-    box-shadow: 0 -18px 64px rgba(0, 0, 0, .46), 0 1px 0 rgba(255, 255, 255, .08) inset;
+    box-shadow: 0 -18px 64px rgba(0, 0, 0, .42), 0 18px 54px rgba(0, 0, 0, .26), 0 1px 0 rgba(255, 255, 255, .08) inset;
+}
+
+@media (min-width: 720px) and (min-height: 680px) {
+    .workout-sheet-dialog {
+        padding: calc(24px + var(--tg-content-safe-area-top)) 18px 18px;
+    }
+
+    .add-modal-screen.active {
+        padding: calc(24px + var(--tg-content-safe-area-top)) 18px 18px;
+    }
+
+    .add-sheet {
+        height: min(860px, calc(100dvh - 44px - var(--tg-content-safe-area-top)));
+        max-height: min(860px, calc(100dvh - 44px - var(--tg-content-safe-area-top)));
+        border-radius: 32px;
+    }
+
+    .workout-sheet-dialog::after,
+    .add-modal-screen::after {
+        top: calc(10px + var(--tg-content-safe-area-top));
+        height: min(860px, calc(100dvh - 28px - var(--tg-content-safe-area-top)));
+        transform: translateX(-50%) scale(.965);
+    }
+
+    .exercise-sheet {
+        height: min(680px, calc(100dvh - 64px - var(--tg-content-safe-area-top)));
+        min-height: min(560px, calc(100dvh - 64px - var(--tg-content-safe-area-top)));
+    }
 }
 
 .sheet-grabber {
     flex: 0 0 5px;
-    width: 42px;
+    width: 38px;
     height: 5px;
-    margin: 2px auto 8px;
+    margin: 2px auto 9px;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--muted) 38%, transparent);
+    background: color-mix(in srgb, var(--muted) 28%, transparent);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .54) inset;
 }
 
 .add-screen-header {
