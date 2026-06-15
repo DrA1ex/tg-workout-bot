@@ -214,7 +214,10 @@ function renderDashboardList(target, items) {
         ? `
             <div class="dashboard-list-heading">
                 <strong>${t("dashboard.today")}</strong>
-                <span>${items.length} ${workoutCountLabel(items.length)}</span>
+                <span class="dashboard-list-heading-actions">
+                    <span>${items.length} ${workoutCountLabel(items.length)}</span>
+                    <button class="dashboard-list-add" data-action="quick-add" type="button" aria-label="${t("actions.addWorkout")}" title="${t("actions.addWorkout")}"></button>
+                </span>
             </div>
             ${items.map(dashboardWorkoutRow).join("")}
         `
@@ -249,13 +252,10 @@ function renderDashboard() {
     $("#weekly-streak-info").setAttribute("aria-label", t("dashboard.weeklyStreakHint"));
     $("#weekly-streak-info").setAttribute("title", t("dashboard.weeklyStreakHint"));
     $(".weekly-streak-card").classList.toggle("at-risk", !data.weeklyStreak?.currentWeekHasWorkout);
-    const hasTodayWorkouts = data.today.workouts.length > 0;
-    $("#dashboard-last-workout-row").hidden = hasTodayWorkouts;
-    if (!hasTodayWorkouts) {
-        $("#dashboard-last-workout").textContent = data.lastSession?.exercise || t("dashboard.noLastSession");
-        $("#dashboard-last-workout-detail").textContent = data.lastSession ? workoutDetail(data.lastSession) : "";
-        $("#dashboard-last-workout-date").textContent = shortDateLabel(data.lastSession);
-    }
+    $("#dashboard-last-workout-row").hidden = false;
+    $("#dashboard-last-workout").textContent = data.lastSession?.exercise || t("dashboard.noLastSession");
+    $("#dashboard-last-workout-detail").textContent = data.lastSession ? workoutDetail(data.lastSession) : "";
+    $("#dashboard-last-workout-date").textContent = shortDateLabel(data.lastSession);
     if (state.tab === "dashboard") {
         setHeadingSkeleton(false);
         $("#screen-title").textContent = t("screens.dashboard");
@@ -2521,6 +2521,7 @@ function bindEvents() {
         releaseNativeSelect(event.currentTarget);
         if (state.user) state.user = {...state.user, language: $("#language-select").value};
         applyI18n();
+        if (state.dashboard) renderDashboard();
         refreshWorkoutFormModes();
         if (state.progressLoaded) renderProgress();
     });

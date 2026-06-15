@@ -3,7 +3,7 @@ import {Op} from "sequelize";
 import {WorkoutDAO} from "../../../dao/index.js";
 import {models} from "../../../db/index.js";
 import {formatDate} from "../../../i18n/index.js";
-import {createDateGroupAttribute} from "../../../utils/timezone.js";
+import {createDateGroupAttribute, dateFromUserDateInput} from "../../../utils/timezone.js";
 import {addDays, addWeeks, dateOnly, shortWeekLabel, weekStartUtc} from "./dates.js";
 import {volumeFor, workoutPayload} from "./workouts.js";
 
@@ -24,6 +24,7 @@ export async function getDashboard(user) {
     const today = new Date();
     const currentWeekStart = weekStartUtc(today);
     const todayKey = dateOnly(today);
+    const todayStart = dateFromUserDateInput(todayKey, timezone);
 
     const todayRows = await WorkoutDAO.getWorkoutsByDate(user.telegramId, todayKey, timezone);
     const weekRows = await models.Workout.findAll({
@@ -54,6 +55,13 @@ export async function getDashboard(user) {
     }
 
     const recent = await getRecentWorkouts(user.telegramId, language, timezone);
+    const lastSessionBeforeToday = await models.Workout.findOne({
+        where: {
+            telegramId: user.telegramId,
+            date: {[Op.lt]: todayStart},
+        },
+        order: [["date", "DESC"], ["id", "DESC"]],
+    });
     const weeklyVolume = weekRows.reduce((sum, row) => sum + volumeFor(row), 0);
     const exerciseCount = new Set(weekRows.map(row => row.exercise)).size;
     const weeklyDays = new Set(weekRows.map(row => dateOnly(new Date(row.date)))).size;
@@ -98,7 +106,7 @@ export async function getDashboard(user) {
             weeks: activity,
         },
         activity,
-        lastSession: recent[0] || null,
+        lastSession: lastSessionBeforeToday ? workoutPayload(lastSessionBeforeToday, language, timezone) : null,
         recent,
     };
 }
