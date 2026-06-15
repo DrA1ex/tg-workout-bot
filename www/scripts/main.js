@@ -195,9 +195,29 @@ function renderList(target, items, emptyKey) {
         : `<div class="empty">${t(emptyKey)}</div>`;
 }
 
+function workoutCountLabel(count) {
+    const language = currentLocale();
+    if (language === "ru") {
+        const mod10 = count % 10;
+        const mod100 = count % 100;
+        if (mod10 === 1 && mod100 !== 11) return "запись";
+        if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "записи";
+        return "записей";
+    }
+    if (language === "fr") return count === 1 ? "séance" : "séances";
+    if (language === "de") return count === 1 ? "Workout" : "Workouts";
+    return count === 1 ? "workout" : "workouts";
+}
+
 function renderDashboardList(target, items) {
     target.innerHTML = items.length
-        ? items.map(dashboardWorkoutRow).join("")
+        ? `
+            <div class="dashboard-list-heading">
+                <strong>${t("dashboard.today")}</strong>
+                <span>${items.length} ${workoutCountLabel(items.length)}</span>
+            </div>
+            ${items.map(dashboardWorkoutRow).join("")}
+        `
         : `
             <div class="dashboard-empty">
                 <span class="dashboard-empty-icon">📅</span>

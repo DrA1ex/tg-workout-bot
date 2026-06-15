@@ -1543,6 +1543,38 @@ textarea {
     min-width: 0;
 }
 
+.dashboard-list-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 38px;
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+    background: color-mix(in srgb, var(--surface-soft) 54%, var(--surface));
+}
+
+.dashboard-list-heading strong {
+    overflow: hidden;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 850;
+    letter-spacing: .08em;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.dashboard-list-heading span {
+    flex: 0 0 auto;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 720;
+    line-height: 1;
+    white-space: nowrap;
+}
+
 .workout-log-card .dashboard-empty {
     padding: 14px 12px;
 }
