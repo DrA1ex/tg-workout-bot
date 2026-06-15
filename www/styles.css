@@ -1713,6 +1713,11 @@ textarea {
     white-space: nowrap;
 }
 
+.history-workout-list .workout-row h3:last-child,
+.onboarding-exercise-button h3:last-child {
+    margin-bottom: 0;
+}
+
 .history-workout-list .workout-row p,
 .dashboard-workout-body p,
 .progress-record-body small {
@@ -3024,7 +3029,7 @@ body.keyboard-open .bottom-nav {
 
 .dashboard-insight-row {
     display: grid;
-    grid-template-columns: 40px minmax(0, 1fr) auto auto;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
     align-items: center;
     gap: 10px;
     width: 100%;
@@ -3170,7 +3175,7 @@ body.keyboard-open .bottom-nav {
     }
 
     .dashboard-insight-row {
-        grid-template-columns: 34px minmax(0, 1fr) auto auto;
+        grid-template-columns: 34px minmax(0, 1fr) auto;
         gap: 10px;
         min-height: 70px;
         padding: 11px 12px;
