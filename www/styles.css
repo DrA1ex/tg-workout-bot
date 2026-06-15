@@ -456,8 +456,16 @@ label span {
 
 .swipe-workout-row {
     display: block;
+    --swipe-action-offset: 100%;
+    --swipe-main-padding-right: 13px;
+    --swipe-main-shift: 0px;
     overflow: hidden;
     padding: 0;
+}
+
+.swipe-workout-row.open {
+    --swipe-action-offset: 0%;
+    --swipe-main-padding-right: 116px;
 }
 
 .swipe-workout-main {
@@ -473,10 +481,11 @@ label span {
     border-radius: inherit;
     background: var(--surface);
     color: inherit;
-    padding: 13px;
+    padding: 13px var(--swipe-main-padding-right) 13px 13px;
     text-align: left;
     touch-action: pan-y;
-    transition: transform .22s cubic-bezier(.22, 1, .36, 1);
+    transform: translateX(var(--swipe-main-shift));
+    transition: padding-right .22s cubic-bezier(.22, 1, .36, 1), transform .22s cubic-bezier(.22, 1, .36, 1);
 }
 
 .swipe-workout-row.swiping .swipe-workout-main {
@@ -485,8 +494,13 @@ label span {
 
 .dashboard-swipe-row {
     position: relative;
+    --swipe-main-padding-right: 12px;
     overflow: hidden;
     border-radius: 14px;
+}
+
+.dashboard-swipe-row.open {
+    --swipe-main-padding-right: 116px;
 }
 
 .swipe-workout-body {
@@ -497,10 +511,6 @@ label span {
 .swipe-workout-body p {
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.swipe-workout-row.open .swipe-workout-main {
-    padding-right: calc(104px + 12px);
 }
 
 .swipe-workout-row.open .swipe-workout-body h3,
@@ -543,16 +553,12 @@ label span {
     font-size: 14px;
     font-weight: 850;
     z-index: 2;
-    transform: translateX(100%);
+    transform: translateX(var(--swipe-action-offset));
     transition: transform .22s cubic-bezier(.22, 1, .36, 1);
 }
 
 .swipe-workout-row.swiping .swipe-delete-action {
     transition: none;
-}
-
-.swipe-workout-row.open .swipe-delete-action {
-    transform: translateX(0);
 }
 
 .workout-row h3 {
@@ -1228,7 +1234,7 @@ textarea {
     gap: 12px;
     width: 100%;
     min-height: 64px;
-    padding: 8px 12px;
+    padding: 8px var(--swipe-main-padding-right, 12px) 8px 12px;
     border: 0;
     border-radius: 0;
     background: var(--surface);
@@ -1646,7 +1652,7 @@ textarea {
     align-items: center;
     width: 100%;
     min-height: 64px;
-    padding: 8px 12px;
+    padding: 8px var(--swipe-main-padding-right, 12px) 8px 12px;
     border: 0;
     border-radius: 0;
     background: var(--surface);
@@ -1660,7 +1666,7 @@ textarea {
     grid-template-columns: minmax(0, 1fr) 20px;
     gap: 10px;
     touch-action: pan-y;
-    transition: transform .22s cubic-bezier(.22, 1, .36, 1);
+    transition: padding-right .22s cubic-bezier(.22, 1, .36, 1), transform .22s cubic-bezier(.22, 1, .36, 1);
 }
 
 .progress-record-row {
@@ -1762,10 +1768,6 @@ textarea {
     font-size: 15px;
 }
 
-.dashboard-swipe-row.open .dashboard-workout-row {
-    padding-right: calc(104px + 12px);
-}
-
 .dashboard-swipe-row.swiping .dashboard-workout-row,
 .dashboard-swipe-row.swiping .swipe-delete-action {
     transition: none;
@@ -1788,10 +1790,6 @@ textarea {
 .dashboard-swipe-row.open .dashboard-workout-body p,
 .dashboard-swipe-row.swiping .dashboard-workout-body p {
     white-space: nowrap;
-}
-
-.dashboard-swipe-row.open .swipe-delete-action {
-    transform: translateX(0);
 }
 
 .history-sentinel {

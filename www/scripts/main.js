@@ -881,6 +881,9 @@ function closeSwipeRows(except = null) {
     $$(".swipe-workout-row.open").forEach(row => {
         if (row !== except) {
             row.classList.remove("open");
+            row.style.removeProperty("--swipe-main-padding-right");
+            row.style.removeProperty("--swipe-action-offset");
+            row.style.removeProperty("--swipe-main-shift");
             row.style.removeProperty("--swipe-main-height");
             row.style.removeProperty("--swipe-title-lines");
         }
@@ -911,6 +914,8 @@ function bindWorkoutSwipeActions() {
             startY: event.clientY,
             startProgress: row.classList.contains("open") ? 1 : 0,
             currentProgress: row.classList.contains("open") ? 1 : 0,
+            closedPadding: row.classList.contains("dashboard-swipe-row") ? 12 : 13,
+            openPadding: WORKOUT_SWIPE_WIDTH + 12,
             active: false,
         };
         main.setPointerCapture?.(event.pointerId);
@@ -934,20 +939,23 @@ function bindWorkoutSwipeActions() {
         event.preventDefault();
         const progress = Math.min(1, Math.max(0, workoutSwipe.startProgress - dx / WORKOUT_SWIPE_WIDTH));
         workoutSwipe.currentProgress = progress;
-        workoutSwipe.main.style.transform = `translateX(${-18 * progress}px)`;
-        if (workoutSwipe.action) {
-            workoutSwipe.action.style.transform = `translateX(${(1 - progress) * 100}%)`;
-        }
+        const padding = workoutSwipe.closedPadding + (workoutSwipe.openPadding - workoutSwipe.closedPadding) * progress;
+        workoutSwipe.row.style.setProperty("--swipe-main-padding-right", `${padding}px`);
+        workoutSwipe.row.style.setProperty("--swipe-action-offset", `${(1 - progress) * 100}%`);
+        workoutSwipe.row.style.setProperty("--swipe-main-shift", workoutSwipe.startProgress === 0 ? `${-18 * progress}px` : "0px");
     }, {passive: false});
 
     const finishSwipe = event => {
         if (!workoutSwipe || event.pointerId !== workoutSwipe.pointerId) return;
 
-        const {row, main, action, currentProgress, active} = workoutSwipe;
+        const {row, currentProgress, active} = workoutSwipe;
         row.classList.remove("swiping");
-        main.style.transform = "";
-        if (action) action.style.transform = "";
         row.classList.toggle("open", active && currentProgress > .5);
+        window.requestAnimationFrame(() => {
+            row.style.removeProperty("--swipe-main-padding-right");
+            row.style.removeProperty("--swipe-action-offset");
+            row.style.removeProperty("--swipe-main-shift");
+        });
         if (!row.classList.contains("open")) {
             row.style.removeProperty("--swipe-main-height");
             row.style.removeProperty("--swipe-title-lines");
@@ -2726,6 +2734,11 @@ function bindEvents() {
             if (swipeRow?.dataset.suppressClick === "true") return;
             if (swipeRow?.classList.contains("open")) {
                 swipeRow.classList.remove("open");
+                swipeRow.style.removeProperty("--swipe-main-padding-right");
+                swipeRow.style.removeProperty("--swipe-action-offset");
+                swipeRow.style.removeProperty("--swipe-main-shift");
+                swipeRow.style.removeProperty("--swipe-main-height");
+                swipeRow.style.removeProperty("--swipe-title-lines");
                 return;
             }
             const workout = findWorkout(editButton.dataset.editWorkout);
@@ -2746,6 +2759,11 @@ function bindEvents() {
             if (swipeRow?.dataset.suppressClick === "true") return;
             if (swipeRow?.classList.contains("open")) {
                 swipeRow.classList.remove("open");
+                swipeRow.style.removeProperty("--swipe-main-padding-right");
+                swipeRow.style.removeProperty("--swipe-action-offset");
+                swipeRow.style.removeProperty("--swipe-main-shift");
+                swipeRow.style.removeProperty("--swipe-main-height");
+                swipeRow.style.removeProperty("--swipe-title-lines");
                 return;
             }
             const exercise = findExercise(editExerciseButton.dataset.editExercise);
