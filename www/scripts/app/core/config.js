@@ -1,0 +1,15 @@
+export const HISTORY_PAGE_SIZE = 8;
+export const HISTORY_INITIAL_SIZE = 24;
+export const PULL_REFRESH_THRESHOLD = 42;
+export const PULL_REFRESH_REQUEST_DELAY = 220;
+export const PULL_REFRESH_MIN_VISIBLE = 760;
+export const VALID_TABS = new Set(["dashboard", "history", "add", "progress", "exercises", "settings"]);
+export const WORKOUT_SWIPE_WIDTH = 104;
+export const WORKOUT_SAVE_LOADER_DELAY = 180;
+export const WORKOUT_SAVE_MIN_LOADER_VISIBLE = 300;
+export const WORKOUT_SAVE_SUCCESS_VISIBLE = 500;
+export const EXERCISE_SAVE_LOADER_DELAY = 200;
+export const EXERCISE_SAVE_MIN_LOADER_VISIBLE = 200;
+export const EXERCISE_SAVE_SUCCESS_VISIBLE = 300;
+export const ONBOARDING_GLOBAL_PAGE_SIZE = 30;
+export const EXERCISE_ROW_SELECTOR = "[data-exercise-row-key]";

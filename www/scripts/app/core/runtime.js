@@ -1,0 +1,17 @@
+export const runtime = {
+    previousWorkoutController: null,
+    previousWorkoutRequest: null,
+    previousWorkoutRequestExercise: "",
+    historyObserver: null,
+    deleteWorkoutConfirmResolve: null,
+    sheetAnimationSeq: 0,
+    dialogOpenSeq: 0,
+    addScreenCloseTimer: null,
+    workoutSwipe: null,
+    pullRefresh: null,
+    settingsExerciseSearchTimer: null,
+    onboardingExerciseSearchTimer: null,
+    onboardingLanguageTimer: null,
+    onboardingMoveTimer: null,
+    onboardingGlobalRequestSeq: 0,
+};
