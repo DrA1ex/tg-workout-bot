@@ -29,9 +29,12 @@ export const state = {
     mode: "reps",
     saveMode: "next",
     savingWorkout: false,
+    workoutSaveLoading: false,
     workoutSubmitted: false,
     workoutDedupeToken: "",
     savingEditedWorkout: false,
+    editedWorkoutSaveLoading: false,
+    editedWorkoutSubmitted: false,
     savingExercise: false,
     deletingWorkout: false,
     pullRefreshing: false,
@@ -42,4 +45,5 @@ export const state = {
     previousWorkout: null,
     previousWorkoutExercise: "",
     previousWorkoutLoaded: false,
+    previousWorkoutLoading: false,
 };

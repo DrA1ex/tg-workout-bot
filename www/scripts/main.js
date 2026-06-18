@@ -3,6 +3,7 @@ import {api, authApi, setUnauthorizedHandler} from './api.js';
 import {configureAuth, ensureAuth, showAuthScreen} from './auth.js';
 import {$, $$, escapeHtml} from './dom.js';
 import {applyI18n, interpolate, t} from './i18n/index.js';
+import {telegramWebApp} from './telegram.js';
 import {applyTheme} from './theme.js';
 
 let previousWorkoutController = null;
@@ -30,8 +31,12 @@ const PULL_REFRESH_REQUEST_DELAY = 220;
 const PULL_REFRESH_MIN_VISIBLE = 760;
 const VALID_TABS = new Set(["dashboard", "history", "add", "progress", "exercises", "settings"]);
 const WORKOUT_SWIPE_WIDTH = 104;
-const WORKOUT_SAVE_MIN_VISIBLE = 300;
-const WORKOUT_SAVED_CLOSE_DELAY = 200;
+const WORKOUT_SAVE_LOADER_DELAY = 180;
+const WORKOUT_SAVE_MIN_LOADER_VISIBLE = 300;
+const WORKOUT_SAVE_SUCCESS_VISIBLE = 500;
+const EXERCISE_SAVE_LOADER_DELAY = 200;
+const EXERCISE_SAVE_MIN_LOADER_VISIBLE = 200;
+const EXERCISE_SAVE_SUCCESS_VISIBLE = 300;
 const ONBOARDING_GLOBAL_PAGE_SIZE = 30;
 
 function normalizeTimezoneInputValue(value) {
@@ -308,15 +313,15 @@ function updateWorkoutFormState() {
 
     const saveButton = $("#workout-save-button");
     if (saveButton) {
-        saveButton.textContent = state.savingWorkout
+        saveButton.textContent = state.workoutSaveLoading
             ? t("actions.saving")
-            : state.workoutSubmitted ? t("actions.saved") : t("actions.save");
-        saveButton.classList.toggle("loading", state.savingWorkout);
+            : state.workoutSubmitted ? `✓ ${t("actions.saved")}` : t("actions.save");
+        saveButton.classList.toggle("loading", state.workoutSaveLoading);
     }
 }
 
 function updateEditWorkoutFormState() {
-    const disabled = Boolean(state.savingEditedWorkout);
+    const disabled = Boolean(state.savingEditedWorkout || state.editedWorkoutSubmitted);
     $$("#edit-form input, #edit-form select, #edit-form textarea, #edit-form button").forEach(node => {
         node.disabled = disabled;
     });
@@ -327,8 +332,10 @@ function updateEditWorkoutFormState() {
 
     const saveButton = $("#edit-save-button");
     if (saveButton) {
-        saveButton.textContent = state.savingEditedWorkout ? t("actions.saving") : t("actions.save");
-        saveButton.classList.toggle("loading", state.savingEditedWorkout);
+        saveButton.textContent = state.editedWorkoutSaveLoading
+            ? t("actions.saving")
+            : state.editedWorkoutSubmitted ? `✓ ${t("actions.saved")}` : t("actions.save");
+        saveButton.classList.toggle("loading", state.editedWorkoutSaveLoading);
     }
 }
 
@@ -602,9 +609,32 @@ function currentWorkoutDedupeToken() {
     return state.workoutDedupeToken;
 }
 
+function triggerSuccessHaptic() {
+    telegramWebApp?.HapticFeedback?.notificationOccurred?.("success");
+}
+
+function createDelayedLoader({delayMs, minVisibleMs, show}) {
+    let shownAt = 0;
+    const timer = window.setTimeout(() => {
+        shownAt = Date.now();
+        show();
+    }, delayMs);
+
+    return {
+        cancel() {
+            window.clearTimeout(timer);
+        },
+        async waitForMinVisible() {
+            if (!shownAt) return;
+            await delay(Math.max(0, minVisibleMs - (Date.now() - shownAt)));
+        },
+    };
+}
+
 function initializeWorkoutFormSession() {
     state.workoutDedupeToken = generateDedupeToken();
     state.savingWorkout = false;
+    state.workoutSaveLoading = false;
     state.workoutSubmitted = false;
     clearWorkoutInputs();
     updateWorkoutFormState();
@@ -708,6 +738,8 @@ function refreshWorkoutFormModes() {
 
 function openEditDialog(workout) {
     state.savingEditedWorkout = false;
+    state.editedWorkoutSaveLoading = false;
+    state.editedWorkoutSubmitted = false;
     $("#edit-id").value = workout.id;
     setWorkoutFormValues("edit", workout);
     updateEditWorkoutFormState();
@@ -984,21 +1016,48 @@ function bindWorkoutSwipeActions() {
 }
 
 async function saveEditedWorkout() {
-    if (state.savingEditedWorkout) return;
+    if (state.savingEditedWorkout || state.editedWorkoutSubmitted) return;
     const id = $("#edit-id").value;
     state.savingEditedWorkout = true;
+    state.editedWorkoutSaveLoading = false;
+    state.editedWorkoutSubmitted = false;
     updateEditWorkoutFormState();
+    const loader = createDelayedLoader({
+        delayMs: WORKOUT_SAVE_LOADER_DELAY,
+        minVisibleMs: WORKOUT_SAVE_MIN_LOADER_VISIBLE,
+        show: () => {
+            state.editedWorkoutSaveLoading = true;
+            updateEditWorkoutFormState();
+        },
+    });
+
     try {
         const workout = await api(`workouts/${id}`, {
             method: "PATCH",
             body: JSON.stringify(readWorkoutFormValues("edit")),
         });
-        closeSheetDialog($("#edit-dialog"));
+        loader.cancel();
+        await loader.waitForMinVisible();
         updateWorkoutInLoadedState(workout);
-        showToast("toast.saved");
-    } finally {
         state.savingEditedWorkout = false;
+        state.editedWorkoutSaveLoading = false;
+        state.editedWorkoutSubmitted = true;
         updateEditWorkoutFormState();
+        triggerSuccessHaptic();
+        await delay(WORKOUT_SAVE_SUCCESS_VISIBLE);
+        closeSheetDialog($("#edit-dialog"));
+    } catch (error) {
+        loader.cancel();
+        await loader.waitForMinVisible();
+        console.error(error);
+        showToast("toast.saveFailed", {variant: "danger"});
+    } finally {
+        loader.cancel();
+        if (!state.editedWorkoutSubmitted) {
+            state.savingEditedWorkout = false;
+            state.editedWorkoutSaveLoading = false;
+            updateEditWorkoutFormState();
+        }
     }
 }
 
@@ -1050,12 +1109,12 @@ function setExerciseEditPending(pending) {
     });
 }
 
-function setExerciseAddPending(pending) {
+function setExerciseAddPending(pending, {loading = pending, saved = false} = {}) {
     state.savingExercise = pending;
     const saveButton = $("#exercise-add-save");
     saveButton.disabled = pending;
-    saveButton.classList.toggle("loading", pending);
-    saveButton.textContent = pending ? t("actions.saving") : t("actions.addExercise");
+    saveButton.classList.toggle("loading", loading);
+    saveButton.textContent = saved ? `✓ ${t("actions.saved")}` : loading ? t("actions.saving") : t("actions.addExercise");
     $$("#exercise-form input, #exercise-form textarea, #exercise-form button").forEach(node => {
         if (node.id !== "exercise-add-save") node.disabled = pending;
     });
@@ -1871,6 +1930,7 @@ function setTab(tab, options = {}) {
     }
     if (previousTab === "add" && tab !== "add") {
         state.savingWorkout = false;
+        state.workoutSaveLoading = false;
         state.workoutSubmitted = false;
         updateWorkoutFormState();
     }
@@ -2024,6 +2084,7 @@ function clearWorkoutInputs() {
     state.previousWorkoutLoaded = false;
     $("#previous-hint").textContent = t("add.previousHint");
     $("#previous-summary").textContent = t("add.previousHint");
+    updatePreviousWorkoutLoadingState(false);
 }
 
 function abortPreviousWorkoutRequest() {
@@ -2032,6 +2093,7 @@ function abortPreviousWorkoutRequest() {
     previousWorkoutController = null;
     previousWorkoutRequest = null;
     previousWorkoutRequestExercise = "";
+    updatePreviousWorkoutLoadingState(false);
 }
 
 function findPreviousWorkoutForSelectedExercise() {
@@ -2050,12 +2112,22 @@ function setPreviousWorkoutSummary(workout, selected) {
     $("#previous-summary").textContent = workoutDetail(workout);
 }
 
+function updatePreviousWorkoutLoadingState(loading) {
+    state.previousWorkoutLoading = loading;
+    const button = $("#use-previous");
+    const icon = button.querySelector(".previous-icon");
+    button.classList.toggle("loading", loading);
+    button.setAttribute("aria-busy", loading ? "true" : "false");
+    if (icon) icon.textContent = loading ? "" : "↩️";
+}
+
 async function updatePreviousWorkoutSummary() {
     const selected = $("#workout-exercise").value;
     if (!$("#workout-sets").value) $("#workout-sets").value = "3";
     if (!$("#workout-reps").value) $("#workout-reps").value = "12";
 
     if (selected && state.previousWorkoutExercise === selected && state.previousWorkoutLoaded) {
+        updatePreviousWorkoutLoadingState(false);
         setPreviousWorkoutSummary(state.previousWorkout, selected);
         return state.previousWorkout;
     }
@@ -2070,6 +2142,7 @@ async function updatePreviousWorkoutSummary() {
     state.previousWorkoutLoaded = false;
 
     if (!selected) {
+        updatePreviousWorkoutLoadingState(false);
         setPreviousWorkoutSummary(null, selected);
         return null;
     }
@@ -2077,6 +2150,7 @@ async function updatePreviousWorkoutSummary() {
     const controller = new AbortController();
     previousWorkoutController = controller;
     previousWorkoutRequestExercise = selected;
+    updatePreviousWorkoutLoadingState(true);
 
     previousWorkoutRequest = (async () => {
         const data = await api(`workouts/previous?exercise=${encodeURIComponent(selected)}`, {
@@ -2106,6 +2180,7 @@ async function updatePreviousWorkoutSummary() {
             previousWorkoutController = null;
             previousWorkoutRequest = null;
             previousWorkoutRequestExercise = "";
+            updatePreviousWorkoutLoadingState(false);
         }
     }
 }
@@ -2381,8 +2456,17 @@ function bindEvents() {
 
         const saveMode = event.submitter?.dataset.saveMode || "finish";
         state.savingWorkout = true;
+        state.workoutSaveLoading = false;
+        state.workoutSubmitted = false;
         updateWorkoutFormState();
-        const minSavingVisible = delay(WORKOUT_SAVE_MIN_VISIBLE);
+        const loader = createDelayedLoader({
+            delayMs: WORKOUT_SAVE_LOADER_DELAY,
+            minVisibleMs: WORKOUT_SAVE_MIN_LOADER_VISIBLE,
+            show: () => {
+                state.workoutSaveLoading = true;
+                updateWorkoutFormState();
+            },
+        });
 
         try {
             const workoutDate = $("#workout-date").value;
@@ -2393,13 +2477,15 @@ function bindEvents() {
                     deduplicationToken: currentWorkoutDedupeToken(),
                 }),
             });
-            await minSavingVisible;
+            loader.cancel();
+            await loader.waitForMinVisible();
             addWorkoutToLoadedState(workout, workoutDate);
             state.savingWorkout = false;
+            state.workoutSaveLoading = false;
             state.workoutSubmitted = true;
             updateWorkoutFormState();
-            showToast("toast.added");
-            await delay(WORKOUT_SAVED_CLOSE_DELAY);
+            triggerSuccessHaptic();
+            await delay(WORKOUT_SAVE_SUCCESS_VISIBLE);
             if (saveMode === "finish") {
                 navigateTab("dashboard");
             } else {
@@ -2407,12 +2493,15 @@ function bindEvents() {
                 $("#workout-exercise").focus();
             }
         } catch (error) {
-            await minSavingVisible;
+            loader.cancel();
+            await loader.waitForMinVisible();
             console.error(error);
-            showToast("toast.saveFailed");
+            showToast("toast.saveFailed", {variant: "danger"});
         } finally {
+            loader.cancel();
             if (!state.workoutSubmitted) {
                 state.savingWorkout = false;
+                state.workoutSaveLoading = false;
                 updateWorkoutFormState();
             }
         }
@@ -2423,7 +2512,17 @@ function bindEvents() {
         if (state.savingExercise) return;
         const createdName = $("#exercise-name").value.trim();
         const createdNotes = $("#exercise-notes").value.trim();
-        setExerciseAddPending(true);
+        setExerciseAddPending(true, {loading: false});
+        let loaderShownAt = 0;
+        const loaderTimer = window.setTimeout(() => {
+            loaderShownAt = Date.now();
+            setExerciseAddPending(true, {loading: true});
+        }, EXERCISE_SAVE_LOADER_DELAY);
+        const waitForMinLoaderVisible = async () => {
+            if (!loaderShownAt) return;
+            await delay(Math.max(0, EXERCISE_SAVE_MIN_LOADER_VISIBLE - (Date.now() - loaderShownAt)));
+        };
+
         try {
             if ($("#onboarding-dialog").open) {
                 const duplicate = [
@@ -2432,6 +2531,8 @@ function bindEvents() {
                     ...state.onboardingCustomExercises,
                 ].some(exercise => exercise.name.toLowerCase() === createdName.toLowerCase());
                 if (duplicate) {
+                    window.clearTimeout(loaderTimer);
+                    await waitForMinLoaderVisible();
                     showToast("toast.exerciseDuplicate", {variant: "danger"});
                     return;
                 }
@@ -2452,10 +2553,15 @@ function bindEvents() {
                 const selected = onboardingSelectedSet();
                 selected.add(createdName);
                 state.onboardingSelectedExercises = [...selected];
-                $("#exercise-form").reset();
-                closeModalDialog($("#exercise-add-dialog"));
+                window.clearTimeout(loaderTimer);
+                await waitForMinLoaderVisible();
                 renderOnboardingGlobalExercises();
-                showToast("toast.exerciseAdded");
+                setExerciseAddPending(true, {loading: false, saved: true});
+                triggerSuccessHaptic();
+                await delay(EXERCISE_SAVE_SUCCESS_VISIBLE);
+                closeModalDialog($("#exercise-add-dialog"));
+                $("#exercise-form").reset();
+                setExerciseAddPending(false);
                 return;
             }
 
@@ -2466,16 +2572,25 @@ function bindEvents() {
                     notes: createdNotes,
                 }),
             });
+            window.clearTimeout(loaderTimer);
+            await waitForMinLoaderVisible();
             syncExerciseState(data.exercises);
-            $("#exercise-form").reset();
+            renderExercises();
+            setExerciseAddPending(true, {loading: false, saved: true});
+            triggerSuccessHaptic();
+            await delay(EXERCISE_SAVE_SUCCESS_VISIBLE);
             closeModalDialog($("#exercise-add-dialog"));
+            $("#exercise-form").reset();
+            setExerciseAddPending(false);
             await refreshAll();
-            showToast("toast.exerciseAdded");
         } catch (error) {
+            window.clearTimeout(loaderTimer);
+            await waitForMinLoaderVisible();
             console.error(error);
             showToast(error.status === 409 ? "toast.exerciseDuplicate" : "toast.saveFailed", {variant: "danger"});
         } finally {
-            setExerciseAddPending(false);
+            window.clearTimeout(loaderTimer);
+            if (state.savingExercise) setExerciseAddPending(false);
         }
     });
 

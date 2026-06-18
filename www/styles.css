@@ -3803,8 +3803,22 @@ body[data-tab="add"] main {
 }
 
 .previous-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
     color: var(--primary);
     font-size: 23px;
+}
+
+.previous-row.loading .previous-icon::before {
+    width: 18px;
+    height: 18px;
+    border: 2px solid color-mix(in srgb, var(--primary) 28%, transparent);
+    border-top-color: var(--primary);
+    border-radius: 999px;
+    content: "";
+    animation: button-spin .8s linear infinite;
 }
 
 .previous-copy {
