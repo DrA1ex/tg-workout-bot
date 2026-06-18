@@ -29,6 +29,7 @@ export const state = {
     mode: "reps",
     saveMode: "next",
     savingWorkout: false,
+    workoutSubmitted: false,
     workoutDedupeToken: "",
     savingEditedWorkout: false,
     savingExercise: false,

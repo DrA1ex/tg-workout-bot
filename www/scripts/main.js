@@ -30,6 +30,8 @@ const PULL_REFRESH_REQUEST_DELAY = 220;
 const PULL_REFRESH_MIN_VISIBLE = 760;
 const VALID_TABS = new Set(["dashboard", "history", "add", "progress", "exercises", "settings"]);
 const WORKOUT_SWIPE_WIDTH = 104;
+const WORKOUT_SAVE_MIN_VISIBLE = 300;
+const WORKOUT_SAVED_CLOSE_DELAY = 200;
 const ONBOARDING_GLOBAL_PAGE_SIZE = 30;
 
 function normalizeTimezoneInputValue(value) {
@@ -299,14 +301,16 @@ function updateAppReadyState() {
 }
 
 function updateWorkoutFormState() {
-    const disabled = state.savingWorkout || state.exercises.length === 0;
+    const disabled = state.savingWorkout || state.workoutSubmitted || state.exercises.length === 0;
     $$("#workout-form input, #workout-form select, #workout-form textarea, #workout-form button").forEach(node => {
         node.disabled = disabled;
     });
 
     const saveButton = $("#workout-save-button");
     if (saveButton) {
-        saveButton.textContent = state.savingWorkout ? t("actions.saving") : t("actions.save");
+        saveButton.textContent = state.savingWorkout
+            ? t("actions.saving")
+            : state.workoutSubmitted ? t("actions.saved") : t("actions.save");
         saveButton.classList.toggle("loading", state.savingWorkout);
     }
 }
@@ -596,6 +600,14 @@ function currentWorkoutDedupeToken() {
         state.workoutDedupeToken = generateDedupeToken();
     }
     return state.workoutDedupeToken;
+}
+
+function initializeWorkoutFormSession() {
+    state.workoutDedupeToken = generateDedupeToken();
+    state.savingWorkout = false;
+    state.workoutSubmitted = false;
+    clearWorkoutInputs();
+    updateWorkoutFormState();
 }
 
 function workoutFormFields(prefix) {
@@ -1385,13 +1397,14 @@ function addWorkoutToLoadedState(workout, dateKey) {
     if (state.dashboard) {
         const isToday = dateKey === todayInputValue();
         const recent = [workout, ...(state.dashboard.recent || []).filter(row => String(row.id) !== String(workout.id))].slice(0, 8);
+        const todayWorkouts = state.dashboard.today?.workouts || [];
         state.dashboard = {
             ...state.dashboard,
             today: {
                 ...state.dashboard.today,
                 workouts: isToday
-                    ? [...(state.dashboard.today?.workouts || []), workout]
-                    : (state.dashboard.today?.workouts || []),
+                    ? [...todayWorkouts.filter(row => String(row.id) !== String(workout.id)), workout]
+                    : todayWorkouts,
             },
             recent,
             lastSession: recent[0] || workout,
@@ -1856,9 +1869,18 @@ function setTab(tab, options = {}) {
     if (tab === "settings") {
         renderSettings();
     }
+    if (previousTab === "add" && tab !== "add") {
+        state.savingWorkout = false;
+        state.workoutSubmitted = false;
+        updateWorkoutFormState();
+    }
+    const isOpeningAddScreen = tab === "add" && previousTab !== "add";
     if (tab === "add") {
+        if (isOpeningAddScreen) {
+            initializeWorkoutFormSession();
+        }
         window.scrollTo({top: 0, behavior: "instant"});
-        if (previousTab !== "add" && options.animate !== false) animateAddScreenOpen();
+        if (isOpeningAddScreen && options.animate !== false) animateAddScreenOpen();
         updatePreviousWorkoutSummary().catch(console.error);
     }
 }
@@ -1991,7 +2013,6 @@ function setupHistoryInfiniteScroll() {
 
 function clearWorkoutInputs() {
     abortPreviousWorkoutRequest();
-    state.workoutDedupeToken = "";
     $("#workout-sets").value = "3";
     $("#workout-weight").value = "";
     $("#workout-reps").value = "12";
@@ -2232,7 +2253,7 @@ function schedulePullRefreshFrame() {
 
 function canStartPullRefresh(event) {
     if (!["dashboard", "history"].includes(state.tab)) return false;
-    if (state.pullRefreshing || state.savingWorkout || state.deletingWorkout) return false;
+    if (state.pullRefreshing || state.savingWorkout || state.workoutSubmitted || state.deletingWorkout) return false;
     if (document.body.classList.contains("sheet-open")) return false;
     if (window.scrollY > 0) return false;
 
@@ -2356,11 +2377,12 @@ function bindEvents() {
 
     $("#workout-form").addEventListener("submit", async event => {
         event.preventDefault();
-        if (state.savingWorkout) return;
+        if (state.savingWorkout || state.workoutSubmitted) return;
 
-        const saveMode = event.submitter?.dataset.saveMode || "next";
+        const saveMode = event.submitter?.dataset.saveMode || "finish";
         state.savingWorkout = true;
         updateWorkoutFormState();
+        const minSavingVisible = delay(WORKOUT_SAVE_MIN_VISIBLE);
 
         try {
             const workoutDate = $("#workout-date").value;
@@ -2371,9 +2393,13 @@ function bindEvents() {
                     deduplicationToken: currentWorkoutDedupeToken(),
                 }),
             });
+            await minSavingVisible;
             addWorkoutToLoadedState(workout, workoutDate);
-            clearWorkoutInputs();
+            state.savingWorkout = false;
+            state.workoutSubmitted = true;
+            updateWorkoutFormState();
             showToast("toast.added");
+            await delay(WORKOUT_SAVED_CLOSE_DELAY);
             if (saveMode === "finish") {
                 navigateTab("dashboard");
             } else {
@@ -2381,11 +2407,14 @@ function bindEvents() {
                 $("#workout-exercise").focus();
             }
         } catch (error) {
+            await minSavingVisible;
             console.error(error);
             showToast("toast.saveFailed");
         } finally {
-            state.savingWorkout = false;
-            updateWorkoutFormState();
+            if (!state.workoutSubmitted) {
+                state.savingWorkout = false;
+                updateWorkoutFormState();
+            }
         }
     });
 
@@ -2796,8 +2825,7 @@ function registerServiceWorker() {
 
 $("#workout-date").value = todayInputValue();
 setWorkoutFormMode("workout", {hasWeight: true, isTime: false});
-state.tab = tabFromUrl();
-setTab(state.tab, {force: true, updateUrl: false, animate: false});
+setTab(tabFromUrl(), {force: true, updateUrl: false, animate: false});
 configureAuth({applyTheme, refreshAll});
 setUnauthorizedHandler(showAuthScreen);
 bindViewportInsets();
