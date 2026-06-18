@@ -48,20 +48,27 @@ export function updateAppReadyState() {
 }
 
 export function animateAddScreenOpen() {
-    window.clearTimeout(runtime.addScreenCloseTimer);
+    const screen = $("#screen-add");
     const sheet = $("#screen-add .add-sheet");
     if (!sheet) return;
+    screen?.classList.remove("sheet-closing");
+    screen?.classList.add("sheet-opening");
     sheet.style.opacity = "0";
-    sheet.style.transform = "translateY(32px) scale(.985)";
-    animateSheetElement(sheet, "in");
+    sheet.style.transform = "translate3d(0, 38px, -28px) rotateX(14deg) scale3d(.972, .972, 1)";
+    animateSheetElement(sheet, "in", () => {
+        screen?.classList.remove("sheet-opening");
+    });
 }
 
 export function animateAddScreenClose(nextTab, options = {}) {
+    const screen = $("#screen-add");
     const sheet = $("#screen-add .add-sheet");
-    animateSheetElement(sheet, "out", () => setTab(nextTab, {...options, animate: false}));
-    runtime.addScreenCloseTimer = window.setTimeout(() => {
-        if (state.tab === "add") setTab(nextTab, {...options, animate: false});
-    }, 260);
+    screen?.classList.remove("sheet-opening");
+    screen?.classList.add("sheet-closing");
+    animateSheetElement(sheet, "out", () => {
+        screen?.classList.remove("sheet-closing");
+        setTab(nextTab, {...options, animate: false});
+    });
 }
 
 export function navigateTab(tab, options = {}) {

@@ -124,6 +124,12 @@ body.dialog-open {
     overscroll-behavior: none;
 }
 
+body.sheet-open,
+body.dialog-open,
+html.dialog-open {
+    background: color-mix(in srgb, var(--bg) 82%, #000 18%);
+}
+
 @supports not (overflow-x: clip) {
     html,
     body {
@@ -1013,7 +1019,7 @@ textarea {
 }
 
 .modal::backdrop {
-    background: rgba(7, 13, 21, .48);
+    background: rgba(7, 13, 21, .56);
 }
 
 .workout-sheet-dialog {
@@ -1025,6 +1031,7 @@ textarea {
     padding: calc(22px + var(--tg-content-safe-area-top)) 10px 6px;
     overflow: hidden;
     isolation: isolate;
+    perspective: 1200px;
 }
 
 .workout-sheet-dialog[open] {
@@ -1034,19 +1041,19 @@ textarea {
 }
 
 .workout-sheet-dialog.sheet-opening::before {
-    animation: ios-sheet-backdrop-enter .22s ease-out both;
+    animation: ios-sheet-backdrop-enter .29s ease-out both;
 }
 
 .workout-sheet-dialog.sheet-opening::after {
-    animation: ios-sheet-card-enter .22s ease-out both;
+    animation: ios-sheet-card-enter .44s cubic-bezier(.18, .84, .2, 1) .02s both;
 }
 
 .workout-sheet-dialog.sheet-closing::before {
-    animation: ios-sheet-backdrop-exit .18s ease-in both;
+    animation: ios-sheet-backdrop-exit .14s ease-in both;
 }
 
 .workout-sheet-dialog.sheet-closing::after {
-    animation: ios-sheet-card-exit .18s ease-in both;
+    animation: ios-sheet-card-exit .31s cubic-bezier(.4, 0, .2, 1) both;
 }
 
 .workout-sheet-dialog::backdrop {
@@ -1059,11 +1066,7 @@ textarea {
     inset: 0;
     z-index: 0;
     content: "";
-    background:
-        linear-gradient(180deg, rgba(246, 248, 251, .58), rgba(234, 238, 244, .9)),
-        radial-gradient(circle at 50% 4%, rgba(255, 255, 255, .94), transparent 36%),
-        radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 38%),
-        var(--bg);
+    background: color-mix(in srgb, var(--bg) 84%, #000 16%);
 }
 
 .workout-sheet-dialog::after {
@@ -1075,29 +1078,20 @@ textarea {
     height: calc(100dvh - 20px - var(--tg-content-safe-area-top));
     border-radius: 30px;
     content: "";
-    background:
-        linear-gradient(#ffffff, #ffffff) padding-box,
-        linear-gradient(135deg, rgba(209, 213, 219, .74), rgba(255, 255, 255, .18)) border-box;
-    border: 1px solid transparent;
-    box-shadow: 0 18px 56px rgba(15, 23, 42, .08);
+    background: color-mix(in srgb, var(--surface) 94%, #ffffff 6%);
+    border: 1px solid color-mix(in srgb, var(--line) 56%, transparent);
     opacity: .58;
-    transform-origin: top center;
-    transform: translateX(-50%) scale(.965);
+    transform-origin: center center;
+    transform: translate3d(-50%, 0, 0) rotateX(0deg) scale3d(.988, .988, 1);
 }
 
 [data-theme="dark"] .workout-sheet-dialog::before {
-    background:
-        linear-gradient(180deg, rgba(14, 19, 26, .72), rgba(9, 12, 18, .9)),
-        radial-gradient(circle at 50% 5%, rgba(46, 59, 74, .72), transparent 34%),
-        radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 38%),
-        var(--bg);
+    background: color-mix(in srgb, var(--bg) 84%, #000 16%);
 }
 
 [data-theme="dark"] .workout-sheet-dialog::after {
-    background:
-        linear-gradient(var(--surface), var(--surface)) padding-box,
-        linear-gradient(135deg, rgba(86, 100, 118, .72), rgba(255, 255, 255, .08)) border-box;
-    box-shadow: 0 18px 60px rgba(0, 0, 0, .28);
+    background: color-mix(in srgb, var(--surface) 92%, #000 8%);
+    border-color: rgba(71, 85, 105, .8);
 }
 
 .edit-sheet {
@@ -1121,7 +1115,7 @@ textarea {
     width: auto;
     margin: 0;
     padding: 12px 16px 18px;
-    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--surface) 94%, transparent) 26%, color-mix(in srgb, var(--surface) 98%, transparent));
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
 }
 
 .workout-sheet-dialog .danger-button,
@@ -1148,8 +1142,8 @@ textarea {
 }
 
 .exercise-sheet {
-    height: min(560px, calc(100dvh - 72px));
-    min-height: min(560px, calc(100dvh - 72px));
+    height: calc(100dvh - 28px - var(--tg-content-safe-area-top));
+    min-height: calc(100dvh - 28px - var(--tg-content-safe-area-top));
 }
 
 .exercise-sheet-form {
@@ -1574,21 +1568,35 @@ textarea {
 
 @keyframes ios-sheet-card-enter {
     from {
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100dvh;
+        border-radius: 0;
         opacity: 0;
+        transform: translate3d(0, 0, -40px) rotateX(18deg) scale3d(1.04, 1.04, 1);
     }
 
     to {
         opacity: .58;
+        transform: translate3d(-50%, 0, 0) rotateX(0deg) scale3d(.988, .988, 1);
     }
 }
 
 @keyframes ios-sheet-card-exit {
     from {
         opacity: .58;
+        transform: translate3d(-50%, 0, 0) rotateX(0deg) scale3d(.988, .988, 1);
     }
 
     to {
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100dvh;
+        border-radius: 0;
         opacity: 0;
+        transform: translate3d(0, 0, -40px) rotateX(18deg) scale3d(1.04, 1.04, 1);
     }
 }
 
@@ -3436,52 +3444,61 @@ body[data-tab="add"] main {
     align-items: end;
     justify-items: center;
     isolation: isolate;
+    perspective: 1200px;
 }
 
 .add-modal-screen::before {
     position: fixed;
     inset: 0;
-    z-index: -2;
+    z-index: 0;
     content: "";
-    background:
-        linear-gradient(180deg, rgba(246, 248, 251, .58), rgba(234, 238, 244, .9)),
-        radial-gradient(circle at 50% 4%, rgba(255, 255, 255, .94), transparent 36%),
-        radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 38%),
-        var(--bg);
+    background: color-mix(in srgb, var(--bg) 84%, #000 16%);
 }
 
 .add-modal-screen::after {
     position: fixed;
     top: calc(8px + var(--tg-content-safe-area-top));
     left: 50%;
-    z-index: -1;
+    z-index: 0;
     width: min(calc(100% - 54px), calc(var(--sheet-max-width) - 18px));
     height: calc(100dvh - 20px - var(--tg-content-safe-area-top));
     border-radius: 30px;
     content: "";
-    background:
-        linear-gradient(#ffffff, #ffffff) padding-box,
-        linear-gradient(135deg, rgba(209, 213, 219, .74), rgba(255, 255, 255, .18)) border-box;
-    border: 1px solid transparent;
-    box-shadow: 0 18px 56px rgba(15, 23, 42, .08);
+    background: color-mix(in srgb, var(--surface) 94%, #ffffff 6%);
+    border: 1px solid color-mix(in srgb, var(--line) 78%, #000 22%);
     opacity: .58;
-    transform-origin: top center;
-    transform: translateX(-50%) scale(.965);
+    transform-origin: center center;
+    transform: translate3d(-50%, 0, 0) rotateX(0deg) scale3d(.988, .988, 1);
+    will-change: top, left, width, height, border-radius, transform, opacity;
+}
+
+.add-modal-screen.sheet-opening::before {
+    animation: ios-sheet-backdrop-enter .29s ease-out both;
+}
+
+.add-modal-screen.sheet-opening::after {
+    animation: ios-sheet-card-enter .44s cubic-bezier(.18, .84, .2, 1) .02s both;
+}
+
+.add-modal-screen.sheet-closing::before {
+    animation: ios-sheet-backdrop-exit .14s ease-in both;
+}
+
+.add-modal-screen.sheet-closing::after {
+    animation: ios-sheet-card-exit .31s cubic-bezier(.4, 0, .2, 1) both;
+}
+
+.add-modal-screen.sheet-closing .add-sheet {
+    pointer-events: none;
 }
 
 [data-theme="dark"] .add-modal-screen::before {
-    background:
-        linear-gradient(180deg, rgba(14, 19, 26, .72), rgba(9, 12, 18, .9)),
-        radial-gradient(circle at 50% 5%, rgba(46, 59, 74, .72), transparent 34%),
-        radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 38%),
-        var(--bg);
+    background: color-mix(in srgb, var(--bg) 84%, #000 16%);
 }
 
 [data-theme="dark"] .add-modal-screen::after {
-    background:
-        linear-gradient(var(--surface), var(--surface)) padding-box,
-        linear-gradient(135deg, rgba(86, 100, 118, .72), rgba(255, 255, 255, .08)) border-box;
-    box-shadow: 0 18px 60px rgba(0, 0, 0, .28);
+    background: color-mix(in srgb, var(--surface) 92%, #000 8%);
+    border-color: rgba(71, 85, 105, .52);
 }
 
 .add-sheet {
@@ -3499,6 +3516,10 @@ body[data-tab="add"] main {
     border-radius: 30px;
     background: color-mix(in srgb, var(--surface) 97%, var(--surface-soft));
     box-shadow: 0 -18px 64px rgba(15, 23, 42, .16), 0 18px 54px rgba(15, 23, 42, .10), 0 1px 0 rgba(255, 255, 255, .72) inset;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    transform-origin: center bottom;
+    will-change: transform, opacity;
 }
 
 .confirm-dialog {
@@ -3593,12 +3614,12 @@ body[data-tab="add"] main {
     .add-modal-screen::after {
         top: calc(10px + var(--tg-content-safe-area-top));
         height: min(860px, calc(100dvh - 28px - var(--tg-content-safe-area-top)));
-        transform: translateX(-50%) scale(.965);
+        transform: translate3d(-50%, 0, 0) scale3d(.965, .965, 1);
     }
 
     .exercise-sheet {
-        height: min(680px, calc(100dvh - 64px - var(--tg-content-safe-area-top)));
-        min-height: min(560px, calc(100dvh - 64px - var(--tg-content-safe-area-top)));
+        height: min(860px, calc(100dvh - 44px - var(--tg-content-safe-area-top)));
+        min-height: min(860px, calc(100dvh - 44px - var(--tg-content-safe-area-top)));
     }
 }
 

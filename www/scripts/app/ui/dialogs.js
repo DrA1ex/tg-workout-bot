@@ -93,18 +93,18 @@ export function animateSheetElement(sheet, direction, onFinish) {
 
     const frames = direction === "in"
         ? [
-            {opacity: 0, transform: "translateY(32px) scale(.985)"},
-            {opacity: 1, transform: "translateY(0) scale(1)"},
+            {opacity: 0, transform: "translate3d(0, 38px, -28px) rotateX(14deg) scale3d(.972, .972, 1)"},
+            {opacity: 1, transform: "translate3d(0, 0, 0) rotateX(0deg) scale3d(1, 1, 1)"},
         ]
         : [
-            {opacity: 1, transform: "translateY(0) scale(1)"},
-            {opacity: 0, transform: "translateY(34px) scale(.985)"},
+            {opacity: 1, transform: "translate3d(0, 0, 0) rotateX(0deg) scale3d(1, 1, 1)"},
+            {opacity: 0, transform: "translate3d(0, 30px, -24px) rotateX(12deg) scale3d(.975, .975, 1)"},
         ];
 
     requestAnimationFrame(() => {
         if (sheet.dataset.sheetAnimation !== animationToken) return;
         const animation = sheet.animate(frames, {
-            duration: direction === "in" ? 260 : 210,
+            duration: direction === "in" ? 338 : 273,
             easing: direction === "in" ? "cubic-bezier(.22, 1, .36, 1)" : "cubic-bezier(.4, 0, 1, 1)",
             fill: "both",
         });
