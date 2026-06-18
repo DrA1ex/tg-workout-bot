@@ -26,7 +26,6 @@ let onboardingGlobalRequestSeq = 0;
 const HISTORY_PAGE_SIZE = 8;
 const HISTORY_INITIAL_SIZE = 24;
 const PULL_REFRESH_THRESHOLD = 42;
-const PULL_REFRESH_READY_DELAY = 250;
 const PULL_REFRESH_REQUEST_DELAY = 220;
 const PULL_REFRESH_MIN_VISIBLE = 760;
 const VALID_TABS = new Set(["dashboard", "history", "add", "progress", "exercises", "settings"]);
@@ -2295,11 +2294,13 @@ function setPullRefreshIndicator({visible = false, ready = false, refreshing = f
     indicator.classList.toggle("refreshing", refreshing);
     indicator.style.setProperty("--pull-offset", `${Math.round(offset)}px`);
     indicator.style.setProperty("--pull-progress", String(Math.min(offset / PULL_REFRESH_THRESHOLD, 1)));
-    $(".pull-refresh-label").textContent = refreshing
-        ? t("actions.refreshing")
-        : ready
-        ? t("actions.releaseToRefresh")
-        : t("actions.pullToRefresh");
+    if (visible || refreshing) {
+        $(".pull-refresh-label").textContent = refreshing
+            ? t("actions.refreshing")
+            : ready
+            ? t("actions.releaseToRefresh")
+            : t("actions.pullToRefresh");
+    }
 }
 
 function renderPullRefreshFrame() {
@@ -2384,12 +2385,7 @@ function bindPullToRefresh() {
         pullRefresh.offset = offset;
         if (offset >= PULL_REFRESH_THRESHOLD && !pullRefresh.thresholdReached) {
             pullRefresh.thresholdReached = true;
-            pullRefresh.readyTimer = window.setTimeout(() => {
-                if (!pullRefresh || !pullRefresh.thresholdReached || state.pullRefreshing) return;
-                pullRefresh.armed = true;
-                pullRefresh.targetOffset = Math.max(pullRefresh.offset, PULL_REFRESH_THRESHOLD);
-                schedulePullRefreshFrame();
-            }, PULL_REFRESH_READY_DELAY);
+            pullRefresh.armed = true;
         }
 
         const displayOffset = pullRefresh.thresholdReached

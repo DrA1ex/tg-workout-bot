@@ -2247,52 +2247,63 @@ body.keyboard-open .bottom-nav {
 /* Dashboard and pull-to-refresh */
 .pull-refresh {
     position: fixed;
-    top: calc(8px + env(safe-area-inset-top) + var(--tg-content-safe-area-top));
+    top: calc(6px + env(safe-area-inset-top) + var(--tg-content-safe-area-top));
     left: 50%;
     z-index: 90;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    min-height: 48px;
-    max-width: min(calc(100% - 32px), 340px);
-    padding: 10px 18px;
+    gap: 8px;
+    min-height: 38px;
+    max-width: min(calc(100% - 24px), 280px);
+    padding: 8px 13px;
     border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
     border-radius: 999px;
-    background: color-mix(in srgb, var(--surface) 96%, transparent);
-    box-shadow: 0 12px 28px rgba(15, 23, 42, .14), 0 1px 0 rgba(255, 255, 255, .62) inset;
+    background: color-mix(in srgb, var(--surface) 98%, transparent);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .12), 0 1px 0 rgba(255, 255, 255, .66) inset;
     color: var(--muted);
-    font-size: 16px;
-    font-weight: 650;
+    font-size: 13px;
+    font-weight: 760;
+    line-height: 1;
     opacity: 0;
     pointer-events: none;
-    transform: translate(-50%, calc(-54px + var(--pull-offset, 0px))) scale(.96);
-    transition: opacity .16s ease, transform .18s cubic-bezier(.22, 1, .36, 1);
+    transform: translate(-50%, calc(-42px + var(--pull-offset, 0px))) scale(.96);
+    transition: opacity .14s ease, transform .18s cubic-bezier(.22, 1, .36, 1), color .14s ease, border-color .14s ease, background .14s ease;
+    white-space: nowrap;
 }
 
 .pull-refresh.visible {
     opacity: 1;
-    transform: translate(-50%, min(var(--pull-offset, 0px), 34px)) scale(1);
-    transition: opacity .16s ease, color .16s ease;
+    transform: translate(-50%, min(var(--pull-offset, 0px), 26px)) scale(1);
 }
 
 .pull-refresh.ready {
+    border-color: color-mix(in srgb, var(--primary) 28%, var(--line));
+    background: color-mix(in srgb, var(--primary) 7%, var(--surface));
     color: var(--primary);
 }
 
 .pull-refresh.refreshing {
     opacity: 1;
     color: var(--text);
-    transform: translate(-50%, 34px) scale(1);
+    transform: translate(-50%, 26px) scale(1);
+}
+
+.pull-refresh-label {
+    overflow: hidden;
+    max-width: 220px;
+    min-width: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .pull-refresh-spinner {
     display: block;
     box-sizing: border-box;
-    flex: 0 0 22px;
-    width: 22px;
-    height: 22px;
-    border: 4px solid color-mix(in srgb, currentColor 24%, transparent);
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    border: 3px solid color-mix(in srgb, currentColor 22%, transparent);
     border-top-color: currentColor;
     border-radius: 999px;
     opacity: .9;
