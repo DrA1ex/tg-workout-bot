@@ -438,7 +438,10 @@
                 </fieldset>
                 <button class="ghost-button settings-row-button" id="settings-exercises-open" type="button">
                     <span data-i18n="settings.manageExercises">Exercises</span>
-                    <strong id="settings-exercises-count">0</strong>
+                    <span class="settings-row-meta">
+                        <strong id="settings-exercises-count">0</strong>
+                        <span class="settings-row-chevron" aria-hidden="true">›</span>
+                    </span>
                 </button>
                 <button class="primary-button save-button" id="settings-save-button" type="submit" data-i18n="actions.saveSettings">Save settings</button>
                 <button class="ghost-button" id="logout-button" type="button" data-i18n="actions.logout">Log out</button>
@@ -585,26 +588,23 @@
     </dialog>
 
     <dialog class="modal workout-sheet-dialog exercise-sheet-dialog" id="settings-exercises-dialog">
-        <div class="add-sheet edit-sheet exercise-sheet">
+        <div class="add-sheet edit-sheet exercise-sheet settings-exercises-sheet">
             <div class="sheet-grabber" aria-hidden="true"></div>
             <header class="add-screen-header">
                 <button class="add-header-button" id="settings-exercises-close" type="button" aria-label="Close">×</button>
                 <h1 data-i18n="settings.manageExercises">Exercises</h1>
                 <span class="add-header-spacer" aria-hidden="true"></span>
             </header>
-            <div class="add-form exercise-sheet-form">
+            <div class="add-form exercise-sheet-form settings-exercises-form">
                 <label class="add-field full-field settings-exercise-search">
                     <span data-i18n="exercises.search">Search exercises</span>
-                    <div class="field-shell single-field">
+                    <div class="field-shell single-field onboarding-search-shell">
                         <input id="settings-exercise-search" type="search" autocomplete="off" data-i18n-placeholder="exercises.search">
+                        <span class="onboarding-search-spinner" id="settings-exercise-spinner" aria-label="Loading" role="status" hidden></span>
                     </div>
                 </label>
-                <button class="ghost-button exercise-add-trigger" id="settings-exercise-add-open" type="button">
-                    <span>＋</span>
-                    <span data-i18n="actions.addExercise">Add exercise</span>
-                </button>
                 <div class="settings-exercise-scroll">
-                    <div class="list history-workout-list" id="settings-exercise-list"></div>
+                    <div class="list history-workout-list settings-exercise-list" id="settings-exercise-list"></div>
                     <div class="settings-exercise-bottom-spacer" aria-hidden="true"></div>
                 </div>
             </div>
@@ -615,7 +615,7 @@
         <div class="add-sheet edit-sheet exercise-sheet onboarding-sheet">
             <div class="sheet-grabber" aria-hidden="true"></div>
             <header class="add-screen-header">
-                <span class="add-header-spacer" aria-hidden="true"></span>
+                <button class="add-header-button is-invisible" id="onboarding-close" type="button" aria-label="Close" aria-hidden="true" disabled>×</button>
                 <h1 data-i18n="onboarding.title">Set up exercises</h1>
                 <span class="add-header-spacer" aria-hidden="true"></span>
             </header>

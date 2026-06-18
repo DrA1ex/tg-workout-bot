@@ -17,7 +17,6 @@ let addScreenCloseTimer = null;
 let workoutSwipe = null;
 let pullRefresh = null;
 let settingsExerciseSearchTimer = null;
-let pendingSettingsExerciseSearch = null;
 let onboardingExerciseSearchTimer = null;
 let onboardingLanguageTimer = null;
 let onboardingMoveTimer = null;
@@ -37,6 +36,7 @@ const EXERCISE_SAVE_LOADER_DELAY = 200;
 const EXERCISE_SAVE_MIN_LOADER_VISIBLE = 200;
 const EXERCISE_SAVE_SUCCESS_VISIBLE = 300;
 const ONBOARDING_GLOBAL_PAGE_SIZE = 30;
+const EXERCISE_ROW_SELECTOR = "[data-exercise-row-key]";
 
 function normalizeTimezoneInputValue(value) {
     const text = String(value || "").trim();
@@ -471,7 +471,7 @@ function userExerciseRow(exercise) {
     const note = String(exercise.notes || "").trim();
 
     return `
-        <article class="workout-row swipe-workout-row exercise-row" data-exercise-name="${escapeHtml(exercise.name)}">
+        <article class="workout-row swipe-workout-row exercise-row" data-exercise-row-key="${escapeHtml(exercise.name)}" data-exercise-name="${escapeHtml(exercise.name)}">
             <button class="swipe-workout-main" type="button" data-edit-exercise="${escapeHtml(exercise.name)}">
                 <span class="swipe-workout-body">
                     <h3>${escapeHtml(exercise.name)}</h3>
@@ -850,8 +850,9 @@ function bindSheetDialog(dialogSelector, closeSelector) {
         delete dialog.dataset.dialogOpenOrder;
         if (dialog.id === "settings-exercises-dialog") {
             window.clearTimeout(settingsExerciseSearchTimer);
-            settingsExerciseSearchTimer = null;
-            pendingSettingsExerciseSearch = null;
+            state.settingsExerciseSearchPending = false;
+            state.settingsExerciseLoading = false;
+            renderSettingsExerciseSearchState();
         }
         document.body.classList.remove("sheet-open");
     });
@@ -1064,7 +1065,12 @@ function findExercise(name) {
     return state.exercises.find(ex => ex.name === name);
 }
 
-function syncExerciseState(exercises) {
+function syncExerciseState(exercises, {
+    animateSettings = false,
+    animateOnboarding = false,
+    renderSettingsList = true,
+    renderOnboardingList = true,
+} = {}) {
     state.exercises = exercises;
     const byName = new Map(exercises.map(exercise => [exercise.name, exercise]));
     state.recentExercises = (state.recentExercises || []).map(exercise => ({
@@ -1072,8 +1078,20 @@ function syncExerciseState(exercises) {
         ...(byName.get(exercise.name) || {}),
     }));
     renderSettingsExerciseSummary();
-    renderSettingsExercises();
-    renderOnboardingGlobalExercises();
+
+    const animations = [];
+    if (renderSettingsList) {
+        animations.push(renderSettingsExercises({
+            animate: animateSettings && isSettingsExercisesDialogOpen(),
+        }));
+    }
+    if (renderOnboardingList) {
+        animations.push(renderOnboardingGlobalExercises({
+            animate: animateOnboarding && isOnboardingDialogOpen(),
+        }));
+    }
+
+    return Promise.allSettled(animations);
 }
 
 function openExerciseDialog(exercise) {
@@ -1139,8 +1157,18 @@ async function saveExerciseNotes() {
                 notes: $("#exercise-edit-notes").value,
             }),
         });
-        syncExerciseState(data.exercises);
+        const animateSettings = isSettingsExercisesDialogOpen();
+
         closeModalDialog($("#exercise-dialog"));
+        if (animateSettings) await nextAnimationFrame();
+
+        await syncExerciseState(data.exercises, {
+            renderSettingsList: !animateSettings,
+        });
+        if (animateSettings) {
+            await loadSettingsGlobalExercises({animate: true});
+        }
+
         await refreshAll();
         renderExercises();
         showToast("toast.exerciseSaved");
@@ -1157,9 +1185,21 @@ async function deleteExercise(name) {
     if (!await confirmExerciseDelete()) return;
     try {
         const data = await api(`exercises/${encodeURIComponent(name)}`, {method: "DELETE"});
-        syncExerciseState(data.exercises);
+        const animateSettings = isSettingsExercisesDialogOpen();
+
         closeModalDialog($("#exercise-dialog"));
-        $("#delete-workout-dialog").close();
+        closeModalDialog($("#delete-workout-dialog"));
+        if (animateSettings) await nextAnimationFrame();
+
+        // Keep the old settings DOM until the refreshed global list is ready.
+        // This lets a deleted catalog exercise animate back to its global section.
+        await syncExerciseState(data.exercises, {
+            renderSettingsList: !animateSettings,
+        });
+        if (animateSettings) {
+            await loadSettingsGlobalExercises({animate: true});
+        }
+
         await refreshAll();
         showToast("toast.exerciseDeleted");
     } catch (error) {
@@ -1171,13 +1211,17 @@ async function deleteExercise(name) {
 }
 
 async function addGlobalExercise(name) {
+    const animateSettings = isSettingsExercisesDialogOpen();
     const data = await api("exercises", {
         method: "POST",
         body: JSON.stringify({name, notes: ""}),
     });
-    syncExerciseState(data.exercises);
+
+    // The global row is still in the DOM here, so FLIP can move it into the user section.
+    await syncExerciseState(data.exercises, {animateSettings});
     await loadGlobalExercises();
     await refreshAll();
+    if (isSettingsExercisesDialogOpen()) await loadSettingsGlobalExercises();
     state.exerciseScope = "global";
     renderExerciseScope();
     showToast("toast.exerciseAdded");
@@ -1506,36 +1550,259 @@ function renderSettingsExerciseSummary() {
     if (count) count.textContent = String(state.exercises.length);
 }
 
-function renderSettingsExercises() {
-    const list = $("#settings-exercise-list");
-    if (!list) return;
-    const query = state.settingsExerciseSearch.toLowerCase();
-    const filtered = query
-        ? state.exercises.filter(exercise =>
-            exercise.name.toLowerCase().includes(query) ||
-            (exercise.notes || "").toLowerCase().includes(query)
-        )
-        : state.exercises;
-
-    list.innerHTML = filtered.length
-        ? filtered.map(userExerciseRow).join("")
-        : `<div class="empty">${t(state.exercises.length ? "exercises.noMatches" : "empty.exercises")}</div>`;
-}
-
 function openSettingsExercisesDialog() {
-    window.clearTimeout(settingsExerciseSearchTimer);
-    settingsExerciseSearchTimer = null;
-    pendingSettingsExerciseSearch = null;
     state.settingsExerciseSearch = "";
-    const search = $("#settings-exercise-search");
-    if (search) search.value = "";
+    state.settingsExerciseSearchPending = false;
+    state.settingsGlobalExercises = [];
+    $("#settings-exercise-search").value = "";
     renderSettingsExercises();
     openSheetDialog($("#settings-exercises-dialog"));
+    loadSettingsGlobalExercises().catch(console.error);
 }
 
-function applySettingsExerciseSearch(query) {
-    state.settingsExerciseSearch = query;
-    renderSettingsExercises();
+function settingsExerciseSpinner() {
+    return $("#settings-exercise-spinner");
+}
+
+function renderSettingsExerciseSearchState() {
+    setExerciseSearchLoading(
+        settingsExerciseSpinner(),
+        state.settingsExerciseLoading || state.settingsExerciseSearchPending,
+    );
+}
+
+function isSettingsExercisesDialogOpen() {
+    return Boolean($("#settings-exercises-dialog")?.open);
+}
+
+function isOnboardingDialogOpen() {
+    return Boolean($("#onboarding-dialog")?.open);
+}
+
+function nextAnimationFrame() {
+    return new Promise(resolve => window.requestAnimationFrame(resolve));
+}
+
+function setExerciseSearchLoading(spinner, loading) {
+    if (!spinner) return;
+    spinner.hidden = !loading;
+    spinner.closest(".onboarding-search-shell")?.classList.toggle("loading", loading);
+}
+
+function exerciseListRowMarkup({
+    key,
+    title,
+    subtitle = "",
+    rowClasses = "",
+    rowAttributes = "",
+    buttonClasses = "",
+    buttonAttributes = "",
+    trailing = "",
+}) {
+    const rowClassName = ["workout-row", "exercise-list-row", rowClasses].filter(Boolean).join(" ");
+    const buttonClassName = ["exercise-list-button", buttonClasses].filter(Boolean).join(" ");
+    const subtitleMarkup = subtitle ? `<p>${escapeHtml(subtitle)}</p>` : "";
+
+    return `
+        <article class="${rowClassName}" data-exercise-row-key="${escapeHtml(key)}"${rowAttributes ? ` ${rowAttributes}` : ""}>
+            <button class="${buttonClassName}" type="button"${buttonAttributes ? ` ${buttonAttributes}` : ""}>
+                <span class="swipe-workout-body">
+                    <h3>${escapeHtml(title)}</h3>
+                    ${subtitleMarkup}
+                </span>
+                ${trailing}
+            </button>
+        </article>
+    `;
+}
+
+function exerciseAddSuggestionRow({name, hasResults, context}) {
+    const title = interpolate(t("onboarding.addSearch"), {name});
+    const subtitle = hasResults ? t("onboarding.addSearchHint") : t("onboarding.noResults");
+    const buttonAttribute = context === "settings"
+        ? "data-settings-add-search"
+        : "data-onboarding-add-search";
+
+    return exerciseListRowMarkup({
+        key: `${context}-suggestion:${name}`,
+        title,
+        subtitle,
+        rowClasses: "exercise-list-add-row",
+        buttonAttributes: buttonAttribute,
+        trailing: '<span class="exercise-list-add-icon" aria-hidden="true">＋</span>',
+    });
+}
+
+function exerciseListRows(list) {
+    return [...list.querySelectorAll(EXERCISE_ROW_SELECTOR)];
+}
+
+function captureExerciseRowPositions(list) {
+    return new Map(exerciseListRows(list).map(row => [
+        row.dataset.exerciseRowKey,
+        row.getBoundingClientRect(),
+    ]));
+}
+
+function animateExerciseRows(list, previousPositions) {
+    if (
+        !previousPositions?.size ||
+        typeof Element.prototype.animate !== "function" ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+        return Promise.resolve();
+    }
+
+    const animations = [];
+    list.classList.add("exercise-list-reordering");
+
+    exerciseListRows(list).forEach(row => {
+        const previous = previousPositions.get(row.dataset.exerciseRowKey);
+        let animation;
+
+        row.getAnimations().forEach(current => current.cancel());
+
+        if (!previous) {
+            animation = row.animate([
+                {opacity: 0, transform: "translateY(10px) scale(.985)"},
+                {opacity: 1, transform: "translateY(0) scale(1)"},
+            ], {
+                duration: 220,
+                easing: "cubic-bezier(.22, 1, .36, 1)",
+                fill: "both",
+            });
+        } else {
+            const current = row.getBoundingClientRect();
+            const dx = previous.left - current.left;
+            const dy = previous.top - current.top;
+
+            if (!dx && !dy) return;
+
+            row.style.zIndex = "2";
+            animation = row.animate([
+                {opacity: .84, transform: `translate(${dx}px, ${dy}px)`},
+                {opacity: 1, transform: "translate(0, 0)"},
+            ], {
+                duration: 340,
+                easing: "cubic-bezier(.22, 1, .36, 1)",
+                fill: "both",
+            });
+        }
+
+        animations.push(
+            animation.finished
+                .catch(() => {})
+                .finally(() => {
+                    animation.cancel();
+                    row.style.zIndex = "";
+                })
+        );
+    });
+
+    if (!animations.length) {
+        list.classList.remove("exercise-list-reordering");
+        return Promise.resolve();
+    }
+
+    return Promise.allSettled(animations).finally(() => {
+        list.classList.remove("exercise-list-reordering");
+    });
+}
+
+function settingsExerciseRow(exercise) {
+    const userExercise = state.exercises.find(row => row.name === exercise.name);
+    if (userExercise) return userExerciseRow(userExercise);
+
+    return exerciseListRowMarkup({
+        key: exercise.name,
+        title: exercise.name,
+        subtitle: t("exercises.global"),
+        rowClasses: "settings-global-row",
+        buttonClasses: "settings-global-button",
+        buttonAttributes: `data-add-global-exercise="${escapeHtml(exercise.name)}"`,
+    });
+}
+
+function settingsExerciseDivider() {
+    return `
+        <div class="settings-exercise-divider" data-exercise-row-key="settings-global-divider">
+            <span>${escapeHtml(t("exercises.globalSection"))}</span>
+        </div>
+    `;
+}
+
+function settingsExerciseAddSuggestionRow({hasResults}) {
+    return exerciseAddSuggestionRow({
+        name: state.settingsExerciseSearch.trim(),
+        hasResults,
+        context: "settings",
+    });
+}
+
+function renderSettingsExercises({animate = false} = {}) {
+    const list = $("#settings-exercise-list");
+    if (!list) return Promise.resolve();
+
+    const previousPositions = animate ? captureExerciseRowPositions(list) : null;
+    const query = state.settingsExerciseSearch.trim();
+    const rows = query || state.settingsGlobalExercises.length
+        ? state.settingsGlobalExercises
+        : state.exercises.map(exercise => ({...exercise, added: true}));
+    const addedRows = rows.filter(exercise => state.exercises.some(row => row.name === exercise.name));
+    const newRows = rows.filter(exercise => !state.exercises.some(row => row.name === exercise.name));
+    const rowMarkup = [
+        ...addedRows.map(settingsExerciseRow),
+        ...(addedRows.length && newRows.length ? [settingsExerciseDivider()] : []),
+        ...newRows.map(settingsExerciseRow),
+    ];
+    const hasExactMatch = rows.some(exercise => exercise.name.toLowerCase() === query.toLowerCase());
+    if (query && !state.settingsExerciseLoading && !state.settingsExerciseSearchPending && !hasExactMatch) {
+        rowMarkup.push(settingsExerciseAddSuggestionRow({hasResults: rowMarkup.length > 0}));
+    }
+
+    list.innerHTML = rowMarkup.length
+        ? rowMarkup.join("")
+        : `<div class="empty">${escapeHtml(t(state.exercises.length ? "exercises.noMatches" : "empty.exercises"))}</div>`;
+    renderSettingsExerciseSearchState();
+
+    return animate
+        ? animateExerciseRows(list, previousPositions)
+        : Promise.resolve();
+}
+
+async function loadSettingsGlobalExercises({animate = false} = {}) {
+    const requestSearch = state.settingsExerciseSearch;
+    state.settingsExerciseLoading = true;
+    state.settingsExerciseSearchPending = false;
+    renderSettingsExerciseSearchState();
+    const params = new URLSearchParams();
+    params.set("limit", "60");
+    if (requestSearch) params.set("search", requestSearch);
+
+    let loaded = false;
+    try {
+        const data = await api(`exercises/global?${params.toString()}`);
+        if (requestSearch !== state.settingsExerciseSearch) return Promise.resolve();
+        const globalRows = data.exercises || [];
+        const byName = new Map(globalRows.map(exercise => [exercise.name, exercise]));
+        state.exercises.forEach(exercise => {
+            if (!requestSearch || exercise.name.toLowerCase().includes(requestSearch.toLowerCase())) {
+                byName.set(exercise.name, {...exercise, added: true});
+            }
+        });
+        state.settingsGlobalExercises = [...byName.values()];
+        loaded = true;
+    } catch (error) {
+        console.error(error);
+        showToast("toast.refreshFailed", {variant: "danger"});
+    } finally {
+        if (requestSearch === state.settingsExerciseSearch) {
+            state.settingsExerciseLoading = false;
+        }
+    }
+
+    if (requestSearch !== state.settingsExerciseSearch) return Promise.resolve();
+    return renderSettingsExercises({animate: animate && loaded});
 }
 
 function onboardingSelectedSet() {
@@ -1559,29 +1826,34 @@ function onboardingExerciseRow(exercise, selected) {
     const isAdded = exercise.added ||
         exercise.onboardingCustom ||
         state.exercises.some(userExercise => userExercise.name === exercise.name);
-    return `
-        <article class="workout-row onboarding-exercise-row ${isSelected ? "selected" : ""}" data-onboarding-row="${escapeHtml(exercise.name)}">
-            <button class="onboarding-exercise-button" type="button" data-onboarding-exercise="${escapeHtml(exercise.name)}">
-                <span class="swipe-workout-body">
-                    <h3>${escapeHtml(exercise.name)}</h3>
-                    ${isAdded ? `<p>${escapeHtml(t("actions.added"))}</p>` : ""}
-                </span>
-                <span class="onboarding-check" aria-hidden="true">${isSelected ? "✓" : ""}</span>
-            </button>
-        </article>
-    `;
+
+    return exerciseListRowMarkup({
+        key: exercise.name,
+        title: exercise.name,
+        subtitle: isAdded ? t("actions.added") : "",
+        rowClasses: isSelected ? "selected" : "",
+        rowAttributes: `data-onboarding-row="${escapeHtml(exercise.name)}"`,
+        buttonAttributes: `data-onboarding-exercise="${escapeHtml(exercise.name)}"`,
+        trailing: `<span class="exercise-list-check" aria-hidden="true">${isSelected ? "✓" : ""}</span>`,
+    });
 }
 
 function onboardingSearchSpinner() {
     return $("#onboarding-search-spinner");
 }
 
+function setOnboardingCloseVisible(visible) {
+    const button = $("#onboarding-close");
+    button.classList.toggle("is-invisible", !visible);
+    button.disabled = !visible;
+    button.setAttribute("aria-hidden", visible ? "false" : "true");
+}
+
 function renderOnboardingSearchState() {
-    const spinner = onboardingSearchSpinner();
-    if (!spinner) return;
-    const loading = state.onboardingLoading || state.onboardingSearchPending;
-    spinner.hidden = !loading;
-    spinner.closest(".onboarding-search-shell")?.classList.toggle("loading", loading);
+    setExerciseSearchLoading(
+        onboardingSearchSpinner(),
+        state.onboardingLoading || state.onboardingSearchPending,
+    );
 }
 
 function onboardingEmptyMessage() {
@@ -1596,48 +1868,10 @@ function shouldShowOnboardingAddSuggestion(rows) {
 }
 
 function onboardingAddSuggestionRow({hasResults}) {
-    const name = state.onboardingSearch.trim();
-    const title = interpolate(t("onboarding.addSearch"), {name});
-    const subtitle = hasResults ? t("onboarding.addSearchHint") : t("onboarding.noResults");
-
-    return `
-        <article class="workout-row onboarding-exercise-row onboarding-add-row">
-            <button class="onboarding-exercise-button" type="button" data-onboarding-add-search>
-                <span class="swipe-workout-body">
-                    <h3>${escapeHtml(title)}</h3>
-                    <p>${escapeHtml(subtitle)}</p>
-                </span>
-                <span class="onboarding-add-icon" aria-hidden="true">＋</span>
-            </button>
-        </article>
-    `;
-}
-
-function onboardingRowPositions(list) {
-    return new Map([...list.querySelectorAll("[data-onboarding-row]")]
-        .map(row => [row.dataset.onboardingRow, row.getBoundingClientRect()]));
-}
-
-function animateOnboardingRows(list, previousPositions) {
-    if (!previousPositions?.size) return;
-    list.querySelectorAll("[data-onboarding-row]").forEach(row => {
-        const previous = previousPositions.get(row.dataset.onboardingRow);
-        if (!previous) {
-            row.animate([
-                {opacity: 0, transform: "translateY(8px)"},
-                {opacity: 1, transform: "translateY(0)"}
-            ], {duration: 180, easing: "cubic-bezier(.22, 1, .36, 1)"});
-            return;
-        }
-
-        const current = row.getBoundingClientRect();
-        const dx = previous.left - current.left;
-        const dy = previous.top - current.top;
-        if (!dx && !dy) return;
-        row.animate([
-            {transform: `translate(${dx}px, ${dy}px)`},
-            {transform: "translate(0, 0)"}
-        ], {duration: 220, easing: "cubic-bezier(.22, 1, .36, 1)"});
+    return exerciseAddSuggestionRow({
+        name: state.onboardingSearch.trim(),
+        hasResults,
+        context: "onboarding",
     });
 }
 
@@ -1649,8 +1883,9 @@ function currentOnboardingRows(list) {
 
 function renderOnboardingGlobalExercises({animate = false, preserveOrder = false} = {}) {
     const list = $("#onboarding-exercise-list");
-    if (!list) return;
-    const previousPositions = animate ? onboardingRowPositions(list) : null;
+    if (!list) return Promise.resolve();
+
+    const previousPositions = animate ? captureExerciseRowPositions(list) : null;
     const selected = onboardingSelectedSet();
     const rows = preserveOrder
         ? currentOnboardingRows(list)
@@ -1671,9 +1906,12 @@ function renderOnboardingGlobalExercises({animate = false, preserveOrder = false
     list.innerHTML = rowMarkup.length
         ? rowMarkup.join("")
         : `<div class="empty">${escapeHtml(onboardingEmptyMessage())}</div>`;
-    if (animate) animateOnboardingRows(list, previousPositions);
     renderOnboardingSearchState();
     updateOnboardingStartState();
+
+    return animate
+        ? animateExerciseRows(list, previousPositions)
+        : Promise.resolve();
 }
 
 function updateOnboardingStartState() {
@@ -1740,7 +1978,10 @@ function openOnboardingIfNeeded() {
     state.onboardingHasMore = true;
     state.onboardingNextOffset = 0;
     $("#onboarding-language-select").value = state.user.language || "en";
+    $("#onboarding-language-select").closest(".onboarding-language-field").hidden = false;
     $("#onboarding-exercise-search").value = "";
+    $("#onboarding-dialog h1").textContent = t("onboarding.title");
+    setOnboardingCloseVisible(false);
     renderOnboardingGlobalExercises();
     openSheetDialog(dialog);
     loadOnboardingGlobalExercises({reset: true}).catch(console.error);
@@ -2570,7 +2811,10 @@ function bindEvents() {
             });
             window.clearTimeout(loaderTimer);
             await waitForMinLoaderVisible();
-            syncExerciseState(data.exercises);
+            const animateSettings = isSettingsExercisesDialogOpen();
+            await syncExerciseState(data.exercises, {
+                renderSettingsList: !animateSettings,
+            });
             renderExercises();
             setExerciseAddPending(true, {loading: false, saved: true});
             triggerSuccessHaptic();
@@ -2578,6 +2822,10 @@ function bindEvents() {
             closeModalDialog($("#exercise-add-dialog"));
             $("#exercise-form").reset();
             setExerciseAddPending(false);
+            if (animateSettings) {
+                await nextAnimationFrame();
+                await loadSettingsGlobalExercises({animate: true});
+            }
             await refreshAll();
         } catch (error) {
             window.clearTimeout(loaderTimer);
@@ -2683,8 +2931,10 @@ function bindEvents() {
 
     $("#settings-exercises-open").addEventListener("click", openSettingsExercisesDialog);
     bindSheetDialog("#settings-exercises-dialog", "#settings-exercises-close");
-    $("#settings-exercise-add-open").addEventListener("click", openExerciseAddDialog);
-    $("#onboarding-dialog").addEventListener("cancel", event => event.preventDefault());
+    $("#onboarding-close").addEventListener("click", () => closeSheetDialog($("#onboarding-dialog")));
+    $("#onboarding-dialog").addEventListener("cancel", event => {
+        event.preventDefault();
+    });
     $("#onboarding-dialog").addEventListener("close", () => {
         window.clearTimeout(onboardingExerciseSearchTimer);
         window.clearTimeout(onboardingLanguageTimer);
@@ -2746,20 +2996,14 @@ function bindEvents() {
     });
     $("#onboarding-start-button").addEventListener("click", () => completeOnboarding().catch(console.error));
     $("#settings-exercise-search").addEventListener("input", event => {
-        const query = event.target.value.trim();
-        if (settingsExerciseSearchTimer) {
-            pendingSettingsExerciseSearch = query;
-            return;
-        }
-
-        applySettingsExerciseSearch(query);
+        state.settingsExerciseSearch = event.target.value.trim();
+        state.settingsExerciseSearchPending = true;
+        state.settingsExerciseLoading = false;
+        renderSettingsExerciseSearchState();
+        window.clearTimeout(settingsExerciseSearchTimer);
         settingsExerciseSearchTimer = window.setTimeout(() => {
-            settingsExerciseSearchTimer = null;
-            if (pendingSettingsExerciseSearch === null) return;
-            const nextQuery = pendingSettingsExerciseSearch;
-            pendingSettingsExerciseSearch = null;
-            applySettingsExerciseSearch(nextQuery);
-        }, 120);
+            loadSettingsGlobalExercises().catch(console.error);
+        }, 180);
     });
 
     $("#logout-button").addEventListener("click", async () => {
@@ -2908,6 +3152,12 @@ function bindEvents() {
             }
             const exercise = findExercise(editExerciseButton.dataset.editExercise);
             if (exercise) openExerciseDialog(exercise);
+            return;
+        }
+
+        const settingsAddSearchButton = event.target.closest("[data-settings-add-search]");
+        if (settingsAddSearchButton) {
+            openExerciseAddDialogWithName(state.settingsExerciseSearch);
             return;
         }
 
