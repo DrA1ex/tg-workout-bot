@@ -170,7 +170,6 @@ export function bindEvents() {
                 await nextAnimationFrame();
                 await loadSettingsGlobalExercises({animate: true});
             }
-            await refreshAll();
         } catch (error) {
             window.clearTimeout(loaderTimer);
             await waitForMinLoaderVisible();

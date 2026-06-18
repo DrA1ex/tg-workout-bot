@@ -241,7 +241,6 @@ export async function deleteExercise(name) {
             await loadSettingsGlobalExercises({animate: true});
         }
 
-        await refreshAll();
         showToast("toast.exerciseDeleted");
     } catch (error) {
         console.error(error);
@@ -260,11 +259,13 @@ export async function addGlobalExercise(name) {
 
     // The global row is still in the DOM here, so FLIP can move it into the user section.
     await syncExerciseState(data.exercises, {animateSettings});
-    await loadGlobalExercises();
-    await refreshAll();
-    if (isSettingsExercisesDialogOpen()) await loadSettingsGlobalExercises();
-    state.exerciseScope = "global";
-    renderExerciseScope();
+    if (animateSettings) {
+        await loadSettingsGlobalExercises();
+    } else {
+        await loadGlobalExercises();
+        state.exerciseScope = "global";
+        renderExerciseScope();
+    }
     showToast("toast.exerciseAdded");
 }
 
