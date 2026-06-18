@@ -5,7 +5,7 @@ import {ensureProgressLoaded} from '../features/progress/index.js';
 import {renderSettings} from '../features/settings/index.js';
 import {initializeWorkoutFormSession, updatePreviousWorkoutSummary, updateWorkoutFormState} from '../features/workouts/forms.js';
 import {todaySubtitle} from '../features/workouts/presentation.js';
-import {animateSheetElement} from '../ui/dialogs.js';
+import {animateSheetElement, resetSheetScroll} from '../ui/dialogs.js';
 import {VALID_TABS} from './config.js';
 import {runtime} from './runtime.js';
 
@@ -109,6 +109,7 @@ export function setTab(tab, options = {}) {
     if (tab === "add") {
         if (isOpeningAddScreen) {
             initializeWorkoutFormSession();
+            resetSheetScroll($("#screen-add .add-sheet"));
         }
         window.scrollTo({top: 0, behavior: "instant"});
         if (isOpeningAddScreen && options.animate !== false) animateAddScreenOpen();

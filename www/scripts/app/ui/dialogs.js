@@ -123,7 +123,8 @@ export function openSheetDialog(dialog) {
     const sheet = dialog.querySelector(".add-sheet");
     dialog.classList.remove("sheet-closing", "sheet-opening");
     document.body.classList.add("sheet-open");
-    dialog.showModal();
+    showDialog(dialog);
+    resetSheetScroll(sheet);
     dialog.dataset.dialogOpenOrder = String(++runtime.dialogOpenSeq);
     dialog.classList.add("sheet-opening");
     animateSheetElement(sheet, "in", () => {
@@ -165,7 +166,7 @@ export function bindSheetDialog(dialogSelector, closeSelector) {
 
 export function openModalDialog(dialog) {
     if (!dialog.open) {
-        dialog.showModal();
+        showDialog(dialog);
         dialog.dataset.dialogOpenOrder = String(++runtime.dialogOpenSeq);
     }
 }
@@ -195,7 +196,7 @@ export function confirmDelete({titleKey, bodyKey, closeOnConfirm = false}) {
     $("#delete-workout-title").textContent = t(titleKey);
     $("#delete-workout-copy").textContent = t(bodyKey);
     runtime.deleteConfirmCloseOnConfirm = closeOnConfirm;
-    dialog.showModal();
+    showDialog(dialog);
     dialog.dataset.dialogOpenOrder = String(++runtime.dialogOpenSeq);
     return new Promise(resolve => {
         runtime.deleteWorkoutConfirmResolve = resolve;
@@ -218,4 +219,27 @@ export function setDeleteWorkoutPending(pending) {
     confirmButton.disabled = pending;
     confirmButton.classList.toggle("loading", pending);
     confirmButton.textContent = pending ? t("actions.deleting") : t("actions.delete");
+}
+
+export function showDialog(dialog) {
+    if (!dialog) return;
+    if (!dialog.hasAttribute("tabindex")) dialog.setAttribute("tabindex", "-1");
+    dialog.addEventListener("close", updateDialogScrollLock, {once: true});
+    dialog.showModal();
+    updateDialogScrollLock();
+    dialog.focus({preventScroll: true});
+}
+
+export function updateDialogScrollLock() {
+    const locked = Boolean(document.querySelector("dialog[open]"));
+    document.documentElement.classList.toggle("dialog-open", locked);
+    document.body.classList.toggle("dialog-open", locked);
+}
+
+export function resetSheetScroll(sheet) {
+    if (!sheet) return;
+    sheet.scrollTop = 0;
+    sheet.scrollLeft = 0;
+    sheet.querySelector(".add-form")?.scrollTo({top: 0, left: 0, behavior: "instant"});
+    sheet.querySelector(".settings-exercise-scroll")?.scrollTo({top: 0, left: 0, behavior: "instant"});
 }
