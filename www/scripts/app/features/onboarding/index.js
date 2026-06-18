@@ -189,7 +189,7 @@ export function openOnboardingIfNeeded() {
     $("#onboarding-dialog h1").textContent = t("onboarding.title");
     setOnboardingCloseVisible(false);
     renderOnboardingGlobalExercises();
-    openSheetDialog(dialog);
+    openSheetDialog(dialog, {dismissible: false});
     loadOnboardingGlobalExercises({reset: true}).catch(console.error);
 }
 

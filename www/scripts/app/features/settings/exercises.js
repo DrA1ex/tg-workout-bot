@@ -1,4 +1,6 @@
 // Extracted from main.js without changing feature behavior.
+import {SETTINGS_GLOBAL_PAGE_SIZE} from '../../core/config.js';
+import {runtime} from '../../core/runtime.js';
 import {$, api, escapeHtml, state, t} from '../../deps.js';
 import {openSheetDialog, showToast} from '../../ui/dialogs.js';
 import {userExerciseRow} from '../exercises/catalog.js';
@@ -13,6 +15,8 @@ export function openSettingsExercisesDialog() {
     state.settingsExerciseSearch = "";
     state.settingsExerciseSearchPending = false;
     state.settingsGlobalExercises = [];
+    state.settingsExerciseHasMore = true;
+    state.settingsExerciseNextOffset = 0;
     $("#settings-exercise-search").value = "";
     renderSettingsExercises();
     openSheetDialog($("#settings-exercises-dialog"));
@@ -102,37 +106,55 @@ export function renderSettingsExercises({animate = false} = {}) {
         : Promise.resolve();
 }
 
-export async function loadSettingsGlobalExercises({animate = false} = {}) {
+export async function loadSettingsGlobalExercises({animate = false, append = false} = {}) {
+    if (state.settingsExerciseLoading) return Promise.resolve();
+    if (append && !state.settingsExerciseHasMore) return Promise.resolve();
+    const requestSeq = ++runtime.settingsGlobalRequestSeq;
     const requestSearch = state.settingsExerciseSearch;
     state.settingsExerciseLoading = true;
     state.settingsExerciseSearchPending = false;
+    if (!append) {
+        state.settingsExerciseNextOffset = 0;
+        state.settingsExerciseHasMore = true;
+    }
     renderSettingsExerciseSearchState();
     const params = new URLSearchParams();
-    params.set("limit", "60");
+    params.set("limit", String(SETTINGS_GLOBAL_PAGE_SIZE));
+    params.set("offset", String(append ? state.settingsExerciseNextOffset : 0));
     if (requestSearch) params.set("search", requestSearch);
 
     let loaded = false;
     try {
         const data = await api(`exercises/global?${params.toString()}`);
-        if (requestSearch !== state.settingsExerciseSearch) return Promise.resolve();
+        if (requestSeq !== runtime.settingsGlobalRequestSeq || requestSearch !== state.settingsExerciseSearch) return Promise.resolve();
         const globalRows = data.exercises || [];
-        const byName = new Map(globalRows.map(exercise => [exercise.name, exercise]));
+        const existingRows = append ? state.settingsGlobalExercises : [];
+        const byName = new Map(existingRows.map(exercise => [exercise.name, exercise]));
+        globalRows.forEach(exercise => byName.set(exercise.name, exercise));
         state.exercises.forEach(exercise => {
             if (!requestSearch || exercise.name.toLowerCase().includes(requestSearch.toLowerCase())) {
                 byName.set(exercise.name, {...exercise, added: true});
             }
         });
         state.settingsGlobalExercises = [...byName.values()];
+        state.settingsExerciseHasMore = Boolean(data.hasNext);
+        state.settingsExerciseNextOffset = Number(data.nextOffset || state.settingsGlobalExercises.length);
         loaded = true;
     } catch (error) {
+        if (requestSeq !== runtime.settingsGlobalRequestSeq) return Promise.resolve();
         console.error(error);
         showToast("toast.refreshFailed", {variant: "danger"});
     } finally {
-        if (requestSearch === state.settingsExerciseSearch) {
+        if (requestSeq === runtime.settingsGlobalRequestSeq && requestSearch === state.settingsExerciseSearch) {
             state.settingsExerciseLoading = false;
         }
     }
 
-    if (requestSearch !== state.settingsExerciseSearch) return Promise.resolve();
-    return renderSettingsExercises({animate: animate && loaded});
+    if (requestSeq !== runtime.settingsGlobalRequestSeq || requestSearch !== state.settingsExerciseSearch) return Promise.resolve();
+    const result = renderSettingsExercises({animate: animate && loaded});
+    if (!append) {
+        const scroll = $("#settings-exercise-scroll");
+        scroll?.scrollTo({top: 0, left: 0, behavior: "instant"});
+    }
+    return result;
 }

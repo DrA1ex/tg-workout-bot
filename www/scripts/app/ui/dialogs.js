@@ -118,10 +118,12 @@ export function animateSheetElement(sheet, direction, onFinish) {
     });
 }
 
-export function openSheetDialog(dialog) {
+export function openSheetDialog(dialog, {dismissible = true} = {}) {
     if (dialog.open) return;
     const sheet = dialog.querySelector(".add-sheet");
     dialog.classList.remove("sheet-closing", "sheet-opening");
+    dialog.dataset.dismissible = dismissible ? "true" : "false";
+    ensureSheetCancelHandler(dialog);
     document.body.classList.add("sheet-open");
     showDialog(dialog);
     resetSheetScroll(sheet);
@@ -139,6 +141,7 @@ export function closeSheetDialog(dialog) {
     const finish = () => {
         if (!dialog.open) return;
         dialog.classList.remove("sheet-closing");
+        dialog.dataset.sheetCloseAllowed = "true";
         dialog.close();
     };
     animateSheetElement(sheet, "out", finish);
@@ -147,10 +150,6 @@ export function closeSheetDialog(dialog) {
 export function bindSheetDialog(dialogSelector, closeSelector) {
     const dialog = $(dialogSelector);
     $(closeSelector).addEventListener("click", () => closeSheetDialog(dialog));
-    dialog.addEventListener("cancel", event => {
-        event.preventDefault();
-        closeSheetDialog(dialog);
-    });
     dialog.addEventListener("close", () => {
         dialog.classList.remove("sheet-closing", "sheet-opening");
         delete dialog.dataset.dialogOpenOrder;
@@ -161,6 +160,28 @@ export function bindSheetDialog(dialogSelector, closeSelector) {
             renderSettingsExerciseSearchState();
         }
         document.body.classList.remove("sheet-open");
+    });
+}
+
+export function ensureSheetCancelHandler(dialog) {
+    if (!dialog || dialog.dataset.cancelHandlerBound === "true") return;
+    dialog.dataset.cancelHandlerBound = "true";
+    dialog.addEventListener("cancel", event => {
+        event.preventDefault();
+        if (dialog.dataset.dismissible === "false") return;
+        closeSheetDialog(dialog);
+    });
+    dialog.addEventListener("close", () => {
+        const closeAllowed = dialog.dataset.sheetCloseAllowed === "true";
+        const dismissible = dialog.dataset.dismissible !== "false";
+        delete dialog.dataset.sheetCloseAllowed;
+
+        if (!dismissible && !closeAllowed) {
+            requestAnimationFrame(() => openSheetDialog(dialog, {dismissible: false}));
+            return;
+        }
+
+        delete dialog.dataset.dismissible;
     });
 }
 

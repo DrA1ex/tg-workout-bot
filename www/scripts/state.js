@@ -16,6 +16,8 @@ export const state = {
     settingsGlobalExercises: [],
     settingsExerciseLoading: false,
     settingsExerciseSearchPending: false,
+    settingsExerciseHasMore: false,
+    settingsExerciseNextOffset: 0,
     settingsExercisePending: null,
     exerciseScope: "mine",
     exerciseSearch: "",

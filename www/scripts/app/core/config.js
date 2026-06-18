@@ -12,4 +12,5 @@ export const EXERCISE_SAVE_LOADER_DELAY = 200;
 export const EXERCISE_SAVE_MIN_LOADER_VISIBLE = 200;
 export const EXERCISE_SAVE_SUCCESS_VISIBLE = 300;
 export const ONBOARDING_GLOBAL_PAGE_SIZE = 30;
+export const SETTINGS_GLOBAL_PAGE_SIZE = 30;
 export const EXERCISE_ROW_SELECTOR = "[data-exercise-row-key]";

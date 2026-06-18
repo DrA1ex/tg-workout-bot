@@ -11,6 +11,7 @@ export const runtime = {
     workoutSwipe: null,
     pullRefresh: null,
     settingsExerciseSearchTimer: null,
+    settingsGlobalRequestSeq: 0,
     onboardingExerciseSearchTimer: null,
     onboardingLanguageTimer: null,
     onboardingMoveTimer: null,

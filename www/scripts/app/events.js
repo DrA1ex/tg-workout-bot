@@ -8,7 +8,7 @@ import {$, $$, api, applyI18n, applyTheme, authApi, showAuthScreen, state} from 
 import {renderDashboard} from './features/dashboard/index.js';
 import {addGlobalExercise, deleteExercise, findExercise, loadGlobalExercises, openExerciseAddDialog, openExerciseAddDialogWithName, openExerciseDialog, renderExerciseScope, renderExercises, saveExerciseNotes, setExerciseAddPending, syncExerciseState} from './features/exercises/catalog.js';
 import {setupHistoryInfiniteScroll} from './features/history/index.js';
-import {completeOnboarding, loadOnboardingGlobalExercises, onboardingSelectedSet, renderOnboardingGlobalExercises, renderOnboardingSearchState, saveOnboardingLanguage, updateOnboardingStartState} from './features/onboarding/index.js';
+import {completeOnboarding, loadOnboardingGlobalExercises, onboardingSelectedSet, openOnboardingIfNeeded, renderOnboardingGlobalExercises, renderOnboardingSearchState, saveOnboardingLanguage, updateOnboardingStartState} from './features/onboarding/index.js';
 import {loadProgress, renderProgress} from './features/progress/index.js';
 import {isSettingsExercisesDialogOpen, loadSettingsGlobalExercises, openSettingsExercisesDialog, renderSettingsExerciseSearchState} from './features/settings/exercises.js';
 import {renderSettings, setSettingsPending, updateSettingsPreview} from './features/settings/index.js';
@@ -274,10 +274,11 @@ export function bindEvents() {
 
     $("#settings-exercises-open").addEventListener("click", openSettingsExercisesDialog);
     bindSheetDialog("#settings-exercises-dialog", "#settings-exercises-close");
-    $("#onboarding-close").addEventListener("click", () => closeSheetDialog($("#onboarding-dialog")));
-    $("#onboarding-dialog").addEventListener("cancel", event => {
-        event.preventDefault();
+    $("#settings-exercises-dialog").addEventListener("close", () => {
+        if (state.exercises.length) return;
+        requestAnimationFrame(() => openOnboardingIfNeeded());
     });
+    $("#onboarding-close").addEventListener("click", () => closeSheetDialog($("#onboarding-dialog")));
     $("#onboarding-dialog").addEventListener("close", () => {
         window.clearTimeout(runtime.onboardingExerciseSearchTimer);
         window.clearTimeout(runtime.onboardingLanguageTimer);
@@ -342,12 +343,22 @@ export function bindEvents() {
         state.settingsExerciseSearch = event.target.value.trim();
         state.settingsExerciseSearchPending = true;
         state.settingsExerciseLoading = false;
+        state.settingsGlobalExercises = [];
+        state.settingsExerciseNextOffset = 0;
+        state.settingsExerciseHasMore = true;
+        runtime.settingsGlobalRequestSeq += 1;
         renderSettingsExerciseSearchState();
         window.clearTimeout(runtime.settingsExerciseSearchTimer);
         runtime.settingsExerciseSearchTimer = window.setTimeout(() => {
             loadSettingsGlobalExercises().catch(console.error);
         }, 180);
     });
+    $("#settings-exercise-scroll").addEventListener("scroll", event => {
+        const node = event.currentTarget;
+        if (node.scrollTop + node.clientHeight >= node.scrollHeight - 120) {
+            loadSettingsGlobalExercises({append: true}).catch(console.error);
+        }
+    }, {passive: true});
 
     $("#logout-button").addEventListener("click", async () => {
         await authApi("logout", {method: "POST"});
