@@ -1342,6 +1342,63 @@ textarea {
     color: var(--primary);
 }
 
+.exercise-row-pending {
+    position: relative;
+    pointer-events: none;
+}
+
+.exercise-row-pending::after {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    content: "";
+    background: linear-gradient(
+        100deg,
+        transparent 0%,
+        color-mix(in srgb, var(--surface) 0%, transparent) 26%,
+        color-mix(in srgb, var(--primary) 16%, transparent) 44%,
+        transparent 62%
+    );
+    background-size: 220% 100%;
+    opacity: .72;
+    animation: row-pending-shimmer 1.05s linear infinite;
+}
+
+.exercise-row-pending .swipe-workout-main,
+.exercise-row-pending .exercise-list-button {
+    opacity: 1;
+}
+
+.exercise-row-pending .swipe-workout-body {
+    opacity: .72;
+}
+
+.settings-global-row.exercise-row-pending .settings-global-button::after {
+    display: none;
+}
+
+.exercise-row-spinner {
+    display: block;
+    width: 18px;
+    height: 18px;
+    justify-self: end;
+    border: 2px solid color-mix(in srgb, var(--primary) 26%, transparent);
+    border-top-color: var(--primary);
+    border-radius: 999px;
+    animation: button-spin .8s linear infinite;
+}
+
+@keyframes row-pending-shimmer {
+    0% {
+        background-position: 120% 0;
+    }
+
+    100% {
+        background-position: -120% 0;
+    }
+}
+
 .onboarding-actions {
     grid-template-columns: 1fr;
 }

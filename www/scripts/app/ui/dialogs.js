@@ -189,11 +189,12 @@ export function resolveDeleteConfirmation(confirmed) {
     resolve(confirmed);
 }
 
-export function confirmDelete({titleKey, bodyKey}) {
+export function confirmDelete({titleKey, bodyKey, closeOnConfirm = false}) {
     const dialog = $("#delete-workout-dialog");
     if (dialog.open) return Promise.resolve(false);
     $("#delete-workout-title").textContent = t(titleKey);
     $("#delete-workout-copy").textContent = t(bodyKey);
+    runtime.deleteConfirmCloseOnConfirm = closeOnConfirm;
     dialog.showModal();
     dialog.dataset.dialogOpenOrder = String(++runtime.dialogOpenSeq);
     return new Promise(resolve => {
@@ -206,7 +207,7 @@ export function confirmWorkoutDelete() {
 }
 
 export function confirmExerciseDelete() {
-    return confirmDelete({titleKey: "deleteExercise.title", bodyKey: "deleteExercise.body"});
+    return confirmDelete({titleKey: "deleteExercise.title", bodyKey: "deleteExercise.body", closeOnConfirm: true});
 }
 
 export function setDeleteWorkoutPending(pending) {

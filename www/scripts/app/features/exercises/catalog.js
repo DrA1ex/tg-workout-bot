@@ -4,7 +4,7 @@ import {refreshAll} from '../../data/refresh.js';
 import {$, $$, api, escapeHtml, state, t} from '../../deps.js';
 import {closeModalDialog, confirmExerciseDelete, openModalDialog, setDeleteWorkoutPending, showToast} from '../../ui/dialogs.js';
 import {isOnboardingDialogOpen, renderOnboardingGlobalExercises} from '../onboarding/index.js';
-import {isSettingsExercisesDialogOpen, loadSettingsGlobalExercises, renderSettingsExerciseSummary, renderSettingsExercises} from '../settings/exercises.js';
+import {isSettingsExercisesDialogOpen, loadSettingsGlobalExercises, renderSettingsExerciseSummary, renderSettingsExercises, setSettingsExercisePending} from '../settings/exercises.js';
 import {updateWorkoutFormState} from '../workouts/forms.js';
 
 export function exerciseSelectOptions(selectedValue = "") {
@@ -67,19 +67,25 @@ export function renderExercises() {
         : `<div class="empty">${t("exercises.noGlobalMatches")}</div>`;
 }
 
-export function userExerciseRow(exercise) {
+export function userExerciseRow(exercise, {pending = false} = {}) {
     const note = String(exercise.notes || "").trim();
+    const rowClasses = ["workout-row", "swipe-workout-row", "exercise-row", pending ? "exercise-row-pending" : ""].filter(Boolean).join(" ");
+    const buttonAttributes = pending ? ' disabled aria-busy="true"' : "";
+    const deleteAttributes = pending ? ' disabled aria-busy="true"' : "";
+    const trailing = pending
+        ? '<span class="exercise-row-spinner" aria-hidden="true"></span>'
+        : '<span class="swipe-workout-chevron" aria-hidden="true">›</span>';
 
     return `
-        <article class="workout-row swipe-workout-row exercise-row" data-exercise-row-key="${escapeHtml(exercise.name)}" data-exercise-name="${escapeHtml(exercise.name)}">
-            <button class="swipe-workout-main" type="button" data-edit-exercise="${escapeHtml(exercise.name)}">
+        <article class="${rowClasses}" data-exercise-row-key="${escapeHtml(exercise.name)}" data-exercise-name="${escapeHtml(exercise.name)}">
+            <button class="swipe-workout-main" type="button" data-edit-exercise="${escapeHtml(exercise.name)}"${buttonAttributes}>
                 <span class="swipe-workout-body">
                     <h3>${escapeHtml(exercise.name)}</h3>
                     ${note ? `<p>${escapeHtml(note)}</p>` : ""}
                 </span>
-                <span class="swipe-workout-chevron" aria-hidden="true">›</span>
+                ${trailing}
             </button>
-            <button class="swipe-delete-action" type="button" data-delete-exercise="${escapeHtml(exercise.name)}">
+            <button class="swipe-delete-action" type="button" data-delete-exercise="${escapeHtml(exercise.name)}"${deleteAttributes}>
                 ${escapeHtml(t("actions.delete"))}
             </button>
         </article>
@@ -222,11 +228,17 @@ export async function saveExerciseNotes() {
 }
 
 export async function deleteExercise(name) {
-    if (state.savingExercise) return;
+    if (state.savingExercise || state.settingsExercisePending) return;
     if (!await confirmExerciseDelete()) return;
+    const animateSettings = isSettingsExercisesDialogOpen();
+    if (animateSettings) setSettingsExercisePending(name, "delete", {visible: false, render: false});
+    const pendingTimer = animateSettings
+        ? window.setTimeout(() => setSettingsExercisePending(name, "delete"), 180)
+        : null;
     try {
         const data = await api(`exercises/${encodeURIComponent(name)}`, {method: "DELETE"});
-        const animateSettings = isSettingsExercisesDialogOpen();
+        if (pendingTimer) window.clearTimeout(pendingTimer);
+        if (animateSettings) setSettingsExercisePending(null, "", {render: false});
 
         closeModalDialog($("#exercise-dialog"));
         closeModalDialog($("#delete-workout-dialog"));
@@ -246,27 +258,44 @@ export async function deleteExercise(name) {
         console.error(error);
         showToast("toast.exerciseDeleteFailed");
     } finally {
+        if (pendingTimer) window.clearTimeout(pendingTimer);
+        if (animateSettings && state.settingsExercisePending) setSettingsExercisePending(null);
         setDeleteWorkoutPending(false);
     }
 }
 
 export async function addGlobalExercise(name) {
+    if (state.settingsExercisePending) return;
     const animateSettings = isSettingsExercisesDialogOpen();
-    const data = await api("exercises", {
-        method: "POST",
-        body: JSON.stringify({name, notes: ""}),
-    });
+    if (animateSettings) setSettingsExercisePending(name, "add", {visible: false, render: false});
+    const pendingTimer = animateSettings
+        ? window.setTimeout(() => setSettingsExercisePending(name, "add"), 180)
+        : null;
+    try {
+        const data = await api("exercises", {
+            method: "POST",
+            body: JSON.stringify({name, notes: ""}),
+        });
+        if (pendingTimer) window.clearTimeout(pendingTimer);
+        if (animateSettings) setSettingsExercisePending(null, "", {render: false});
 
-    // The global row is still in the DOM here, so FLIP can move it into the user section.
-    await syncExerciseState(data.exercises, {animateSettings});
-    if (animateSettings) {
-        await loadSettingsGlobalExercises();
-    } else {
-        await loadGlobalExercises();
-        state.exerciseScope = "global";
-        renderExerciseScope();
+        // The global row is still in the DOM here, so FLIP can move it into the user section.
+        await syncExerciseState(data.exercises, {animateSettings});
+        if (animateSettings) {
+            await loadSettingsGlobalExercises();
+        } else {
+            await loadGlobalExercises();
+            state.exerciseScope = "global";
+            renderExerciseScope();
+        }
+        showToast("toast.exerciseAdded");
+    } catch (error) {
+        console.error(error);
+        showToast(error.status === 409 ? "toast.exerciseDuplicate" : "toast.saveFailed", {variant: "danger"});
+    } finally {
+        if (pendingTimer) window.clearTimeout(pendingTimer);
+        if (animateSettings && state.settingsExercisePending) setSettingsExercisePending(null);
     }
-    showToast("toast.exerciseAdded");
 }
 
 export function renderExerciseScope() {

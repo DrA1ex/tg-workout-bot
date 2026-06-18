@@ -34,17 +34,24 @@ export function isSettingsExercisesDialogOpen() {
     return Boolean($("#settings-exercises-dialog")?.open);
 }
 
+export function setSettingsExercisePending(name, action = "", {visible = true, render = true} = {}) {
+    state.settingsExercisePending = name ? {name, action, visible} : null;
+    return render ? renderSettingsExercises() : Promise.resolve();
+}
+
 export function settingsExerciseRow(exercise) {
+    const pending = state.settingsExercisePending?.visible && state.settingsExercisePending.name === exercise.name;
     const userExercise = state.exercises.find(row => row.name === exercise.name);
-    if (userExercise) return userExerciseRow(userExercise);
+    if (userExercise) return userExerciseRow(userExercise, {pending});
 
     return exerciseListRowMarkup({
         key: exercise.name,
         title: exercise.name,
         subtitle: t("exercises.global"),
-        rowClasses: "settings-global-row",
+        rowClasses: ["settings-global-row", pending ? "exercise-row-pending" : ""].filter(Boolean).join(" "),
         buttonClasses: "settings-global-button",
-        buttonAttributes: `data-add-global-exercise="${escapeHtml(exercise.name)}"`,
+        buttonAttributes: `data-add-global-exercise="${escapeHtml(exercise.name)}"${pending ? ' disabled aria-busy="true"' : ""}`,
+        trailing: pending ? '<span class="exercise-row-spinner" aria-hidden="true"></span>' : "",
     });
 }
 

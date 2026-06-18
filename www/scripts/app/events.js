@@ -416,6 +416,11 @@ export function bindEvents() {
     });
     $("#delete-workout-confirm").addEventListener("click", () => {
         if (state.deletingWorkout) return;
+        if (runtime.deleteConfirmCloseOnConfirm) {
+            resolveDeleteConfirmation(true);
+            $("#delete-workout-dialog").close();
+            return;
+        }
         setDeleteWorkoutPending(true);
         resolveDeleteConfirmation(true);
     });
@@ -425,6 +430,7 @@ export function bindEvents() {
     });
     $("#delete-workout-dialog").addEventListener("close", () => {
         delete $("#delete-workout-dialog").dataset.dialogOpenOrder;
+        runtime.deleteConfirmCloseOnConfirm = false;
         if (state.deletingWorkout) return;
         setDeleteWorkoutPending(false);
         resolveDeleteConfirmation(false);
