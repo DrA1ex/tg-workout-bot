@@ -1,10 +1,12 @@
 import {
     convertToUserTimezone,
+    dateKeyInTimezone,
     dateFromUserDateInput,
     getTimezoneOffsetMinutes,
     getTimezoneOffsetSQL,
     isValidTimezone,
     normalizeTimezoneOffset,
+    startOfUserDate,
 } from "../../src/utils/timezone.js";
 
 describe("timezone utilities", () => {
@@ -53,5 +55,16 @@ describe("timezone utilities", () => {
 
         expect(convertToUserTimezone(date, "+5:00").toISOString()).toBe("2026-06-12T01:00:00.000Z");
         expect(convertToUserTimezone(date, "Asia/Yekaterinburg").toISOString()).toBe("2026-06-12T01:00:00.000Z");
+    });
+
+    it("gets date keys in user timezone", () => {
+        expect(dateKeyInTimezone(new Date("2026-06-11T20:00:00.000Z"), "+05:00")).toBe("2026-06-12");
+        expect(dateKeyInTimezone(new Date("2026-06-12T02:00:00.000Z"), "-03:30")).toBe("2026-06-11");
+    });
+
+    it("creates UTC start boundaries for user dates", () => {
+        expect(startOfUserDate("2026-06-12", "UTC").toISOString()).toBe("2026-06-12T00:00:00.000Z");
+        expect(startOfUserDate("2026-06-12", "+05:00").toISOString()).toBe("2026-06-11T19:00:00.000Z");
+        expect(startOfUserDate("2026-06-12", "-03:30").toISOString()).toBe("2026-06-12T03:30:00.000Z");
     });
 });

@@ -77,6 +77,37 @@ export function dateFromUserDateInput(dateValue, timezone = 'UTC') {
     return new Date(localNoonUtc - getTimezoneOffsetMinutes(timezone) * 60 * 1000);
 }
 
+export function startOfUserDate(dateValue, timezone = 'UTC') {
+    const match = String(dateValue || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) throw new Error("Invalid date");
+
+    const year = Number.parseInt(match[1], 10);
+    const month = Number.parseInt(match[2], 10);
+    const day = Number.parseInt(match[3], 10);
+    const localNoonUtc = Date.UTC(year, month - 1, day, 12, 0, 0, 0);
+    const localNoon = new Date(localNoonUtc);
+
+    if (
+        localNoon.getUTCFullYear() !== year ||
+        localNoon.getUTCMonth() !== month - 1 ||
+        localNoon.getUTCDate() !== day
+    ) {
+        throw new Error("Invalid date");
+    }
+
+    const localMidnightUtc = Date.UTC(year, month - 1, day, 0, 0, 0, 0);
+    return new Date(localMidnightUtc - getTimezoneOffsetMinutes(timezone) * 60 * 1000);
+}
+
+export function dateKeyInTimezone(date, timezone = 'UTC') {
+    const userDate = convertToUserTimezone(date, timezone);
+    return [
+        userDate.getUTCFullYear(),
+        String(userDate.getUTCMonth() + 1).padStart(2, '0'),
+        String(userDate.getUTCDate()).padStart(2, '0'),
+    ].join('-');
+}
+
 /**
  * Convert UTC date to user's timezone
  * @param {Date} utcDate - UTC date

@@ -1,10 +1,11 @@
 import {formatDate} from "../../../i18n/index.js";
-import {dateFromUserDateInput} from "../../../utils/timezone.js";
+import {dateFromUserDateInput, dateKeyInTimezone} from "../../../utils/timezone.js";
 
 export function workoutPayload(row, language, timezone) {
     return {
         id: row.id,
         date: row.date,
+        dateKey: dateKeyInTimezone(new Date(row.date), timezone),
         dateLabel: formatDate(new Date(row.date), language, timezone),
         exercise: row.exercise,
         sets: row.sets,

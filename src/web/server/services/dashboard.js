@@ -2,8 +2,8 @@ import {Op} from "sequelize";
 
 import {WorkoutDAO} from "../../../dao/index.js";
 import {models} from "../../../db/index.js";
-import {formatDate} from "../../../i18n/index.js";
-import {createDateGroupAttribute, dateFromUserDateInput} from "../../../utils/timezone.js";
+import {formatDate, t} from "../../../i18n/index.js";
+import {convertToUserTimezone, createDateGroupAttribute, dateKeyInTimezone, dateFromUserDateInput, startOfUserDate} from "../../../utils/timezone.js";
 import {addDays, addWeeks, dateOnly, shortWeekLabel, weekStartUtc} from "./dates.js";
 import {volumeFor, workoutPayload} from "./workouts.js";
 
@@ -21,16 +21,18 @@ export async function getDashboard(user) {
     const language = user.language || "en";
     const timezone = user.timezone || "UTC";
     const q = models.Workout.sequelize;
-    const today = new Date();
-    const currentWeekStart = weekStartUtc(today);
-    const todayKey = dateOnly(today);
-    const todayStart = dateFromUserDateInput(todayKey, timezone);
+    const now = new Date();
+    const todayKey = dateKeyInTimezone(now, timezone);
+    const today = dateFromUserDateInput(todayKey, timezone);
+    const currentWeekStart = weekStartUtc(new Date(`${todayKey}T00:00:00Z`));
+    const currentWeekStartBoundary = startOfUserDate(dateOnly(currentWeekStart), timezone);
+    const todayStart = startOfUserDate(todayKey, timezone);
 
     const todayRows = await WorkoutDAO.getWorkoutsByDate(user.telegramId, todayKey, timezone);
     const weekRows = await models.Workout.findAll({
         where: {
             telegramId: user.telegramId,
-            date: {[Op.gte]: currentWeekStart},
+            date: {[Op.gte]: currentWeekStartBoundary},
         },
         order: [["date", "ASC"]],
     });
@@ -64,7 +66,7 @@ export async function getDashboard(user) {
     });
     const weeklyVolume = weekRows.reduce((sum, row) => sum + volumeFor(row), 0);
     const exerciseCount = new Set(weekRows.map(row => row.exercise)).size;
-    const weeklyDays = new Set(weekRows.map(row => dateOnly(new Date(row.date)))).size;
+    const weeklyDays = new Set(weekRows.map(row => dateKeyInTimezone(new Date(row.date), timezone))).size;
     const currentWeekKey = dateOnly(currentWeekStart);
     const activityAnchor = currentWeekStart;
     const activity = Array.from({length: 7}, (_, index) => {
@@ -81,6 +83,12 @@ export async function getDashboard(user) {
         };
     });
 
+    const todayDateLabel = formatDate(today, language, timezone, {month: "short", day: "numeric", year: "numeric"});
+    const todayWeekdayLabel = new Intl.DateTimeFormat(t(language, "locale.date"), {
+        weekday: "long",
+        timeZone: "UTC",
+    }).format(convertToUserTimezone(today, timezone));
+
     return {
         profile: {
             telegramId: user.telegramId,
@@ -90,7 +98,8 @@ export async function getDashboard(user) {
             accentColor: user.accentColor || "blue",
         },
         today: {
-            label: formatDate(today, language, timezone, {weekday: "short", month: "short", day: "numeric"}),
+            key: todayKey,
+            label: `${todayDateLabel} • ${todayWeekdayLabel}`,
             workouts: todayRows.map(row => workoutPayload(row, language, timezone)),
         },
         stats: {

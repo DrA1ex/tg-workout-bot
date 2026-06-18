@@ -8,6 +8,10 @@ import {renderProgress} from '../progress/index.js';
 import {updatePreviousWorkoutSummary} from './forms.js';
 import {workoutDateInputValue} from './presentation.js';
 
+export function dashboardTodayKey() {
+    return state.dashboard?.today?.key || todayInputValue();
+}
+
 export function removeWorkoutFromLoadedState(id) {
     const workoutId = String(id);
     const removeFromArray = rows => (rows || []).filter(row => String(row.id) !== workoutId);
@@ -69,7 +73,7 @@ export function updateWorkoutInLoadedState(workout) {
             ...state.dashboard,
             today: {
                 ...state.dashboard.today,
-                workouts: dateKey === todayInputValue()
+                workouts: dateKey === dashboardTodayKey()
                     ? upsertWorkoutInRows(state.dashboard.today?.workouts, workout)
                     : removeFromArray(state.dashboard.today?.workouts),
             },
@@ -113,7 +117,7 @@ export function updateWorkoutInLoadedState(workout) {
 
 export function addWorkoutToLoadedState(workout, dateKey) {
     if (state.dashboard) {
-        const isToday = dateKey === todayInputValue();
+        const isToday = dateKey === dashboardTodayKey();
         const recent = [workout, ...(state.dashboard.recent || []).filter(row => String(row.id) !== String(workout.id))].slice(0, 8);
         const todayWorkouts = state.dashboard.today?.workouts || [];
         state.dashboard = {

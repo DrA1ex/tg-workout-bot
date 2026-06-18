@@ -111,13 +111,7 @@ export function weekUnitLabel(count) {
 }
 
 export function todaySubtitle(data) {
-    const source = parseClientDate(data.today.workouts[0]?.date) || new Date();
-    const locale = currentLocale();
-    return source.toLocaleDateString(locale, {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-    }) + " • " + source.toLocaleDateString(locale, {weekday: "long"});
+    return data.today?.label || "";
 }
 
 export function shortDateLabel(workout) {
@@ -140,6 +134,7 @@ export function findWorkout(id) {
 }
 
 export function workoutDateInputValue(workout) {
+    if (workout.dateKey) return workout.dateKey;
     const date = parseClientDate(workout.date) || new Date();
     const offset = date.getTimezoneOffset();
     return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 10);
