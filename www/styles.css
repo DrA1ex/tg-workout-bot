@@ -116,7 +116,6 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
-body[data-tab="add"],
 body.sheet-open,
 html.dialog-open,
 body.dialog-open {
@@ -3417,90 +3416,7 @@ body.keyboard-open .bottom-nav {
     line-height: 1;
 }
 
-body[data-tab="add"] .page-heading,
-body[data-tab="add"] .bottom-nav {
-    display: none;
-}
-
-body[data-tab="add"] .app-shell {
-    width: min(100%, var(--app-max-width));
-    padding: 0;
-}
-
-body[data-tab="add"] main {
-    min-height: 100dvh;
-    overflow: hidden;
-}
-
 /* Add and edit workout sheet */
-.add-modal-screen.active {
-    position: relative;
-    display: grid;
-    width: 100%;
-    max-width: 100%;
-    min-height: 100dvh;
-    overflow: hidden;
-    padding: calc(22px + var(--tg-content-safe-area-top)) 10px 6px;
-    align-items: end;
-    justify-items: center;
-    isolation: isolate;
-    perspective: 1200px;
-}
-
-.add-modal-screen::before {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    content: "";
-    background: color-mix(in srgb, var(--bg) 84%, #000 16%);
-}
-
-.add-modal-screen::after {
-    position: fixed;
-    top: calc(8px + var(--tg-content-safe-area-top));
-    left: 50%;
-    z-index: 0;
-    width: min(calc(100% - 54px), calc(var(--sheet-max-width) - 18px));
-    height: calc(100dvh - 20px - var(--tg-content-safe-area-top));
-    border-radius: 30px;
-    content: "";
-    background: color-mix(in srgb, var(--surface) 94%, #ffffff 6%);
-    border: 1px solid color-mix(in srgb, var(--line) 78%, #000 22%);
-    opacity: .58;
-    transform-origin: center center;
-    transform: translate3d(-50%, 0, 0) rotateX(0deg) scale3d(.988, .988, 1);
-    will-change: top, left, width, height, border-radius, transform, opacity;
-}
-
-.add-modal-screen.sheet-opening::before {
-    animation: ios-sheet-backdrop-enter .29s ease-out both;
-}
-
-.add-modal-screen.sheet-opening::after {
-    animation: ios-sheet-card-enter .44s cubic-bezier(.18, .84, .2, 1) .02s both;
-}
-
-.add-modal-screen.sheet-closing::before {
-    animation: ios-sheet-backdrop-exit .14s ease-in both;
-}
-
-.add-modal-screen.sheet-closing::after {
-    animation: ios-sheet-card-exit .31s cubic-bezier(.4, 0, .2, 1) both;
-}
-
-.add-modal-screen.sheet-closing .add-sheet {
-    pointer-events: none;
-}
-
-[data-theme="dark"] .add-modal-screen::before {
-    background: color-mix(in srgb, var(--bg) 84%, #000 16%);
-}
-
-[data-theme="dark"] .add-modal-screen::after {
-    background: color-mix(in srgb, var(--surface) 92%, #000 8%);
-    border-color: rgba(71, 85, 105, .52);
-}
-
 .add-sheet {
     position: relative;
     z-index: 1;
@@ -3600,18 +3516,13 @@ body[data-tab="add"] main {
         padding: calc(24px + var(--tg-content-safe-area-top)) 18px 18px;
     }
 
-    .add-modal-screen.active {
-        padding: calc(24px + var(--tg-content-safe-area-top)) 18px 18px;
-    }
-
     .add-sheet {
         height: min(860px, calc(100dvh - 44px - var(--tg-content-safe-area-top)));
         max-height: min(860px, calc(100dvh - 44px - var(--tg-content-safe-area-top)));
         border-radius: 32px;
     }
 
-    .workout-sheet-dialog::after,
-    .add-modal-screen::after {
+    .workout-sheet-dialog::after {
         top: calc(10px + var(--tg-content-safe-area-top));
         height: min(860px, calc(100dvh - 28px - var(--tg-content-safe-area-top)));
         transform: translate3d(-50%, 0, 0) scale3d(.965, .965, 1);
@@ -4067,11 +3978,11 @@ body[data-tab="add"] main {
     white-space: nowrap;
 }
 
-#screen-add .helper-text {
+#add-dialog .helper-text {
     display: none;
 }
 
-body[data-tab="add"] .sticky-form-actions {
+#add-dialog .sticky-form-actions {
     position: absolute;
     right: 16px;
     bottom: 0;
@@ -4200,7 +4111,7 @@ body[data-tab="add"] .sticky-form-actions {
         gap: 20px;
     }
 
-    body[data-tab="add"] .sticky-form-actions {
+    #add-dialog .sticky-form-actions {
         right: 24px;
         left: 24px;
     }
@@ -4219,15 +4130,6 @@ body[data-tab="add"] .sticky-form-actions {
     .bottom-nav {
         width: 100%;
         max-width: none;
-    }
-
-    body[data-tab="add"] .app-shell {
-        padding: 0;
-    }
-
-    .add-modal-screen.active {
-        padding-right: 10px;
-        padding-left: 10px;
     }
 
     .workout-log-heading h2 {

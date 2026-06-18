@@ -118,7 +118,7 @@ export function animateSheetElement(sheet, direction, onFinish) {
     });
 }
 
-export function openSheetDialog(dialog, {dismissible = true} = {}) {
+export function openSheetDialog(dialog, {dismissible = true, animate = true} = {}) {
     if (dialog.open) return;
     const sheet = dialog.querySelector(".add-sheet");
     dialog.classList.remove("sheet-closing", "sheet-opening");
@@ -128,6 +128,7 @@ export function openSheetDialog(dialog, {dismissible = true} = {}) {
     showDialog(dialog);
     resetSheetScroll(sheet);
     dialog.dataset.dialogOpenOrder = String(++runtime.dialogOpenSeq);
+    if (!animate) return;
     dialog.classList.add("sheet-opening");
     animateSheetElement(sheet, "in", () => {
         dialog.classList.remove("sheet-opening");

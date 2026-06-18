@@ -160,11 +160,11 @@
             </div>
         </section>
 
-        <section class="screen add-modal-screen" id="screen-add" aria-labelledby="nav-add">
+        <dialog class="modal workout-sheet-dialog" id="add-dialog" aria-labelledby="add-title">
             <div class="add-sheet" role="dialog" aria-modal="true" aria-labelledby="add-title">
                 <div class="sheet-grabber" aria-hidden="true"></div>
                 <header class="add-screen-header">
-                    <button class="add-header-button" data-tab="dashboard" type="button" aria-label="Close">×</button>
+                    <button class="add-header-button" id="add-close" type="button" aria-label="Close" tabindex="-1">×</button>
                     <h1 id="add-title" data-i18n="screens.add">Add workout</h1>
                     <span class="add-header-spacer" aria-hidden="true"></span>
                 </header>
@@ -246,12 +246,12 @@
                         </div>
                     </label>
                     <p class="helper-text" id="previous-hint" data-i18n="add.previousHint">Previous values will appear here.</p>
-                    <div class="sticky-form-actions">
+                    <div class="sticky-form-actions single-action">
                         <button class="primary-button save-button" id="workout-save-button" type="submit" data-save-mode="finish" data-i18n="actions.save">Save</button>
                     </div>
                 </form>
             </div>
-        </section>
+        </dialog>
 
         <section class="screen" id="screen-history" aria-labelledby="nav-history">
             <div class="history-skeleton" id="history-skeleton" aria-hidden="true" hidden>

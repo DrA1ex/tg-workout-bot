@@ -5,17 +5,24 @@ import {ensureProgressLoaded} from '../features/progress/index.js';
 import {renderSettings} from '../features/settings/index.js';
 import {initializeWorkoutFormSession, updatePreviousWorkoutSummary, updateWorkoutFormState} from '../features/workouts/forms.js';
 import {todaySubtitle} from '../features/workouts/presentation.js';
-import {animateSheetElement, resetSheetScroll} from '../ui/dialogs.js';
+import {closeModalDialog, closeSheetDialog, openModalDialog, openSheetDialog, resetSheetScroll} from '../ui/dialogs.js';
 import {VALID_TABS} from './config.js';
-import {runtime} from './runtime.js';
 
 export function tabFromUrl() {
     const tab = new URL(window.location.href).searchParams.get("tab");
     return VALID_TABS.has(tab) ? tab : "dashboard";
 }
 
+export function dialogFromUrl() {
+    const url = new URL(window.location.href);
+    const dialog = url.searchParams.get("dialog");
+    if (dialog === "add-workout" || dialog === "add-exercise") return dialog;
+    return url.searchParams.get("tab") === "add" ? "add-workout" : "";
+}
+
 export function tabUrl(tab) {
     const url = new URL(window.location.href);
+    url.searchParams.delete("dialog");
     if (tab === "dashboard") {
         url.searchParams.delete("tab");
     } else {
@@ -29,6 +36,20 @@ export function syncTabUrl(tab, {replace = false} = {}) {
     const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     if (next === current) return;
     window.history[replace ? "replaceState" : "pushState"]({tab}, "", next);
+}
+
+export function syncDialogUrl(dialog, {replace = false} = {}) {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("tab") === "add") url.searchParams.delete("tab");
+    if (dialog) {
+        url.searchParams.set("dialog", dialog);
+    } else {
+        url.searchParams.delete("dialog");
+    }
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (next === current) return;
+    window.history[replace ? "replaceState" : "pushState"]({dialog}, "", next);
 }
 
 export function setHeadingSkeleton(visible) {
@@ -47,41 +68,57 @@ export function updateAppReadyState() {
     }
 }
 
-export function animateAddScreenOpen() {
-    const screen = $("#screen-add");
-    const sheet = $("#screen-add .add-sheet");
-    if (!sheet) return;
-    screen?.classList.remove("sheet-closing");
-    screen?.classList.add("sheet-opening");
-    sheet.style.opacity = "0";
-    sheet.style.transform = "translate3d(0, 38px, -28px) rotateX(14deg) scale3d(.972, .972, 1)";
-    animateSheetElement(sheet, "in", () => {
-        screen?.classList.remove("sheet-opening");
-    });
+export function openAddWorkoutDialog({updateUrl = true, replaceUrl = false, animate = true} = {}) {
+    if (!state.appReady) return;
+    initializeWorkoutFormSession();
+    resetSheetScroll($("#add-dialog .add-sheet"));
+    if (updateUrl) syncDialogUrl("add-workout", {replace: replaceUrl});
+    openSheetDialog($("#add-dialog"), {animate});
+    updatePreviousWorkoutSummary().catch(console.error);
 }
 
-export function animateAddScreenClose(nextTab, options = {}) {
-    const screen = $("#screen-add");
-    const sheet = $("#screen-add .add-sheet");
-    screen?.classList.remove("sheet-opening");
-    screen?.classList.add("sheet-closing");
-    animateSheetElement(sheet, "out", () => {
-        screen?.classList.remove("sheet-closing");
-        setTab(nextTab, {...options, animate: false});
-    });
+export function closeAddWorkoutDialog({updateUrl = true, replaceUrl = false} = {}) {
+    if (updateUrl) syncDialogUrl("", {replace: replaceUrl});
+    closeSheetDialog($("#add-dialog"));
+}
+
+export function openExerciseAddRouteDialog({updateUrl = true, replaceUrl = false} = {}) {
+    if (!state.appReady) return;
+    $("#exercise-form").reset();
+    openModalDialog($("#exercise-add-dialog"));
+    if (updateUrl) syncDialogUrl("add-exercise", {replace: replaceUrl});
+}
+
+export function closeExerciseAddRouteDialog({updateUrl = true, replaceUrl = false} = {}) {
+    if (updateUrl) syncDialogUrl("", {replace: replaceUrl});
+    closeModalDialog($("#exercise-add-dialog"));
+}
+
+export function applyRouteDialog({replaceUrl = true, animate = false} = {}) {
+    const dialog = dialogFromUrl();
+    if (dialog === "add-workout") {
+        openAddWorkoutDialog({updateUrl: false, replaceUrl, animate});
+        return;
+    }
+    if (dialog === "add-exercise") {
+        openExerciseAddRouteDialog({updateUrl: false, replaceUrl});
+    }
 }
 
 export function navigateTab(tab, options = {}) {
-    if (state.tab === "add" && tab !== "add") {
-        animateAddScreenClose(tab, options);
+    if (tab === "add") {
+        openAddWorkoutDialog({replaceUrl: options.replaceUrl});
         return;
     }
     setTab(tab, options);
 }
 
 export function setTab(tab, options = {}) {
+    if (tab === "add") {
+        openAddWorkoutDialog({updateUrl: options.updateUrl !== false, replaceUrl: options.replaceUrl, animate: options.animate !== false});
+        return;
+    }
     if (!VALID_TABS.has(tab)) tab = "dashboard";
-    if (tab === "add" && !state.appReady && !options.force) return;
 
     const previousTab = state.tab;
     state.tab = tab;
@@ -106,27 +143,24 @@ export function setTab(tab, options = {}) {
     if (tab === "settings") {
         renderSettings();
     }
-    if (previousTab === "add" && tab !== "add") {
-        state.savingWorkout = false;
-        state.workoutSaveLoading = false;
-        state.workoutSubmitted = false;
-        updateWorkoutFormState();
-    }
-    const isOpeningAddScreen = tab === "add" && previousTab !== "add";
-    if (tab === "add") {
-        if (isOpeningAddScreen) {
-            initializeWorkoutFormSession();
-            resetSheetScroll($("#screen-add .add-sheet"));
-        }
-        window.scrollTo({top: 0, behavior: "instant"});
-        if (isOpeningAddScreen && options.animate !== false) animateAddScreenOpen();
-        updatePreviousWorkoutSummary().catch(console.error);
-    }
+    state.savingWorkout = false;
+    state.workoutSaveLoading = false;
+    state.workoutSubmitted = false;
+    updateWorkoutFormState();
 }
 
 export function bindHistoryNavigation() {
-    window.history.replaceState({tab: state.tab}, "", tabUrl(state.tab));
+    const dialog = dialogFromUrl();
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    window.history.replaceState({tab: state.tab, dialog: dialog || undefined}, "", dialog ? current : tabUrl(state.tab));
     window.addEventListener("popstate", () => {
+        const dialog = dialogFromUrl();
+        if (dialog) {
+            applyRouteDialog({animate: true});
+            return;
+        }
+        closeSheetDialog($("#add-dialog"));
+        closeModalDialog($("#exercise-add-dialog"));
         navigateTab(tabFromUrl(), {updateUrl: false, force: true});
     });
 }

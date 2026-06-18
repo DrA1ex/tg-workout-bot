@@ -1,6 +1,6 @@
 // Extracted from main.js without changing feature behavior.
 import {EXERCISE_SAVE_LOADER_DELAY, EXERCISE_SAVE_MIN_LOADER_VISIBLE, EXERCISE_SAVE_SUCCESS_VISIBLE, WORKOUT_SAVE_LOADER_DELAY, WORKOUT_SAVE_MIN_LOADER_VISIBLE, WORKOUT_SAVE_SUCCESS_VISIBLE} from './core/config.js';
-import {navigateTab} from './core/navigation.js';
+import {closeAddWorkoutDialog, closeExerciseAddRouteDialog, dialogFromUrl, navigateTab, openExerciseAddRouteDialog, syncDialogUrl} from './core/navigation.js';
 import {runtime} from './core/runtime.js';
 import {createDelayedLoader, delay, nextAnimationFrame, normalizeTimezoneInputValue} from './core/utils.js';
 import {refreshAll} from './data/refresh.js';
@@ -68,6 +68,7 @@ export function bindEvents() {
             triggerSuccessHaptic();
             await delay(WORKOUT_SAVE_SUCCESS_VISIBLE);
             if (saveMode === "finish") {
+                closeAddWorkoutDialog();
                 navigateTab("dashboard");
             } else {
                 navigateTab("add");
@@ -446,8 +447,23 @@ export function bindEvents() {
         setDeleteWorkoutPending(false);
         resolveDeleteConfirmation(false);
     });
-    $("#exercise-add-open").addEventListener("click", openExerciseAddDialog);
-    bindModalDialog("#exercise-add-dialog", "#exercise-add-close");
+    $("#add-close").addEventListener("click", () => closeAddWorkoutDialog());
+    $("#add-dialog").addEventListener("close", () => {
+        $("#add-dialog").classList.remove("sheet-closing", "sheet-opening");
+        delete $("#add-dialog").dataset.dialogOpenOrder;
+        document.body.classList.remove("sheet-open");
+        state.savingWorkout = false;
+        state.workoutSaveLoading = false;
+        state.workoutSubmitted = false;
+        updateWorkoutFormState();
+        if (dialogFromUrl() === "add-workout") syncDialogUrl("", {replace: true});
+    });
+    $("#exercise-add-open").addEventListener("click", () => openExerciseAddRouteDialog());
+    $("#exercise-add-close").addEventListener("click", () => closeExerciseAddRouteDialog());
+    $("#exercise-add-dialog").addEventListener("close", () => {
+        delete $("#exercise-add-dialog").dataset.dialogOpenOrder;
+        if (dialogFromUrl() === "add-exercise") syncDialogUrl("", {replace: true});
+    });
     bindModalDialog("#exercise-dialog", "#exercise-close");
     $("#exercise-edit-form").addEventListener("submit", async event => {
         event.preventDefault();

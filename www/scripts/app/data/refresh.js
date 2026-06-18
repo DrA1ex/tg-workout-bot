@@ -1,5 +1,6 @@
 // Extracted from main.js without changing feature behavior.
 import {HISTORY_INITIAL_SIZE, PULL_REFRESH_REQUEST_DELAY} from '../core/config.js';
+import {applyRouteDialog} from '../core/navigation.js';
 import {delay} from '../core/utils.js';
 import {api, applyI18n, state} from '../deps.js';
 import {renderDashboard, showDashboardSkeleton} from '../features/dashboard/index.js';
@@ -30,9 +31,7 @@ export async function refreshAll() {
     ensureHistoryLoaded();
     ensureProgressLoaded();
     openOnboardingIfNeeded();
-    if (state.tab === "add") {
-        updatePreviousWorkoutSummary().catch(console.error);
-    }
+    applyRouteDialog({animate: false});
 }
 
 export async function refreshDashboardOnly() {
