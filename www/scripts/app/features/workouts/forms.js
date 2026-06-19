@@ -1,7 +1,7 @@
 // Extracted from main.js without changing feature behavior.
 import {WORKOUT_SAVE_LOADER_DELAY, WORKOUT_SAVE_MIN_LOADER_VISIBLE, WORKOUT_SAVE_SUCCESS_VISIBLE} from '../../core/config.js';
 import {runtime} from '../../core/runtime.js';
-import {createDelayedLoader, delay, generateDedupeToken} from '../../core/utils.js';
+import {createDelayedLoader, delay, generateDedupeToken, todayInputValue} from '../../core/utils.js';
 import {$, $$, api, interpolate, state, t, telegramWebApp} from '../../deps.js';
 import {closeSheetDialog, openSheetDialog, showToast} from '../../ui/dialogs.js';
 import {workoutDateInputValue, workoutDetail} from './presentation.js';
@@ -52,12 +52,19 @@ export function triggerSuccessHaptic() {
     telegramWebApp?.HapticFeedback?.notificationOccurred?.("success");
 }
 
+export function triggerAchievementHaptic() {
+    telegramWebApp?.HapticFeedback?.impactOccurred?.("heavy");
+    telegramWebApp?.HapticFeedback?.notificationOccurred?.("success");
+}
+
 export function initializeWorkoutFormSession() {
     state.workoutDedupeToken = generateDedupeToken();
     state.savingWorkout = false;
     state.workoutSaveLoading = false;
     state.workoutSubmitted = false;
     clearWorkoutInputs();
+    syncWorkoutDateLimits();
+    $("#workout-date").value = todayInputValue();
     updateWorkoutFormState();
 }
 
@@ -85,6 +92,7 @@ export function setWorkoutFormMode(prefix, {hasWeight = true, isTime = false} = 
     fields.isTime.checked = Boolean(isTime);
     fields.controls.classList.toggle("no-weight", !fields.hasWeight.checked);
     fields.weight.disabled = !fields.hasWeight.checked;
+    fields.weight.required = fields.hasWeight.checked;
     if (!fields.hasWeight.checked) fields.weight.value = "";
 
     const resultLabel = fields.repsControl.querySelector(":scope > span");
@@ -141,10 +149,32 @@ export function readWorkoutFormValues(prefix) {
         exercise,
         sets: fields.sets.value,
         weight: fields.hasWeight.checked ? fields.weight.value : "",
+        hasWeight: fields.hasWeight.checked,
         repsOrTime: fields.reps.value,
         isTime: fields.isTime.checked,
         notes: fields.notes.value,
     };
+}
+
+export function syncWorkoutDateLimits() {
+    const today = todayInputValue();
+    ["workout", "edit"].forEach(prefix => {
+        const date = $(`#${prefix}-date`);
+        if (date) date.max = today;
+    });
+}
+
+export function validateWorkoutForm(prefix) {
+    syncWorkoutDateLimits();
+    const fields = workoutFormFields(prefix);
+    fields.weight.required = fields.hasWeight.checked;
+    if (fields.date.value && fields.date.value > todayInputValue()) {
+        fields.date.setCustomValidity(t("validation.futureDate"));
+    } else {
+        fields.date.setCustomValidity("");
+    }
+    const form = prefix === "workout" ? $("#workout-form") : $("#edit-form");
+    return form.reportValidity();
 }
 
 export function refreshWorkoutFormModes() {
@@ -161,6 +191,7 @@ export function openEditDialog(workout) {
     state.savingEditedWorkout = false;
     state.editedWorkoutSaveLoading = false;
     state.editedWorkoutSubmitted = false;
+    syncWorkoutDateLimits();
     $("#edit-id").value = workout.id;
     setWorkoutFormValues("edit", workout);
     updateEditWorkoutFormState();
@@ -169,6 +200,7 @@ export function openEditDialog(workout) {
 
 export async function saveEditedWorkout() {
     if (state.savingEditedWorkout || state.editedWorkoutSubmitted) return;
+    if (!validateWorkoutForm("edit")) return;
     const id = $("#edit-id").value;
     state.savingEditedWorkout = true;
     state.editedWorkoutSaveLoading = false;

@@ -21,19 +21,27 @@ export function workoutPayload(row, language, timezone) {
 
 export function parseWorkoutBody(body, fallbackDate = new Date(), timezone = "UTC") {
     const exercise = String(body.exercise || "").trim();
-    const date = body.date ? dateFromUserDateInput(body.date, timezone) : fallbackDate;
+    const dateInput = body.date ? String(body.date) : dateKeyInTimezone(fallbackDate, timezone);
+    const date = dateFromUserDateInput(dateInput, timezone);
+    if (dateInput > dateKeyInTimezone(new Date(), timezone)) throw new Error("Date cannot be in the future");
     const sets = Number.parseInt(body.sets, 10);
     const repsOrTime = Number.parseFloat(body.repsOrTime);
+    const hasWeight = body.hasWeight === true || body.hasWeight === "true";
+    const weight = hasWeight
+        ? Number.parseFloat(body.weight)
+        : body.weight === "" || body.weight == null ? null : Number.parseFloat(body.weight);
 
     if (!exercise) throw new Error("Exercise is required");
     if (!Number.isFinite(sets) || sets <= 0) throw new Error("Sets must be a positive number");
     if (!Number.isFinite(repsOrTime) || repsOrTime <= 0) throw new Error("Reps or time must be a positive number");
+    if (hasWeight && (!Number.isFinite(weight) || weight < 0)) throw new Error("Weight must be a valid number");
+    if (!hasWeight && weight != null && (!Number.isFinite(weight) || weight < 0)) throw new Error("Weight must be a valid number");
 
     return {
         date: date.toISOString(),
         exercise,
         sets,
-        weight: body.weight === "" || body.weight == null ? null : Number.parseFloat(body.weight),
+        weight,
         repsOrTime,
         isTime: Boolean(body.isTime),
         notes: String(body.notes || "").trim(),

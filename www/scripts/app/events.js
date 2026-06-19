@@ -13,7 +13,7 @@ import {loadProgress, renderProgress} from './features/progress/index.js';
 import {isSettingsExercisesDialogOpen, loadSettingsGlobalExercises, renderSettingsExerciseSearchState} from './features/settings/exercises.js';
 import {renderSettings, setSettingsPending, updateSettingsPreview} from './features/settings/index.js';
 import {deleteWorkout} from './features/workouts/actions.js';
-import {adjustNumberInput, applyPreviousWorkoutValues, currentWorkoutDedupeToken, openDatePicker, openEditDialog, readWorkoutFormValues, refreshWorkoutFormModes, releaseNativeSelect, saveEditedWorkout, setWorkoutFormMode, triggerSuccessHaptic, updatePreviousWorkoutSummary, updateWorkoutFormState, workoutFormFields} from './features/workouts/forms.js';
+import {adjustNumberInput, applyPreviousWorkoutValues, currentWorkoutDedupeToken, openDatePicker, openEditDialog, readWorkoutFormValues, refreshWorkoutFormModes, releaseNativeSelect, saveEditedWorkout, setWorkoutFormMode, triggerAchievementHaptic, triggerSuccessHaptic, updatePreviousWorkoutSummary, updateWorkoutFormState, validateWorkoutForm, workoutFormFields} from './features/workouts/forms.js';
 import {findWorkout} from './features/workouts/presentation.js';
 import {addWorkoutToLoadedState} from './features/workouts/state.js';
 import {bindModalDialog, bindSheetDialog, closeModalDialog, closeSheetDialog, resolveDeleteConfirmation, setDeleteWorkoutPending, showSpecialToast, showToast} from './ui/dialogs.js';
@@ -34,6 +34,7 @@ export function bindEvents() {
     $("#workout-form").addEventListener("submit", async event => {
         event.preventDefault();
         if (state.savingWorkout || state.workoutSubmitted) return;
+        if (!validateWorkoutForm("workout")) return;
 
         const saveMode = event.submitter?.dataset.saveMode || "finish";
         state.savingWorkout = true;
@@ -577,11 +578,15 @@ function firstExerciseAchievementShownToday(workout) {
 function showWorkoutAchievements(workout) {
     const achievements = workout?.achievements;
     if (!achievements) return;
+    const showFirstExercise = achievements.firstExerciseWorkout && !firstExerciseAchievementShownToday(workout);
+    const hasAchievement = achievements.newVolumeRecord || achievements.comebackAfterTwoMonths || showFirstExercise;
+
+    if (hasAchievement) triggerAchievementHaptic();
 
     if (achievements.newVolumeRecord) {
         showSpecialToast("special.record.title", "special.record.body");
     }
-    if (achievements.firstExerciseWorkout && !firstExerciseAchievementShownToday(workout)) {
+    if (showFirstExercise) {
         showSpecialToast("special.firstExercise.title", "special.firstExercise.body");
     }
     if (achievements.comebackAfterTwoMonths) {
