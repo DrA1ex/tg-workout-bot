@@ -1,5 +1,5 @@
 // Extracted from main.js without changing feature behavior.
-import {todayInputValue} from '../../core/utils.js';
+import {currentLocale, todayInputValue} from '../../core/utils.js';
 import {state} from '../../deps.js';
 import {renderDashboard} from '../dashboard/index.js';
 import {renderExercises} from '../exercises/catalog.js';
@@ -10,6 +10,20 @@ import {workoutDateInputValue} from './presentation.js';
 
 export function dashboardTodayKey() {
     return state.dashboard?.today?.key || todayInputValue();
+}
+
+function historyDateLabel(dateKey, fallback = "") {
+    const date = new Date(`${dateKey}T12:00:00`);
+    if (Number.isNaN(date.getTime())) return fallback || dateKey;
+    try {
+        return new Intl.DateTimeFormat(currentLocale(), {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+        }).format(date);
+    } catch {
+        return fallback || dateKey;
+    }
 }
 
 export function removeWorkoutFromLoadedState(id) {
@@ -134,10 +148,24 @@ export function addWorkoutToLoadedState(workout, dateKey) {
         renderDashboard();
     }
 
-    if (state.history?.groups?.length) {
+    if (state.history?.loaded) {
+        const groups = state.history.groups || [];
+        const hasDateGroup = groups.some(group => group.date === dateKey);
+        const shouldCreateTodayGroup = dateKey === dashboardTodayKey() && !hasDateGroup;
+        if (!hasDateGroup && !shouldCreateTodayGroup) return;
+
         state.history = {
             ...state.history,
-            groups: state.history.groups.map(group => {
+            groups: [
+                ...(shouldCreateTodayGroup
+                    ? [{
+                        date: dateKey,
+                        label: historyDateLabel(dateKey, workout.dateLabel),
+                        workouts: [],
+                    }]
+                    : []),
+                ...groups,
+            ].map(group => {
                 if (group.date !== dateKey) return group;
                 const workouts = [...group.workouts.filter(row => String(row.id) !== String(workout.id)), workout]
                     .sort((a, b) => Number(a.id) - Number(b.id));
