@@ -1,5 +1,7 @@
 import {formatDate} from "../../../i18n/index.js";
 import {dateFromUserDateInput, dateKeyInTimezone} from "../../../utils/timezone.js";
+import {models} from "../../../db/index.js";
+import {fn, literal} from "sequelize";
 
 export function workoutPayload(row, language, timezone) {
     return {
@@ -41,4 +43,35 @@ export function parseWorkoutBody(body, fallbackDate = new Date(), timezone = "UT
 export function volumeFor(row) {
     if (row.isTime || !row.weight || !row.repsOrTime || !row.sets) return 0;
     return row.sets * row.weight * row.repsOrTime;
+}
+
+export async function workoutAchievements(telegramId, workoutData) {
+    const q = models.Workout.sequelize;
+    const where = {
+        telegramId: String(telegramId),
+        exercise: workoutData.exercise,
+    };
+    const workoutDateSql = q.escape(workoutData.date);
+    const previous = await models.Workout.findOne({
+        where,
+        attributes: [
+            [fn("COUNT", literal("1")), "count"],
+            [fn("MAX", literal("CASE WHEN isTime = 0 AND weight IS NOT NULL AND repsOrTime IS NOT NULL AND sets IS NOT NULL THEN sets * weight * repsOrTime ELSE 0 END")), "volume"],
+            [fn("MAX", literal(`CASE WHEN date <= ${workoutDateSql} THEN date ELSE NULL END`)), "date"],
+        ],
+        raw: true,
+    });
+    const currentVolume = volumeFor(workoutData);
+    const workoutDate = new Date(workoutData.date);
+    const previousCount = Number(previous?.count || 0);
+    const bestPreviousVolume = Number(previous?.volume || 0);
+    const latestPreviousDate = previous?.date ? new Date(previous.date) : null;
+    const staleThreshold = new Date(workoutDate);
+    staleThreshold.setMonth(staleThreshold.getMonth() - 2);
+
+    return {
+        newVolumeRecord: previousCount > 0 && currentVolume > 0 && currentVolume > bestPreviousVolume,
+        firstExerciseWorkout: previousCount === 0,
+        comebackAfterTwoMonths: Boolean(latestPreviousDate && latestPreviousDate <= staleThreshold),
+    };
 }

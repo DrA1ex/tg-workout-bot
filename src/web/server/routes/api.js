@@ -6,7 +6,7 @@ import {getDashboard} from "../services/dashboard.js";
 import {getRecentUserExercises, getUserExercisesNormalized, setUserExerciseList, updateUserExercise} from "../services/exercises.js";
 import {getHistory} from "../services/history.js";
 import {getProgress} from "../services/progress.js";
-import {parseWorkoutBody, workoutPayload} from "../services/workouts.js";
+import {parseWorkoutBody, workoutAchievements, workoutPayload} from "../services/workouts.js";
 import {handleAuthApi} from "./auth.js";
 import {isValidTimezone, normalizeTimezoneOffset} from "../../../utils/timezone.js";
 
@@ -188,6 +188,7 @@ export async function handleApi(req, res, url, config) {
             }
         }
 
+        const achievements = await workoutAchievements(user.telegramId, workoutData);
         let workout;
         let status = 201;
         try {
@@ -205,7 +206,10 @@ export async function handleApi(req, res, url, config) {
             status = 200;
         }
 
-        return sendJson(res, status, workoutPayload(workout, user.language || "en", user.timezone || "UTC"));
+        return sendJson(res, status, {
+            ...workoutPayload(workout, user.language || "en", user.timezone || "UTC"),
+            ...(status === 201 ? {achievements} : {}),
+        });
     }
 
     if (req.method === "PATCH" && workoutId) {

@@ -16,7 +16,7 @@ import {deleteWorkout} from './features/workouts/actions.js';
 import {adjustNumberInput, applyPreviousWorkoutValues, currentWorkoutDedupeToken, openDatePicker, openEditDialog, readWorkoutFormValues, refreshWorkoutFormModes, releaseNativeSelect, saveEditedWorkout, setWorkoutFormMode, triggerSuccessHaptic, updatePreviousWorkoutSummary, updateWorkoutFormState, workoutFormFields} from './features/workouts/forms.js';
 import {findWorkout} from './features/workouts/presentation.js';
 import {addWorkoutToLoadedState} from './features/workouts/state.js';
-import {bindModalDialog, bindSheetDialog, closeModalDialog, closeSheetDialog, resolveDeleteConfirmation, setDeleteWorkoutPending, showToast} from './ui/dialogs.js';
+import {bindModalDialog, bindSheetDialog, closeModalDialog, closeSheetDialog, resolveDeleteConfirmation, setDeleteWorkoutPending, showSpecialToast, showToast} from './ui/dialogs.js';
 import {closeSwipeRows} from './ui/swipe.js';
 
 export function bindEvents() {
@@ -74,6 +74,7 @@ export function bindEvents() {
                 navigateTab("add");
                 $("#workout-exercise").focus();
             }
+            showWorkoutAchievements(workout);
         } catch (error) {
             loader.cancel();
             await loader.waitForMinVisible();
@@ -560,4 +561,30 @@ export function bindEvents() {
             await addGlobalExercise(addGlobalButton.dataset.addGlobalExercise);
         }
     });
+}
+
+function firstExerciseAchievementShownToday(workout) {
+    const key = `special:first-exercise-workout:${workout.dateKey || ""}`;
+    try {
+        if (!workout.dateKey || localStorage.getItem(key) === "true") return true;
+        localStorage.setItem(key, "true");
+        return false;
+    } catch {
+        return false;
+    }
+}
+
+function showWorkoutAchievements(workout) {
+    const achievements = workout?.achievements;
+    if (!achievements) return;
+
+    if (achievements.newVolumeRecord) {
+        showSpecialToast("special.record.title", "special.record.body");
+    }
+    if (achievements.firstExerciseWorkout && !firstExerciseAchievementShownToday(workout)) {
+        showSpecialToast("special.firstExercise.title", "special.firstExercise.body");
+    }
+    if (achievements.comebackAfterTwoMonths) {
+        showSpecialToast("special.comeback.title", "special.comeback.body");
+    }
 }

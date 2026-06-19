@@ -37,6 +37,35 @@ export function showToast(key, {variant = "default"} = {}) {
     requestAnimationFrame(() => toast.classList.add("visible"));
 }
 
+export function showSpecialToast(titleKey, bodyKey) {
+    const stack = $("#toast");
+    const toast = document.createElement("button");
+    toast.className = "toast-item special-toast";
+    toast.type = "button";
+
+    const icon = document.createElement("span");
+    icon.className = "special-toast-icon";
+    icon.textContent = "🏆";
+
+    const content = document.createElement("span");
+    content.className = "special-toast-content";
+
+    const title = document.createElement("strong");
+    title.textContent = t(titleKey);
+
+    const body = document.createElement("small");
+    body.textContent = t(bodyKey);
+
+    content.append(title, body);
+    toast.append(icon, content);
+    stack.append(toast);
+
+    const dismiss = () => hideToast(toast);
+    toast.addEventListener("click", dismiss, {once: true});
+    toast.dismissTimer = window.setTimeout(dismiss, 4200);
+    requestAnimationFrame(() => toast.classList.add("visible"));
+}
+
 export function animateToastStack(stack, previousPositions) {
     Array.from(stack.children).forEach(item => {
         const previousTop = previousPositions.get(item);
