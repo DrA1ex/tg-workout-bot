@@ -188,7 +188,7 @@ export async function handleApi(req, res, url, config) {
             }
         }
 
-        const achievements = await workoutAchievements(user.telegramId, workoutData);
+        const achievements = await workoutAchievements(user.telegramId, workoutData, user.timezone || "UTC");
         let workout;
         let status = 201;
         try {

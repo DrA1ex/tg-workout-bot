@@ -53,7 +53,7 @@ export function volumeFor(row) {
     return row.sets * row.weight * row.repsOrTime;
 }
 
-export async function workoutAchievements(telegramId, workoutData) {
+export async function workoutAchievements(telegramId, workoutData, timezone = "UTC") {
     const q = models.Workout.sequelize;
     const where = {
         telegramId: String(telegramId),
@@ -71,6 +71,7 @@ export async function workoutAchievements(telegramId, workoutData) {
     });
     const currentVolume = volumeFor(workoutData);
     const workoutDate = new Date(workoutData.date);
+    const isTodayWorkout = dateKeyInTimezone(workoutDate, timezone) === dateKeyInTimezone(new Date(), timezone);
     const previousCount = Number(previous?.count || 0);
     const bestPreviousVolume = Number(previous?.volume || 0);
     const latestPreviousDate = previous?.date ? new Date(previous.date) : null;
@@ -78,7 +79,7 @@ export async function workoutAchievements(telegramId, workoutData) {
     staleThreshold.setMonth(staleThreshold.getMonth() - 2);
 
     return {
-        newVolumeRecord: previousCount > 0 && currentVolume > 0 && currentVolume > bestPreviousVolume,
+        newVolumeRecord: isTodayWorkout && previousCount > 0 && currentVolume > 0 && currentVolume > bestPreviousVolume,
         firstExerciseWorkout: previousCount === 0,
         comebackAfterTwoMonths: Boolean(latestPreviousDate && latestPreviousDate <= staleThreshold),
     };
