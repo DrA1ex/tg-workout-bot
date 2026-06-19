@@ -56,6 +56,11 @@ describeWithSilencedConsole('Database Migrations', ['warn', 'error', 'log'], () 
         const [workoutCols] = await sequelize.query('PRAGMA table_info(workouts);');
         const hasDedupeToken = workoutCols.some(col => col.name === 'dedupeToken');
         expect(hasDedupeToken).toBe(true);
+
+        const [workoutIndexes] = await sequelize.query('PRAGMA index_list(workouts);');
+        const workoutIndexNames = new Set(workoutIndexes.map(index => index.name));
+        expect(workoutIndexNames.has('workouts_telegram_date_idx')).toBe(true);
+        expect(workoutIndexNames.has('workouts_telegram_exercise_date_idx')).toBe(true);
     });
 
     it('CLI applies pending migrations successfully', async () => {
