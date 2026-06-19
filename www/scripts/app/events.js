@@ -168,6 +168,7 @@ export function bindEvents() {
             $("#exercise-form").reset();
             setExerciseAddPending(false);
             if (animateSettings) {
+                runtime.settingsExercisesRefreshPending = true;
                 await nextAnimationFrame();
                 await loadSettingsGlobalExercises({animate: true});
             }
@@ -277,6 +278,13 @@ export function bindEvents() {
     bindSheetDialog("#settings-exercises-dialog", "#settings-exercises-close");
     $("#settings-exercises-dialog").addEventListener("close", () => {
         if (dialogFromUrl() === "settings-exercises") syncDialogUrl("", {replace: true});
+        if (runtime.settingsExercisesRefreshPending) {
+            runtime.settingsExercisesRefreshPending = false;
+            requestAnimationFrame(() => {
+                refreshAll().catch(console.error);
+            });
+            return;
+        }
         if (state.exercises.length) return;
         requestAnimationFrame(() => openOnboardingIfNeeded());
     });
@@ -353,7 +361,7 @@ export function bindEvents() {
         renderSettingsExerciseSearchState();
         window.clearTimeout(runtime.settingsExerciseSearchTimer);
         runtime.settingsExerciseSearchTimer = window.setTimeout(() => {
-            loadSettingsGlobalExercises().catch(console.error);
+            loadSettingsGlobalExercises({resetScroll: true}).catch(console.error);
         }, 180);
     });
     $("#settings-exercise-scroll").addEventListener("scroll", event => {

@@ -1,10 +1,10 @@
 // Extracted from main.js without changing feature behavior.
 import {nextAnimationFrame} from '../../core/utils.js';
-import {refreshAll} from '../../data/refresh.js';
+import {runtime} from '../../core/runtime.js';
 import {$, $$, api, escapeHtml, state, t} from '../../deps.js';
 import {closeModalDialog, confirmExerciseDelete, openModalDialog, setDeleteWorkoutPending, showToast} from '../../ui/dialogs.js';
 import {isOnboardingDialogOpen, renderOnboardingGlobalExercises} from '../onboarding/index.js';
-import {isSettingsExercisesDialogOpen, loadSettingsGlobalExercises, renderSettingsExerciseSummary, renderSettingsExercises, setSettingsExercisePending} from '../settings/exercises.js';
+import {isSettingsExercisesDialogOpen, loadSettingsGlobalExercises, renderSettingsExerciseSummary, renderSettingsExercises, setSettingsExercisePending, syncSettingsExerciseRow} from '../settings/exercises.js';
 import {updateWorkoutFormState} from '../workouts/forms.js';
 
 export function exerciseSelectOptions(selectedValue = "") {
@@ -195,12 +195,14 @@ export async function loadGlobalExercises() {
 export async function saveExerciseNotes() {
     if (state.savingExercise) return;
     const name = $("#exercise-edit-name").value;
+    const nextName = $("#exercise-edit-new-name").value.trim();
+    const nameChanged = nextName && nextName !== name;
     setExerciseEditPending(true);
     try {
         const data = await api(`exercises/${encodeURIComponent(name)}`, {
             method: "PATCH",
             body: JSON.stringify({
-                name: $("#exercise-edit-new-name").value,
+                name: nextName,
                 notes: $("#exercise-edit-notes").value,
             }),
         });
@@ -212,12 +214,14 @@ export async function saveExerciseNotes() {
         await syncExerciseState(data.exercises, {
             renderSettingsList: !animateSettings,
         });
-        if (animateSettings) {
+        const updatedExercise = data.exercises.find(exercise => exercise.name === nextName) ||
+            data.exercises.find(exercise => exercise.name === name);
+        syncSettingsExerciseRow(updatedExercise, {previousName: name});
+        renderExercises();
+        if (animateSettings) runtime.settingsExercisesRefreshPending = true;
+        if (animateSettings && nameChanged) {
             await loadSettingsGlobalExercises({animate: true});
         }
-
-        await refreshAll();
-        renderExercises();
         showToast("toast.exerciseSaved");
     } catch (error) {
         console.error(error);
@@ -250,6 +254,7 @@ export async function deleteExercise(name) {
             renderSettingsList: !animateSettings,
         });
         if (animateSettings) {
+            runtime.settingsExercisesRefreshPending = true;
             await loadSettingsGlobalExercises({animate: true});
         }
 
@@ -282,6 +287,7 @@ export async function addGlobalExercise(name) {
         // The global row is still in the DOM here, so FLIP can move it into the user section.
         await syncExerciseState(data.exercises, {animateSettings});
         if (animateSettings) {
+            runtime.settingsExercisesRefreshPending = true;
             await loadSettingsGlobalExercises();
         } else {
             await loadGlobalExercises();

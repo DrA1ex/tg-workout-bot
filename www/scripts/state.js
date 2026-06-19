@@ -14,6 +14,7 @@ export const state = {
     onboardingSaving: false,
     settingsExerciseSearch: "",
     settingsGlobalExercises: [],
+    settingsGlobalExercisesById: new Map(),
     settingsExerciseLoading: false,
     settingsExerciseSearchPending: false,
     settingsExerciseHasMore: false,

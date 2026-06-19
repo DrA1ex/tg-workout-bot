@@ -15,6 +15,7 @@ export function openSettingsExercisesDialog() {
     state.settingsExerciseSearch = "";
     state.settingsExerciseSearchPending = false;
     state.settingsGlobalExercises = [];
+    state.settingsGlobalExercisesById = new Map();
     state.settingsExerciseHasMore = true;
     state.settingsExerciseNextOffset = 0;
     $("#settings-exercise-search").value = "";
@@ -32,6 +33,47 @@ export function renderSettingsExerciseSearchState() {
         settingsExerciseSpinner(),
         state.settingsExerciseLoading || state.settingsExerciseSearchPending,
     );
+}
+
+function settingsExerciseId(name) {
+    let hash = 2166136261;
+    for (let i = 0; i < name.length; i += 1) {
+        hash ^= name.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+    }
+    return `settings-${(hash >>> 0).toString(36)}`;
+}
+
+export function syncSettingsExerciseRow(exercise, {previousName = ""} = {}) {
+    const index = state.settingsGlobalExercisesById instanceof Map
+        ? new Map(state.settingsGlobalExercisesById)
+        : new Map();
+
+    if (!exercise) return;
+
+    const currentId = settingsExerciseId(exercise.name);
+    const current = index.get(currentId);
+    if (current) {
+        index.set(currentId, {...current, ...exercise, added: true});
+    } else if (previousName && previousName !== exercise.name) {
+        const previousId = settingsExerciseId(previousName);
+        if (index.has(previousId)) {
+            const previous = index.get(previousId);
+            index.delete(previousId);
+            index.set(currentId, {...previous, ...exercise, added: true});
+        } else {
+            index.set(currentId, {...exercise, added: true});
+        }
+    } else {
+        index.set(currentId, {...exercise, added: true});
+    }
+
+    state.settingsGlobalExercisesById = index;
+    state.settingsGlobalExercises = [...index.values()];
+
+    if (isSettingsExercisesDialogOpen()) {
+        renderSettingsExercises();
+    }
 }
 
 export function isSettingsExercisesDialogOpen() {
@@ -106,7 +148,7 @@ export function renderSettingsExercises({animate = false} = {}) {
         : Promise.resolve();
 }
 
-export async function loadSettingsGlobalExercises({animate = false, append = false} = {}) {
+export async function loadSettingsGlobalExercises({animate = false, append = false, resetScroll = false} = {}) {
     if (state.settingsExerciseLoading) return Promise.resolve();
     if (append && !state.settingsExerciseHasMore) return Promise.resolve();
     const requestSeq = ++runtime.settingsGlobalRequestSeq;
@@ -129,14 +171,15 @@ export async function loadSettingsGlobalExercises({animate = false, append = fal
         if (requestSeq !== runtime.settingsGlobalRequestSeq || requestSearch !== state.settingsExerciseSearch) return Promise.resolve();
         const globalRows = data.exercises || [];
         const existingRows = append ? state.settingsGlobalExercises : [];
-        const byName = new Map(existingRows.map(exercise => [exercise.name, exercise]));
-        globalRows.forEach(exercise => byName.set(exercise.name, exercise));
+        const byId = new Map(existingRows.map(exercise => [settingsExerciseId(exercise.name), exercise]));
+        globalRows.forEach(exercise => byId.set(settingsExerciseId(exercise.name), exercise));
         state.exercises.forEach(exercise => {
             if (!requestSearch || exercise.name.toLowerCase().includes(requestSearch.toLowerCase())) {
-                byName.set(exercise.name, {...exercise, added: true});
+                byId.set(settingsExerciseId(exercise.name), {...exercise, added: true});
             }
         });
-        state.settingsGlobalExercises = [...byName.values()];
+        state.settingsGlobalExercises = [...byId.values()];
+        state.settingsGlobalExercisesById = byId;
         state.settingsExerciseHasMore = Boolean(data.hasNext);
         state.settingsExerciseNextOffset = Number(data.nextOffset || state.settingsGlobalExercises.length);
         loaded = true;
@@ -154,7 +197,9 @@ export async function loadSettingsGlobalExercises({animate = false, append = fal
     const result = renderSettingsExercises({animate: animate && loaded});
     if (!append) {
         const scroll = $("#settings-exercise-scroll");
-        scroll?.scrollTo({top: 0, left: 0, behavior: "instant"});
+        if (resetScroll) {
+            scroll?.scrollTo({top: 0, left: 0, behavior: "instant"});
+        }
     }
     return result;
 }

@@ -5,6 +5,7 @@ export const runtime = {
     historyObserver: null,
     deleteWorkoutConfirmResolve: null,
     deleteConfirmCloseOnConfirm: false,
+    settingsExercisesRefreshPending: false,
     sheetAnimationSeq: 0,
     dialogOpenSeq: 0,
     addScreenCloseTimer: null,
