@@ -16,7 +16,7 @@ export function tabFromUrl() {
 export function dialogFromUrl() {
     const url = new URL(window.location.href);
     const dialog = url.searchParams.get("dialog");
-    if (dialog === "add-workout" || dialog === "add-exercise") return dialog;
+    if (dialog === "add-workout" || dialog === "add-exercise" || dialog === "settings-exercises") return dialog;
     return url.searchParams.get("tab") === "add" ? "add-workout" : "";
 }
 
@@ -82,11 +82,16 @@ export function closeAddWorkoutDialog({updateUrl = true, replaceUrl = false} = {
     closeSheetDialog($("#add-dialog"));
 }
 
-export function openExerciseAddRouteDialog({updateUrl = true, replaceUrl = false} = {}) {
+export function openExerciseAddRouteDialog({name = "", updateUrl = true, replaceUrl = false} = {}) {
     if (!state.appReady) return;
     $("#exercise-form").reset();
-    openModalDialog($("#exercise-add-dialog"));
     if (updateUrl) syncDialogUrl("add-exercise", {replace: replaceUrl});
+    openModalDialog($("#exercise-add-dialog"));
+    const trimmedName = name.trim();
+    if (trimmedName) {
+        $("#exercise-name").value = trimmedName;
+        $("#exercise-notes").focus();
+    }
 }
 
 export function closeExerciseAddRouteDialog({updateUrl = true, replaceUrl = false} = {}) {
@@ -94,7 +99,14 @@ export function closeExerciseAddRouteDialog({updateUrl = true, replaceUrl = fals
     closeModalDialog($("#exercise-add-dialog"));
 }
 
-export function applyRouteDialog({replaceUrl = true, animate = false} = {}) {
+export async function openSettingsExercisesRouteDialog({updateUrl = true, replaceUrl = false} = {}) {
+    if (!state.appReady) return;
+    if (updateUrl) syncDialogUrl("settings-exercises", {replace: replaceUrl});
+    const {openSettingsExercisesDialog} = await import('../features/settings/exercises.js');
+    openSettingsExercisesDialog();
+}
+
+export async function applyRouteDialog({replaceUrl = true, animate = false} = {}) {
     const dialog = dialogFromUrl();
     if (dialog === "add-workout") {
         openAddWorkoutDialog({updateUrl: false, replaceUrl, animate});
@@ -102,6 +114,10 @@ export function applyRouteDialog({replaceUrl = true, animate = false} = {}) {
     }
     if (dialog === "add-exercise") {
         openExerciseAddRouteDialog({updateUrl: false, replaceUrl});
+        return;
+    }
+    if (dialog === "settings-exercises") {
+        await openSettingsExercisesRouteDialog({updateUrl: false, replaceUrl});
     }
 }
 
@@ -156,10 +172,11 @@ export function bindHistoryNavigation() {
     window.addEventListener("popstate", () => {
         const dialog = dialogFromUrl();
         if (dialog) {
-            applyRouteDialog({animate: true});
+            applyRouteDialog({animate: true}).catch(console.error);
             return;
         }
         closeSheetDialog($("#add-dialog"));
+        closeSheetDialog($("#settings-exercises-dialog"));
         closeModalDialog($("#exercise-add-dialog"));
         navigateTab(tabFromUrl(), {updateUrl: false, force: true});
     });

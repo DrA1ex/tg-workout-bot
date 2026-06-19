@@ -31,7 +31,7 @@ export async function refreshAll() {
     ensureHistoryLoaded();
     ensureProgressLoaded();
     openOnboardingIfNeeded();
-    applyRouteDialog({animate: false});
+    await applyRouteDialog({animate: false});
 }
 
 export async function refreshDashboardOnly() {

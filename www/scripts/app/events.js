@@ -1,16 +1,16 @@
 // Extracted from main.js without changing feature behavior.
 import {EXERCISE_SAVE_LOADER_DELAY, EXERCISE_SAVE_MIN_LOADER_VISIBLE, EXERCISE_SAVE_SUCCESS_VISIBLE, WORKOUT_SAVE_LOADER_DELAY, WORKOUT_SAVE_MIN_LOADER_VISIBLE, WORKOUT_SAVE_SUCCESS_VISIBLE} from './core/config.js';
-import {closeAddWorkoutDialog, closeExerciseAddRouteDialog, dialogFromUrl, navigateTab, openExerciseAddRouteDialog, syncDialogUrl} from './core/navigation.js';
+import {closeAddWorkoutDialog, closeExerciseAddRouteDialog, dialogFromUrl, navigateTab, openExerciseAddRouteDialog, openSettingsExercisesRouteDialog, syncDialogUrl} from './core/navigation.js';
 import {runtime} from './core/runtime.js';
 import {createDelayedLoader, delay, nextAnimationFrame, normalizeTimezoneInputValue} from './core/utils.js';
 import {refreshAll} from './data/refresh.js';
 import {$, $$, api, applyI18n, applyTheme, authApi, showAuthScreen, state} from './deps.js';
 import {renderDashboard} from './features/dashboard/index.js';
-import {addGlobalExercise, deleteExercise, findExercise, loadGlobalExercises, openExerciseAddDialog, openExerciseAddDialogWithName, openExerciseDialog, renderExerciseScope, renderExercises, saveExerciseNotes, setExerciseAddPending, syncExerciseState} from './features/exercises/catalog.js';
+import {addGlobalExercise, deleteExercise, findExercise, loadGlobalExercises, openExerciseAddDialog, openExerciseDialog, renderExerciseScope, renderExercises, saveExerciseNotes, setExerciseAddPending, syncExerciseState} from './features/exercises/catalog.js';
 import {setupHistoryInfiniteScroll} from './features/history/index.js';
 import {completeOnboarding, loadOnboardingGlobalExercises, onboardingSelectedSet, openOnboardingIfNeeded, renderOnboardingGlobalExercises, renderOnboardingSearchState, saveOnboardingLanguage, updateOnboardingStartState} from './features/onboarding/index.js';
 import {loadProgress, renderProgress} from './features/progress/index.js';
-import {isSettingsExercisesDialogOpen, loadSettingsGlobalExercises, openSettingsExercisesDialog, renderSettingsExerciseSearchState} from './features/settings/exercises.js';
+import {isSettingsExercisesDialogOpen, loadSettingsGlobalExercises, renderSettingsExerciseSearchState} from './features/settings/exercises.js';
 import {renderSettings, setSettingsPending, updateSettingsPreview} from './features/settings/index.js';
 import {deleteWorkout} from './features/workouts/actions.js';
 import {adjustNumberInput, applyPreviousWorkoutValues, currentWorkoutDedupeToken, openDatePicker, openEditDialog, readWorkoutFormValues, refreshWorkoutFormModes, releaseNativeSelect, saveEditedWorkout, setWorkoutFormMode, triggerSuccessHaptic, updatePreviousWorkoutSummary, updateWorkoutFormState, workoutFormFields} from './features/workouts/forms.js';
@@ -20,7 +20,7 @@ import {bindModalDialog, bindSheetDialog, closeModalDialog, closeSheetDialog, re
 import {closeSwipeRows} from './ui/swipe.js';
 
 export function bindEvents() {
-    $$("[data-tab]").forEach(button => button.addEventListener("click", () => navigateTab(button.dataset.tab)));
+    $$("button[data-tab]").forEach(button => button.addEventListener("click", () => navigateTab(button.dataset.tab)));
     setupHistoryInfiniteScroll();
 
     $("#workout-notes").addEventListener("input", event => {
@@ -273,9 +273,10 @@ export function bindEvents() {
         state.settingsDraft = {...(state.settingsDraft || {}), timezone: event.currentTarget.value};
     });
 
-    $("#settings-exercises-open").addEventListener("click", openSettingsExercisesDialog);
+    $("#settings-exercises-open").addEventListener("click", () => openSettingsExercisesRouteDialog().catch(console.error));
     bindSheetDialog("#settings-exercises-dialog", "#settings-exercises-close");
     $("#settings-exercises-dialog").addEventListener("close", () => {
+        if (dialogFromUrl() === "settings-exercises") syncDialogUrl("", {replace: true});
         if (state.exercises.length) return;
         requestAnimationFrame(() => openOnboardingIfNeeded());
     });
@@ -319,7 +320,7 @@ export function bindEvents() {
     $("#onboarding-exercise-list").addEventListener("click", event => {
         const addSearchButton = event.target.closest("[data-onboarding-add-search]");
         if (addSearchButton) {
-            openExerciseAddDialogWithName(state.onboardingSearch);
+            openExerciseAddRouteDialog({name: state.onboardingSearch});
             return;
         }
 
@@ -533,7 +534,7 @@ export function bindEvents() {
 
         const settingsAddSearchButton = event.target.closest("[data-settings-add-search]");
         if (settingsAddSearchButton) {
-            openExerciseAddDialogWithName(state.settingsExerciseSearch);
+            openExerciseAddRouteDialog({name: state.settingsExerciseSearch});
             return;
         }
 
