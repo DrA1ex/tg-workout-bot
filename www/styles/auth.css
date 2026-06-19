@@ -1,0 +1,53 @@
+/* Authentication screen
+ * Imported by ./styles/styles.css
+ */
+
+/* Auth screen */
+.auth-screen {
+    display: grid;
+    min-height: 100vh;
+    padding: 18px 16px;
+    place-items: center;
+}
+
+.auth-screen[hidden],
+.app-shell[hidden] {
+    display: none;
+}
+
+.auth-card {
+    display: grid;
+    width: min(100%, 420px);
+    gap: 16px;
+    padding: 22px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.auth-card h1 {
+    max-width: 12ch;
+}
+
+.auth-copy {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.45;
+}
+
+.auth-widget {
+    min-height: 48px;
+}
+
+.primary-link {
+    display: inline-grid;
+    min-height: 52px;
+    place-items: center;
+    border-radius: 8px;
+    background: var(--primary);
+    color: var(--primary-ink);
+    font-weight: 850;
+    text-decoration: none;
+}
+

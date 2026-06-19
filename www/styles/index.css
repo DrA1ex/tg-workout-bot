@@ -1,0 +1,51 @@
+/* Main stylesheet entry point.
+ * Keep imports in this order: it preserves the original cascade.
+ */
+
+/* Tokens and themes */
+@import url("./tokens.css");
+
+/* Document and shell */
+@import url("./base.css");
+
+/* Authentication */
+@import url("./auth.css");
+
+/* Shared components */
+@import url("./components.css");
+
+/* Workout lists */
+@import url("./workout-lists.css");
+
+/* Forms */
+@import url("./forms.css");
+
+/* Toasts */
+@import url("./toasts.css");
+
+/* Workout card dialog and animations */
+@import url("./workout-dialog.css");
+
+/* Exercise and onboarding dialogs */
+@import url("./exercise-dialogs.css");
+
+/* History */
+@import url("./history.css");
+
+/* Progress */
+@import url("./progress.css");
+
+/* Bottom navigation */
+@import url("./navigation.css");
+
+/* Dashboard */
+@import url("./dashboard.css");
+
+/* Confirmation dialog */
+@import url("./confirm-dialog.css");
+
+/* Workout entry */
+@import url("./workout-entry.css");
+
+/* Final responsive overrides */
+@import url("./responsive.css");

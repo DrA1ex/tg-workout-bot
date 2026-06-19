@@ -1,0 +1,458 @@
+/* Exercise selection, onboarding and exercise edit dialogs
+ * Imported by ./styles/styles.css
+ */
+
+.exercise-add-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    width: 100%;
+}
+
+.exercise-add-trigger span:first-child {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.exercise-sheet {
+    height: calc(100dvh - 28px - var(--tg-content-safe-area-top));
+    min-height: calc(100dvh - 28px - var(--tg-content-safe-area-top));
+}
+
+.exercise-sheet-form {
+    gap: 16px;
+}
+
+.settings-exercises-sheet {
+    display: flex;
+}
+
+.settings-exercises-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    padding-bottom: 0;
+}
+
+.settings-exercises-form > .add-field {
+    flex: 0 0 auto;
+    align-self: stretch;
+}
+
+.settings-exercises-form > .settings-exercise-scroll {
+    flex: 1 1 auto;
+    min-height: 160px;
+}
+
+.onboarding-dialog .onboarding-sheet {
+    display: flex;
+    scrollbar-width: none;
+}
+
+.onboarding-dialog,
+.onboarding-dialog .onboarding-sheet,
+.onboarding-dialog .onboarding-form,
+.onboarding-dialog .settings-exercise-scroll {
+    scrollbar-width: none;
+}
+
+.onboarding-dialog::-webkit-scrollbar,
+.onboarding-dialog .onboarding-sheet::-webkit-scrollbar,
+.onboarding-dialog .onboarding-form::-webkit-scrollbar,
+.onboarding-dialog .settings-exercise-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.onboarding-dialog .onboarding-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+    overflow: hidden;
+    padding-bottom: 96px;
+}
+
+.onboarding-dialog .onboarding-form > .add-field {
+    flex: 0 0 auto;
+}
+
+.onboarding-dialog .onboarding-form > .settings-exercise-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.onboarding-dialog .settings-exercise-scroll {
+    margin-right: -4px;
+    padding-right: 8px;
+}
+
+.onboarding-search-shell {
+    position: relative;
+}
+
+.onboarding-search-shell input {
+    padding-right: 34px;
+}
+
+.onboarding-search-spinner {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    margin-top: -9px;
+    border: 2px solid color-mix(in srgb, var(--primary) 22%, transparent);
+    border-top-color: var(--primary);
+    border-radius: 999px;
+    pointer-events: none;
+    animation: button-spin .8s linear infinite;
+}
+
+.onboarding-search-spinner[hidden] {
+    display: none;
+}
+
+.onboarding-search-shell.loading input::-webkit-search-cancel-button {
+    display: none;
+}
+
+.onboarding-language-field .field-shell {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.onboarding-language-field select {
+    min-height: 56px;
+    border: 0;
+    appearance: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 650;
+}
+
+.exercise-list-row {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    padding: 0;
+}
+
+.exercise-list-button {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 64px;
+    padding: 8px var(--swipe-main-padding-right, 12px) 8px 12px;
+    border: 0;
+    border-radius: 0;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.exercise-list-check {
+    display: grid;
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border: 2px solid color-mix(in srgb, var(--muted) 34%, transparent);
+    border-radius: 10px;
+    color: transparent;
+    font-size: 20px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.exercise-list-row.selected .exercise-list-check {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--primary-ink);
+}
+
+.exercise-list-add-row .exercise-list-button {
+    color: var(--primary);
+}
+
+.settings-global-row .settings-global-button {
+    overflow: hidden;
+    border-left: 0;
+    background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+    color: var(--text);
+}
+
+.exercise-list-add-icon,
+.settings-global-row .settings-global-button::after {
+    display: block;
+    box-sizing: border-box;
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+    border-radius: 10px;
+    background:
+        linear-gradient(var(--primary), var(--primary)) center / 12px 2px no-repeat,
+        linear-gradient(var(--primary), var(--primary)) center / 2px 12px no-repeat,
+        color-mix(in srgb, var(--primary) 10%, var(--surface));
+    color: transparent;
+    font-size: 0;
+}
+
+.settings-global-row .settings-global-button::after {
+    content: "";
+}
+
+.settings-global-row .settings-global-button h3 {
+    color: var(--primary);
+}
+
+.exercise-row-pending {
+    position: relative;
+    pointer-events: none;
+}
+
+.exercise-row-pending::after {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    content: "";
+    background: linear-gradient(
+        100deg,
+        transparent 0%,
+        color-mix(in srgb, var(--surface) 0%, transparent) 26%,
+        color-mix(in srgb, var(--primary) 16%, transparent) 44%,
+        transparent 62%
+    );
+    background-size: 220% 100%;
+    opacity: .72;
+    animation: row-pending-shimmer 1.05s linear infinite;
+}
+
+.exercise-row-pending .swipe-workout-main,
+.exercise-row-pending .exercise-list-button {
+    opacity: 1;
+}
+
+.exercise-row-pending .swipe-workout-body {
+    opacity: .72;
+}
+
+.settings-global-row.exercise-row-pending .settings-global-button::after {
+    display: none;
+}
+
+.exercise-row-spinner {
+    display: block;
+    width: 18px;
+    height: 18px;
+    justify-self: end;
+    border: 2px solid color-mix(in srgb, var(--primary) 26%, transparent);
+    border-top-color: var(--primary);
+    border-radius: 999px;
+    animation: button-spin .8s linear infinite;
+}
+
+@keyframes row-pending-shimmer {
+    0% {
+        background-position: 120% 0;
+    }
+
+    100% {
+        background-position: -120% 0;
+    }
+}
+
+.onboarding-actions {
+    grid-template-columns: 1fr;
+}
+
+.settings-exercise-search {
+    gap: 7px;
+}
+
+.settings-exercise-search .field-shell {
+    flex: 0 0 auto;
+    height: 58px;
+    min-height: 58px;
+}
+
+.settings-exercise-scroll {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+
+    -webkit-mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 1) 0,
+        rgba(0, 0, 0, 1) calc(100% - 32px),
+        rgba(0, 0, 0, .72) calc(100% - 20px),
+        rgba(0, 0, 0, .28) calc(100% - 8px),
+        transparent 100%
+    );
+
+    mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 1) 0,
+        rgba(0, 0, 0, 1) calc(100% - 32px),
+        rgba(0, 0, 0, .72) calc(100% - 20px),
+        rgba(0, 0, 0, .28) calc(100% - 8px),
+        transparent 100%
+    );
+
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+.settings-exercise-list {
+    align-content: start;
+    min-height: 64px;
+}
+
+.exercise-list-reordering {
+    pointer-events: none;
+}
+
+.exercise-list-reordering > [data-exercise-row-key] {
+    position: relative;
+    will-change: transform, opacity;
+}
+
+.settings-exercise-divider {
+    display: grid;
+    min-height: 34px;
+    align-items: end;
+    padding: 12px 12px 7px;
+    border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+    background: color-mix(in srgb, var(--surface-soft) 54%, var(--surface));
+}
+
+.settings-exercise-divider span {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: .08em;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.settings-exercise-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.settings-exercise-bottom-spacer {
+    height: max(22px, env(safe-area-inset-bottom));
+}
+
+.exercise-list-button:focus,
+.exercise-list-button:focus-visible,
+.settings-exercise-list .swipe-workout-main:focus,
+.settings-exercise-list .swipe-workout-main:focus-visible,
+.settings-exercise-list .swipe-delete-action:focus,
+.settings-exercise-list .swipe-delete-action:focus-visible,
+#exercise-list.history-workout-list .swipe-workout-main:focus,
+#exercise-list.history-workout-list .swipe-workout-main:focus-visible,
+#exercise-list.history-workout-list .swipe-delete-action:focus,
+#exercise-list.history-workout-list .swipe-delete-action:focus-visible,
+.history-workout-list .swipe-workout-main:focus,
+.history-workout-list .swipe-workout-main:focus-visible,
+.history-workout-list .swipe-delete-action:focus,
+.history-workout-list .swipe-delete-action:focus-visible,
+.dashboard-workout-list .swipe-workout-main:focus,
+.dashboard-workout-list .swipe-workout-main:focus-visible,
+.dashboard-workout-list .swipe-delete-action:focus,
+.dashboard-workout-list .swipe-delete-action:focus-visible,
+.progress-record-row:focus,
+.progress-record-row:focus-visible {
+    outline: 0;
+    box-shadow: none;
+}
+
+.field-shell.single-field {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.field-shell.exercise-missing {
+    grid-template-columns: 42px minmax(0, 1fr);
+}
+
+.field-shell.exercise-missing .field-chevron {
+    display: none;
+}
+
+.modal-heading,
+.modal-actions {
+    display: grid;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-heading {
+    grid-template-columns: 1fr auto;
+}
+
+.modal-actions {
+    grid-template-columns: 1fr 1fr;
+}
+
+.modal-actions.single-action {
+    grid-template-columns: 1fr;
+}
+
+.exercise-edit-dialog {
+    width: min(calc(100% - 32px), 420px);
+}
+
+.exercise-modal-card {
+    display: grid;
+    gap: 16px;
+    padding: 18px;
+    border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: 0 22px 60px rgba(15, 23, 42, .24);
+}
+
+.exercise-modal-card h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: 21px;
+    font-weight: 850;
+}
+
+.exercise-modal-card .modal-heading p {
+    overflow: hidden;
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.exercise-modal-card textarea {
+    min-height: 118px;
+}
+
+.exercise-modal-card .danger-button,
+.exercise-modal-card .save-button {
+    min-height: 52px;
+    border-radius: 12px;
+}
+

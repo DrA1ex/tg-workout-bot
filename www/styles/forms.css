@@ -1,0 +1,273 @@
+/* Forms, fields, settings controls and action buttons
+ * Imported by ./styles/styles.css
+ */
+
+/* Forms */
+.form-stack {
+    display: grid;
+    gap: 14px;
+}
+
+#workout-form,
+#edit-form > .add-form,
+#screen-progress {
+    padding-bottom: calc(118px + env(safe-area-inset-bottom, 0px));
+}
+
+label {
+    display: grid;
+    gap: 7px;
+}
+
+fieldset {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+legend {
+    margin: 0 0 7px;
+    padding: 0;
+    color: var(--text);
+    font-weight: 700;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-soft);
+    color: var(--text);
+    padding: 11px 12px;
+}
+
+.stepper {
+    display: grid;
+    grid-template-columns: 42px 1fr 42px;
+    gap: 6px;
+}
+
+.stepper input {
+    text-align: center;
+}
+
+.stepper button {
+    min-height: 48px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-soft);
+    color: var(--primary);
+    font-size: 20px;
+    font-weight: 850;
+}
+
+textarea {
+    resize: vertical;
+}
+
+.accent-field {
+    display: grid;
+    gap: 7px;
+}
+
+.accent-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.accent-option {
+    position: relative;
+    display: grid;
+    min-width: 0;
+    gap: 6px;
+    justify-items: center;
+    padding: 9px 4px 7px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface-soft);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.accent-option span {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--swatch);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .58);
+}
+
+.accent-option small {
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 760;
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.accent-option.active {
+    border-color: color-mix(in srgb, var(--primary) 62%, var(--line));
+    background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+
+.accent-option.active span::after {
+    color: #ffffff;
+    content: "✓";
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.accent-option.active small {
+    color: var(--primary);
+}
+
+.settings-row-button {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    min-height: 52px;
+    padding: 11px 12px 11px 14px;
+    border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--surface-soft) 44%, var(--surface));
+    color: var(--text);
+    box-shadow: 0 2px 12px rgba(15, 23, 42, .035), 0 1px 0 rgba(255, 255, 255, .68) inset;
+    font-size: 16px;
+    font-weight: 760;
+    text-align: left;
+    transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+
+.settings-row-button:active {
+    transform: scale(.99);
+}
+
+.settings-row-button:hover {
+    border-color: color-mix(in srgb, var(--primary) 28%, var(--line));
+    background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+}
+
+.settings-row-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-row-button strong {
+    display: grid;
+    min-width: 28px;
+    height: 28px;
+    place-items: center;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 850;
+}
+
+.settings-row-chevron {
+    color: var(--muted);
+    font-size: 28px;
+    font-weight: 360;
+    line-height: 1;
+}
+
+.field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.inline-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.segmented {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-soft);
+}
+
+.segmented.three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.segmented.four {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.control-label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.segmented button {
+    min-height: 38px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font-weight: 800;
+}
+
+.segmented button.active {
+    background: var(--surface);
+    color: var(--primary);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent), 0 6px 16px rgba(33, 44, 64, .10);
+}
+
+.primary-button {
+    min-height: 52px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--primary);
+    color: var(--primary-ink);
+    font-weight: 850;
+}
+
+.sticky-form-actions {
+    position: sticky;
+    bottom: 74px;
+    z-index: 12;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 2px -4px -84px;
+    padding: 10px 4px 4px;
+    background: linear-gradient(180deg, transparent, var(--surface) 32%);
+}
+
+.sticky-form-actions .ghost-button,
+.sticky-form-actions .primary-button {
+    min-height: 52px;
+}
+
+.danger-button {
+    min-height: 52px;
+    border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--line));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+    color: var(--danger);
+    font-weight: 850;
+}
+

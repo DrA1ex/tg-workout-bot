@@ -1,0 +1,73 @@
+/* Confirmation dialog
+ * Imported by ./styles/styles.css
+ */
+
+.confirm-dialog {
+    width: min(calc(100% - 32px), 360px);
+}
+
+.confirm-dialog::backdrop {
+    background: rgba(7, 13, 21, .42);
+}
+
+.confirm-card {
+    display: grid;
+    gap: 12px;
+    padding: 22px 18px 18px;
+    border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: 0 22px 60px rgba(15, 23, 42, .24);
+    text-align: center;
+}
+
+.confirm-card h2 {
+    font-size: 21px;
+    font-weight: 850;
+}
+
+.confirm-card p {
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.35;
+}
+
+.confirm-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.confirm-actions .ghost-button,
+.confirm-actions .danger-button {
+    min-height: 50px;
+    border-radius: 12px;
+}
+
+.confirm-actions .danger-button.loading {
+    position: relative;
+    display: grid;
+    place-items: center;
+    padding-right: 30px;
+    padding-left: 30px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.confirm-actions .danger-button.loading::before {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    width: 15px;
+    height: 15px;
+    margin-top: -7.5px;
+    border: 2px solid rgba(255, 255, 255, .48);
+    border-top-color: #ffffff;
+    border-radius: 999px;
+    content: "";
+    animation: button-spin .8s linear infinite;
+}
+
+

@@ -19,10 +19,19 @@ const html = sourceHtml.replace(
     getStartupImageLinks(),
 );
 await writeFile(path.join(outDir, "index.html"), html);
-await cp(path.join(srcDir, "styles.css"), path.join(outDir, "styles.css"));
 await cp(path.join(srcDir, "manifest.webmanifest"), path.join(outDir, "manifest.webmanifest"));
 await cp(path.join(srcDir, "sw.js"), path.join(outDir, "sw.js"));
 await cp(path.join(srcDir, "icons"), path.join(outDir, "icons"), {recursive: true});
+
+await esbuild.build({
+    entryPoints: [path.join(srcDir, "styles", "index.css")],
+    bundle: true,
+    format: "esm",
+    platform: "browser",
+    target: ["es2020"],
+    outfile: path.join(outDir, "styles.css"),
+    minify: true,
+});
 
 await esbuild.build({
     entryPoints: [path.join(srcDir, "scripts", "main.js")],

@@ -1,0 +1,210 @@
+/* Shared controls, cards and generic components
+ * Imported by ./styles/styles.css
+ */
+
+/* Shared controls and generic cards */
+.icon-button,
+.row-action,
+.bottom-nav button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+}
+
+.icon-button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.icon-button.compact {
+    width: 36px;
+    height: 36px;
+    box-shadow: none;
+}
+
+.screen {
+    display: none;
+}
+
+.screen.active {
+    display: block;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.summary-grid.compact {
+    margin: 0;
+}
+
+.summary-grid.compact .metric-card {
+    min-height: 104px;
+}
+
+.metric-card,
+.panel,
+.workout-row,
+.day-group {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.metric-card {
+    min-height: 118px;
+    padding: 14px;
+}
+
+.metric-card.primary {
+    background: var(--primary);
+    color: var(--primary-ink);
+    border-color: transparent;
+}
+
+.metric-card span,
+label span {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.metric-card.primary span,
+.metric-card.primary small {
+    color: rgba(255, 255, 255, .78);
+}
+
+.metric-card strong {
+    display: block;
+    margin: 8px 0 4px;
+    font-size: 29px;
+    line-height: 1;
+}
+
+.metric-card small {
+    color: var(--muted);
+}
+
+.dashboard-panel {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.panel-label {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.dashboard-panel strong {
+    display: block;
+    margin-top: 5px;
+    font-size: 18px;
+}
+
+.dashboard-panel p,
+.helper-text {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.activity-panel {
+    display: block;
+}
+
+.activity-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.activity-heading small {
+    color: var(--muted);
+    font-weight: 750;
+}
+
+.activity-strip {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.activity-week {
+    display: grid;
+    align-content: end;
+    gap: 6px;
+    min-height: 64px;
+}
+
+.activity-bar {
+    width: 100%;
+    min-height: 8px;
+    border-radius: 999px;
+    background: var(--surface-soft);
+}
+
+.activity-bar.active {
+    background: var(--success);
+}
+
+.activity-bar.current {
+    outline: 2px solid color-mix(in srgb, var(--primary) 35%, transparent);
+    outline-offset: 2px;
+}
+
+.activity-week small {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 750;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 20px 0 10px;
+}
+
+.text-button,
+.ghost-button {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.text-button {
+    padding: 9px 11px;
+}
+
+.ghost-button {
+    min-height: 42px;
+    padding: 9px 12px;
+}
+

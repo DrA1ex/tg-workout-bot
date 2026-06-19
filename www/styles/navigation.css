@@ -1,0 +1,94 @@
+/* Bottom navigation and its interaction states
+ * Imported by ./styles/styles.css
+ */
+
+/* Bottom navigation */
+.bottom-nav {
+    position: fixed;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    z-index: 120;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    width: min(100%, var(--app-max-width));
+    height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+    margin: 0 auto;
+    padding: 7px 16px calc(7px + env(safe-area-inset-bottom));
+    border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+    background: var(--surface);
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, .04);
+    transform: translate3d(0, 0, 0);
+    transition: opacity .16s ease, transform .18s cubic-bezier(.4, 0, 1, 1);
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.bottom-nav::before {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    content: "";
+    background: var(--surface);
+}
+
+.bottom-nav button {
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    min-height: 48px;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--muted);
+    touch-action: manipulation;
+}
+
+body.keyboard-open .bottom-nav {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate3d(0, calc(100% + 12px), 0);
+}
+
+.bottom-nav button.active {
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
+    color: var(--primary);
+}
+
+.bottom-nav button:focus,
+.bottom-nav button:focus-visible {
+    outline: 0;
+}
+
+.bottom-nav span {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.empty {
+    padding: 16px;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.bottom-nav button:disabled {
+    pointer-events: none;
+    opacity: .42;
+}
+
+.bottom-nav #nav-add span {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    margin-top: 0;
+    place-items: center;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+    color: var(--primary);
+    box-shadow: none;
+    font-size: 30px;
+    line-height: 1;
+}
+
+
