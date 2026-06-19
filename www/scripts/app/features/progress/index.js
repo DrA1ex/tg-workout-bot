@@ -30,7 +30,10 @@ export function renderProgress() {
     $("#progress-latest").textContent = formatMetricWithUnit(averageValue, metric);
     $("#progress-best-label").textContent = metricLabel(metric);
     $("#progress-latest-label").textContent = metricLabel(metric);
-    $("#progress-pr").textContent = `${Math.round(data.summary?.totalVolume || 0).toLocaleString()} kg`;
+    const totalMetric = progressRecordMetric(data);
+    const totalValue = totalMetric === "volume" ? data.summary?.totalVolume || 0 : data.summary?.totalRepsOrTime || 0;
+    $("#progress-pr-metric-label").textContent = progressSummaryMetricLabel(totalMetric);
+    $("#progress-pr").textContent = formatMetricWithUnit(totalValue, totalMetric);
     $("#progress-pr-label").textContent = t("progress.total");
     renderProgressRecent(data.recent || []);
     if (data.points.length < 2) {
@@ -89,6 +92,9 @@ export function metricValue(point, metric) {
     if (metric === "volume") return point.volume || (!point.isTime && point.weight && point.repsOrTime && point.sets
         ? point.weight * point.repsOrTime * point.sets
         : 0);
+    if (metric === "repsTotal") return point.repsTotal || (!point.isTime && point.repsOrTime && point.sets
+        ? point.repsOrTime * point.sets
+        : 0);
     if (metric === "repsOrTime") return point.repsOrTime || 0;
     if (metric === "sets") return point.sets || 0;
     return point.weight || 0;
@@ -105,19 +111,32 @@ export function formatMetricWithUnit(value, metric) {
     const formatted = formatMetric(value, metric);
     if (metric === "weight" || metric === "volume") return `${formatted} kg`;
     if (metric === "repsOrTime" && state.progress?.summary?.isTime) return `${formatted} ${t("units.sec")}`;
+    if (metric === "repsTotal") return state.progress?.summary?.isTime ? `${formatted} ${t("units.sec")}` : formatted;
     return formatted;
 }
 
 export function metricLabel(metric) {
     if (metric === "volume") return t("progress.volumeMetric");
+    if (metric === "repsTotal") return progressResultMetricLabel(state.progress);
     if (metric === "repsOrTime") return progressResultMetricLabel(state.progress);
     if (metric === "sets") return t("fields.sets");
     return t("progress.weight");
 }
 
+export function progressRecordMetric(data) {
+    const points = data?.points || [];
+    const hasWeight = Boolean(data?.summary?.hasWeight) || points.some(point => point.weight != null && Number(point.weight) > 0);
+    return hasWeight ? "volume" : "repsTotal";
+}
+
+export function progressSummaryMetricLabel(metric) {
+    if (metric === "volume") return t("progress.volumeMetric");
+    return state.progress?.summary?.isTime ? t("progress.timeTotal") : t("progress.repsTotal");
+}
+
 export function renderProgressRecent(rows) {
     const data = state.progress;
-    const metric = "volume";
+    const metric = progressRecordMetric(data);
     const metricValues = (data?.points || []).map(point => metricValue(point, metric));
     const uniqueMetricValues = new Set(metricValues);
     const bestMetricValue = Math.max(...metricValues, 0);
@@ -200,12 +219,13 @@ export function drawChart(points, metric) {
 
 export function metricUnit(metric) {
     if (metric === "weight" || metric === "volume") return "kg";
+    if (metric === "repsTotal") return state.progress?.summary?.isTime ? t("units.sec") : t("units.reps");
     if (metric === "sets") return t("fields.sets").toLowerCase();
     return state.progress?.summary?.isTime ? t("units.sec") : t("progress.repsTime").toLowerCase();
 }
 
 export function formatAxisValue(value, metric) {
-    if (metric === "volume") return Math.round(value).toLocaleString();
+    if (metric === "volume" || metric === "repsTotal") return Math.round(value).toLocaleString();
     const rounded = Number(value.toFixed(value >= 10 ? 0 : 1));
     return String(rounded);
 }

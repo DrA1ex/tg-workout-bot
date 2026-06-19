@@ -35,6 +35,7 @@ export async function getProgress(user, exercise, period = "all") {
         sets: row.sets || 0,
         weight: row.weight == null ? null : row.weight,
         repsOrTime: row.repsOrTime || 0,
+        repsTotal: (row.sets || 0) * (row.repsOrTime || 0),
         volume: volumeFor(row),
         isTime: row.isTime,
     }));
@@ -49,6 +50,7 @@ export async function getProgress(user, exercise, period = "all") {
     const bestVolume = points.reduce((max, point) => Math.max(max, point.volume || 0), 0);
     const bestRepsOrTime = points.reduce((max, point) => Math.max(max, point.repsOrTime || 0), 0);
     const totalVolume = points.reduce((sum, point) => sum + (point.volume || 0), 0);
+    const totalRepsOrTime = points.reduce((sum, point) => sum + (point.repsTotal || 0), 0);
 
     return {
         exercise: selectedExercise,
@@ -64,6 +66,7 @@ export async function getProgress(user, exercise, period = "all") {
             bestVolume,
             bestRepsOrTime,
             totalVolume,
+            totalRepsOrTime,
             hasWeight: points.some(point => point.weight != null),
             isTime: points.some(point => point.isTime),
         },
