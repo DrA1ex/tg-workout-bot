@@ -91,6 +91,26 @@ describe("workoutAchievements", () => {
         expect(result.newVolumeRecord).toBe(false);
     });
 
+    it("counts bodyweight workouts as volume records using weight 1", async () => {
+        const {findOne, workoutAchievements} = await loadService({
+            userCount: 5,
+            userDate: "2026-06-18T07:00:00.000Z",
+            exerciseCount: 2,
+            exerciseVolume: 24,
+            exerciseDate: "2026-06-10T07:00:00.000Z",
+        });
+
+        const result = await workoutAchievements("42", weightedWorkout({
+            exercise: "Push-ups",
+            sets: 3,
+            weight: null,
+            repsOrTime: 12,
+        }), "+05:00");
+
+        expect(JSON.stringify(findOne.mock.calls[0][0].attributes)).toContain("COALESCE(NULLIF(weight, 0), 1)");
+        expect(result.newVolumeRecord).toBe(true);
+    });
+
     it("marks the first workout for an exercise", async () => {
         const {workoutAchievements} = await loadService({
             userCount: 3,

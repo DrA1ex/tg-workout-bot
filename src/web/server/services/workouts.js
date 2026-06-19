@@ -53,6 +53,11 @@ export function volumeFor(row) {
     return row.sets * row.weight * row.repsOrTime;
 }
 
+function achievementVolumeFor(row) {
+    if (row.isTime || !row.repsOrTime || !row.sets) return 0;
+    return row.sets * (row.weight || 1) * row.repsOrTime;
+}
+
 export async function workoutAchievements(telegramId, workoutData, timezone = "UTC") {
     const q = models.Workout.sequelize;
     const userWhere = {
@@ -60,7 +65,7 @@ export async function workoutAchievements(telegramId, workoutData, timezone = "U
     };
     const exerciseSql = q.escape(workoutData.exercise);
     const workoutDateSql = q.escape(workoutData.date);
-    const volumeExpression = "CASE WHEN isTime = 0 AND weight IS NOT NULL AND repsOrTime IS NOT NULL AND sets IS NOT NULL THEN sets * weight * repsOrTime ELSE 0 END";
+    const volumeExpression = "CASE WHEN isTime = 0 AND repsOrTime IS NOT NULL AND sets IS NOT NULL THEN sets * COALESCE(NULLIF(weight, 0), 1) * repsOrTime ELSE 0 END";
     const previous = await models.Workout.findOne({
         where: userWhere,
         attributes: [
@@ -72,7 +77,7 @@ export async function workoutAchievements(telegramId, workoutData, timezone = "U
         ],
         raw: true,
     });
-    const currentVolume = volumeFor(workoutData);
+    const currentVolume = achievementVolumeFor(workoutData);
     const workoutDate = new Date(workoutData.date);
     const workoutDateKey = dateKeyInTimezone(workoutDate, timezone);
     const isTodayWorkout = workoutDateKey === dateKeyInTimezone(new Date(), timezone);
