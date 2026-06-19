@@ -222,7 +222,6 @@ export async function saveExerciseNotes() {
         if (animateSettings && nameChanged) {
             await loadSettingsGlobalExercises({animate: true});
         }
-        showToast("toast.exerciseSaved");
     } catch (error) {
         console.error(error);
         showToast(error.status === 409 ? "toast.exerciseDuplicate" : "toast.saveFailed", {variant: "danger"});
@@ -258,7 +257,6 @@ export async function deleteExercise(name) {
             await loadSettingsGlobalExercises({animate: true});
         }
 
-        showToast("toast.exerciseDeleted");
     } catch (error) {
         console.error(error);
         showToast("toast.exerciseDeleteFailed");
@@ -294,7 +292,6 @@ export async function addGlobalExercise(name) {
             state.exerciseScope = "global";
             renderExerciseScope();
         }
-        showToast("toast.exerciseAdded");
     } catch (error) {
         console.error(error);
         showToast(error.status === 409 ? "toast.exerciseDuplicate" : "toast.saveFailed", {variant: "danger"});
