@@ -65,6 +65,7 @@ export function initializeWorkoutFormSession() {
     clearWorkoutInputs();
     syncWorkoutDateLimits();
     $("#workout-date").value = todayInputValue();
+    clearWorkoutValidation("workout");
     updateWorkoutFormState();
 }
 
@@ -156,6 +157,43 @@ export function readWorkoutFormValues(prefix) {
     };
 }
 
+function setFieldValidation(control, message) {
+    if (!control) return;
+    const label = control.closest(".add-field");
+    if (!label) return;
+    label.classList.toggle("field-invalid", Boolean(message));
+    control.setAttribute("aria-invalid", message ? "true" : "false");
+    if (message) {
+        control.setAttribute("title", message);
+    } else {
+        control.removeAttribute("title");
+    }
+}
+
+function numericFieldMessage(control, {min = 0, requiredKey = "validation.required", invalidKey = "validation.invalidNumber"} = {}) {
+    const value = String(control?.value || "").trim();
+    if (!value) return t(requiredKey);
+    const numeric = Number.parseFloat(value);
+    if (!Number.isFinite(numeric) || numeric < min) return t(invalidKey);
+    return "";
+}
+
+function workoutValidationMessages(prefix) {
+    const fields = workoutFormFields(prefix);
+    const today = todayInputValue();
+    return new Map([
+        [fields.date, !fields.date.value
+            ? t("validation.required")
+            : fields.date.value > today ? t("validation.futureDate") : ""],
+        [fields.exercise, fields.exercise.value ? "" : t("validation.required")],
+        [fields.sets, numericFieldMessage(fields.sets, {min: 1})],
+        [fields.weight, fields.hasWeight.checked
+            ? numericFieldMessage(fields.weight, {min: 0})
+            : ""],
+        [fields.reps, numericFieldMessage(fields.reps, {min: 1})],
+    ]);
+}
+
 export function syncWorkoutDateLimits() {
     const today = todayInputValue();
     ["workout", "edit"].forEach(prefix => {
@@ -164,17 +202,36 @@ export function syncWorkoutDateLimits() {
     });
 }
 
-export function validateWorkoutForm(prefix) {
+export function updateWorkoutValidation(prefix) {
     syncWorkoutDateLimits();
     const fields = workoutFormFields(prefix);
     fields.weight.required = fields.hasWeight.checked;
-    if (fields.date.value && fields.date.value > todayInputValue()) {
-        fields.date.setCustomValidity(t("validation.futureDate"));
-    } else {
-        fields.date.setCustomValidity("");
-    }
-    const form = prefix === "workout" ? $("#workout-form") : $("#edit-form");
-    return form.reportValidity();
+    workoutValidationMessages(prefix).forEach((message, control) => setFieldValidation(control, message));
+}
+
+export function validateWorkoutForm(prefix) {
+    updateWorkoutValidation(prefix);
+    return [...workoutValidationMessages(prefix).values()].every(message => !message);
+}
+
+export function clearWorkoutValidation(prefix) {
+    const fields = workoutFormFields(prefix);
+    [fields.date, fields.exercise, fields.sets, fields.weight, fields.reps].forEach(control => setFieldValidation(control, ""));
+}
+
+export function bindWorkoutValidation() {
+    syncWorkoutDateLimits();
+    ["workout", "edit"].forEach(prefix => {
+        const form = prefix === "workout" ? $("#workout-form") : $("#edit-form");
+        form.noValidate = true;
+        const fields = workoutFormFields(prefix);
+        [fields.date, fields.exercise, fields.sets, fields.weight, fields.reps].forEach(control => {
+            control.addEventListener("input", () => updateWorkoutValidation(prefix));
+            control.addEventListener("change", () => updateWorkoutValidation(prefix));
+        });
+        fields.hasWeight.addEventListener("change", () => updateWorkoutValidation(prefix));
+        fields.isTime.addEventListener("change", () => updateWorkoutValidation(prefix));
+    });
 }
 
 export function refreshWorkoutFormModes() {
@@ -194,6 +251,7 @@ export function openEditDialog(workout) {
     syncWorkoutDateLimits();
     $("#edit-id").value = workout.id;
     setWorkoutFormValues("edit", workout);
+    updateWorkoutValidation("edit");
     updateEditWorkoutFormState();
     openSheetDialog($("#edit-dialog"));
 }
@@ -373,6 +431,7 @@ export async function applyPreviousWorkoutValues() {
         isTime: Boolean(previous.isTime),
     });
     setPreviousWorkoutSummary(previous, $("#workout-exercise").value);
+    updateWorkoutValidation("workout");
 }
 
 export function adjustNumberInput(input, delta) {

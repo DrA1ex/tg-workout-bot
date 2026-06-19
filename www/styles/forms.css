@@ -45,6 +45,22 @@ textarea {
     padding: 11px 12px;
 }
 
+.add-field.field-invalid input,
+.add-field.field-invalid select,
+.add-field.field-invalid textarea,
+.add-field.field-invalid .field-shell,
+.add-field.field-invalid .stepper {
+    border-color: color-mix(in srgb, var(--danger) 66%, var(--line));
+    background: color-mix(in srgb, var(--danger) 8%, var(--surface-soft));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.add-field.field-invalid .field-icon,
+.add-field.field-invalid > span,
+.add-field.field-invalid .stepper-unit {
+    color: color-mix(in srgb, var(--danger) 78%, var(--text));
+}
+
 .stepper {
     display: grid;
     grid-template-columns: 42px 1fr 42px;
@@ -270,4 +286,3 @@ textarea {
     color: var(--danger);
     font-weight: 850;
 }
-

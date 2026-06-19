@@ -55,32 +55,42 @@ export function volumeFor(row) {
 
 export async function workoutAchievements(telegramId, workoutData, timezone = "UTC") {
     const q = models.Workout.sequelize;
-    const where = {
+    const userWhere = {
         telegramId: String(telegramId),
-        exercise: workoutData.exercise,
     };
+    const exerciseSql = q.escape(workoutData.exercise);
     const workoutDateSql = q.escape(workoutData.date);
+    const volumeExpression = "CASE WHEN isTime = 0 AND weight IS NOT NULL AND repsOrTime IS NOT NULL AND sets IS NOT NULL THEN sets * weight * repsOrTime ELSE 0 END";
     const previous = await models.Workout.findOne({
-        where,
+        where: userWhere,
         attributes: [
-            [fn("COUNT", literal("1")), "count"],
-            [fn("MAX", literal("CASE WHEN isTime = 0 AND weight IS NOT NULL AND repsOrTime IS NOT NULL AND sets IS NOT NULL THEN sets * weight * repsOrTime ELSE 0 END")), "volume"],
-            [fn("MAX", literal(`CASE WHEN date <= ${workoutDateSql} THEN date ELSE NULL END`)), "date"],
+            [fn("COUNT", literal("1")), "userCount"],
+            [fn("MAX", literal(`CASE WHEN date <= ${workoutDateSql} THEN date ELSE NULL END`)), "userDate"],
+            [fn("SUM", literal(`CASE WHEN exercise = ${exerciseSql} THEN 1 ELSE 0 END`)), "exerciseCount"],
+            [fn("MAX", literal(`CASE WHEN exercise = ${exerciseSql} THEN ${volumeExpression} ELSE 0 END`)), "exerciseVolume"],
+            [fn("MAX", literal(`CASE WHEN exercise = ${exerciseSql} AND date <= ${workoutDateSql} THEN date ELSE NULL END`)), "exerciseDate"],
         ],
         raw: true,
     });
     const currentVolume = volumeFor(workoutData);
     const workoutDate = new Date(workoutData.date);
-    const isTodayWorkout = dateKeyInTimezone(workoutDate, timezone) === dateKeyInTimezone(new Date(), timezone);
-    const previousCount = Number(previous?.count || 0);
-    const bestPreviousVolume = Number(previous?.volume || 0);
-    const latestPreviousDate = previous?.date ? new Date(previous.date) : null;
+    const workoutDateKey = dateKeyInTimezone(workoutDate, timezone);
+    const isTodayWorkout = workoutDateKey === dateKeyInTimezone(new Date(), timezone);
+    const previousCount = Number(previous?.exerciseCount || 0);
+    const bestPreviousVolume = Number(previous?.exerciseVolume || 0);
+    const latestPreviousDate = previous?.exerciseDate ? new Date(previous.exerciseDate) : null;
+    const userPreviousCount = Number(previous?.userCount || 0);
+    const latestUserWorkoutDate = previous?.userDate ? new Date(previous.userDate) : null;
     const staleThreshold = new Date(workoutDate);
     staleThreshold.setMonth(staleThreshold.getMonth() - 2);
+    const inactiveMonthThreshold = new Date(workoutDate);
+    inactiveMonthThreshold.setMonth(inactiveMonthThreshold.getMonth() - 1);
 
     return {
         newVolumeRecord: isTodayWorkout && previousCount > 0 && currentVolume > 0 && currentVolume > bestPreviousVolume,
         firstExerciseWorkout: previousCount === 0,
         comebackAfterTwoMonths: Boolean(latestPreviousDate && latestPreviousDate <= staleThreshold),
+        comebackAfterMonth: Boolean(latestUserWorkoutDate && latestUserWorkoutDate <= inactiveMonthThreshold),
+        hundredthWorkout: userPreviousCount === 99,
     };
 }

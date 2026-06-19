@@ -579,7 +579,11 @@ function showWorkoutAchievements(workout) {
     const achievements = workout?.achievements;
     if (!achievements) return;
     const showFirstExercise = achievements.firstExerciseWorkout && !firstExerciseAchievementShownToday(workout);
-    const hasAchievement = achievements.newVolumeRecord || achievements.comebackAfterTwoMonths || showFirstExercise;
+    const hasAchievement = achievements.newVolumeRecord ||
+        achievements.comebackAfterTwoMonths ||
+        achievements.comebackAfterMonth ||
+        achievements.hundredthWorkout ||
+        showFirstExercise;
 
     if (hasAchievement) triggerAchievementHaptic();
 
@@ -591,5 +595,11 @@ function showWorkoutAchievements(workout) {
     }
     if (achievements.comebackAfterTwoMonths) {
         showSpecialToast("special.comeback.title", "special.comeback.body");
+    }
+    if (achievements.comebackAfterMonth) {
+        showSpecialToast("special.monthComeback.title", "special.monthComeback.body");
+    }
+    if (achievements.hundredthWorkout) {
+        showSpecialToast("special.hundredth.title", "special.hundredth.body");
     }
 }
