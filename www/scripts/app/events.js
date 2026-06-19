@@ -287,6 +287,7 @@ export function bindEvents() {
         window.clearTimeout(runtime.onboardingMoveTimer);
         delete $("#onboarding-dialog").dataset.dialogOpenOrder;
         document.body.classList.remove("sheet-open");
+        document.body.classList.remove("sheet-closing");
     });
     $("#onboarding-language-select").addEventListener("change", event => {
         releaseNativeSelect(event.currentTarget);
@@ -453,6 +454,7 @@ export function bindEvents() {
         $("#add-dialog").classList.remove("sheet-closing", "sheet-opening");
         delete $("#add-dialog").dataset.dialogOpenOrder;
         document.body.classList.remove("sheet-open");
+        document.body.classList.remove("sheet-closing");
         state.savingWorkout = false;
         state.workoutSaveLoading = false;
         state.workoutSubmitted = false;

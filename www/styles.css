@@ -116,17 +116,28 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
+body::before {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    content: "";
+    background: color-mix(in srgb, var(--bg) 62%, #8b949e 38%);
+    opacity: 0;
+    transition: opacity .32s cubic-bezier(.22, 1, .36, 1);
+    pointer-events: none;
+}
+
 body.sheet-open,
+body.sheet-closing,
 html.dialog-open,
 body.dialog-open {
     overflow: hidden;
     overscroll-behavior: none;
 }
 
-body.sheet-open,
-body.dialog-open,
-html.dialog-open {
-    background: color-mix(in srgb, var(--bg) 82%, #000 18%);
+body.dialog-open::before,
+html.dialog-open body::before {
+    opacity: 1;
 }
 
 @supports not (overflow-x: clip) {
@@ -159,6 +170,8 @@ button {
 }
 
 .app-shell {
+    position: relative;
+    z-index: 1;
     width: min(100%, var(--app-max-width));
     max-width: var(--app-max-width);
     min-height: 100vh;
@@ -1002,7 +1015,7 @@ textarea {
     transition: opacity .18s ease;
 }
 
-/* Dialogs and sheets */
+/* Dialogs */
 .modal {
     width: min(calc(100% - 24px), 500px);
     max-height: calc(100dvh - 28px);
@@ -1021,14 +1034,27 @@ textarea {
     background: rgba(7, 13, 21, .56);
 }
 
+/* Workout card dialog
+ * Layer order: ambient background -> background card -> active sheet.
+ * All geometry, states and animations for this dialog are kept here.
+ */
 .workout-sheet-dialog {
-    width: 100%;
-    max-width: none;
+    --sheet-open-duration: 400ms;
+    --sheet-close-duration: 320ms;
+    --sheet-open-easing: cubic-bezier(.22, 1, .36, 1);
+    --sheet-close-easing: cubic-bezier(.4, 0, .6, 1);
+    --sheet-back-card-opacity: .58;
+
+    width: min(100%, var(--app-max-width));
+    max-width: var(--app-max-width);
     height: 100dvh;
     max-height: none;
     margin: 0 auto;
     padding: calc(22px + var(--tg-content-safe-area-top)) 10px 6px;
     overflow: hidden;
+    border: 0;
+    background: transparent;
+    color: var(--text);
     isolation: isolate;
     perspective: 1200px;
 }
@@ -1039,20 +1065,8 @@ textarea {
     justify-items: center;
 }
 
-.workout-sheet-dialog.sheet-opening::before {
-    animation: ios-sheet-backdrop-enter .29s ease-out both;
-}
-
-.workout-sheet-dialog.sheet-opening::after {
-    animation: ios-sheet-card-enter .44s cubic-bezier(.18, .84, .2, 1) .02s both;
-}
-
-.workout-sheet-dialog.sheet-closing::before {
-    animation: ios-sheet-backdrop-exit .14s ease-in both;
-}
-
-.workout-sheet-dialog.sheet-closing::after {
-    animation: ios-sheet-card-exit .31s cubic-bezier(.4, 0, .2, 1) both;
+.workout-sheet-dialog:focus {
+    outline: 0;
 }
 
 .workout-sheet-dialog::backdrop {
@@ -1060,46 +1074,172 @@ textarea {
     backdrop-filter: none;
 }
 
+/* Full-viewport ambient layer. It never becomes a rounded card. */
 .workout-sheet-dialog::before {
     position: fixed;
     inset: 0;
     z-index: 0;
     content: "";
-    background: color-mix(in srgb, var(--bg) 84%, #000 16%);
+    background: color-mix(in srgb, var(--bg) 62%, #8b949e 38%);
+    opacity: 1;
+    pointer-events: none;
+    will-change: opacity;
 }
 
+/* The only background card behind the active sheet. */
 .workout-sheet-dialog::after {
     position: fixed;
     top: calc(8px + var(--tg-content-safe-area-top));
     left: 50%;
-    z-index: 0;
+    z-index: 1;
     width: min(calc(100% - 54px), calc(var(--sheet-max-width) - 18px));
     height: calc(100dvh - 20px - var(--tg-content-safe-area-top));
+    border: 1px solid color-mix(in srgb, var(--line) 56%, transparent);
     border-radius: 30px;
     content: "";
     background: color-mix(in srgb, var(--surface) 94%, #ffffff 6%);
-    border: 1px solid color-mix(in srgb, var(--line) 56%, transparent);
-    opacity: .58;
-    transform-origin: center center;
-    transform: translate3d(-50%, 0, 0) rotateX(0deg) scale3d(.988, .988, 1);
+    box-shadow: 0 18px 54px rgba(15, 23, 42, .08);
+    opacity: var(--sheet-back-card-opacity);
+    pointer-events: none;
+    transform: translate3d(-50%, 0, 0) scale3d(.988, .988, 1);
+    transform-origin: center top;
+    will-change: transform, opacity;
 }
 
-[data-theme="dark"] .workout-sheet-dialog::before {
-    background: color-mix(in srgb, var(--bg) 84%, #000 16%);
-}
-
-[data-theme="dark"] .workout-sheet-dialog::after {
-    background: color-mix(in srgb, var(--surface) 92%, #000 8%);
-    border-color: rgba(71, 85, 105, .8);
-}
-
+/* Foreground cards */
+.add-sheet,
 .edit-sheet {
-    z-index: 1;
+    position: relative;
+    z-index: 2;
     width: min(100%, var(--sheet-max-width));
     max-width: 100%;
     margin: 0 auto;
-    max-height: calc(100dvh - 44px);
     overflow: hidden;
+    backface-visibility: hidden;
+    transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+    transform-origin: center bottom;
+    transform-style: preserve-3d;
+    will-change: transform, opacity;
+}
+
+.add-sheet {
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - 28px - var(--tg-content-safe-area-top));
+    max-height: calc(100dvh - 28px - var(--tg-content-safe-area-top));
+    padding: 8px 16px 0;
+    border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+    border-radius: 30px;
+    background: color-mix(in srgb, var(--surface) 97%, var(--surface-soft));
+    box-shadow: 0 -18px 64px rgba(15, 23, 42, .16), 0 18px 54px rgba(15, 23, 42, .10), 0 1px 0 rgba(255, 255, 255, .72) inset;
+}
+
+.edit-sheet {
+    max-height: calc(100dvh - 44px);
+}
+
+/* Opening flow: ambient gray appears, the background card recedes,
+ * and the foreground sheet rises into place as one composition.
+ */
+.workout-sheet-dialog.sheet-opening::before {
+    animation: workout-sheet-ambient-enter var(--sheet-open-duration) var(--sheet-open-easing) both;
+}
+
+.workout-sheet-dialog.sheet-opening::after {
+    animation: workout-sheet-background-enter var(--sheet-open-duration) var(--sheet-open-easing) both;
+}
+
+.workout-sheet-dialog.sheet-opening .add-sheet,
+.workout-sheet-dialog.sheet-opening .edit-sheet {
+    animation: workout-sheet-foreground-enter var(--sheet-open-duration) var(--sheet-open-easing) both;
+}
+
+/* Closing flow is the same composition in reverse. */
+.workout-sheet-dialog.sheet-closing::before {
+    animation: workout-sheet-ambient-exit var(--sheet-close-duration) var(--sheet-close-easing) both;
+}
+
+.workout-sheet-dialog.sheet-closing::after {
+    animation: workout-sheet-background-exit var(--sheet-close-duration) var(--sheet-close-easing) both;
+}
+
+.workout-sheet-dialog.sheet-closing .add-sheet,
+.workout-sheet-dialog.sheet-closing .edit-sheet {
+    animation: workout-sheet-foreground-exit var(--sheet-close-duration) var(--sheet-close-easing) both;
+    pointer-events: none;
+}
+
+@keyframes workout-sheet-ambient-enter {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes workout-sheet-ambient-exit {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes workout-sheet-background-enter {
+    from {
+        opacity: 0;
+        transform: translate3d(-50%, 20px, 0) scale3d(1, 1, 1);
+    }
+
+    to {
+        opacity: var(--sheet-back-card-opacity);
+        transform: translate3d(-50%, 0, 0) scale3d(.988, .988, 1);
+    }
+}
+
+@keyframes workout-sheet-background-exit {
+    from {
+        opacity: var(--sheet-back-card-opacity);
+        transform: translate3d(-50%, 0, 0) scale3d(.988, .988, 1);
+    }
+
+    to {
+        opacity: 0;
+        transform: translate3d(-50%, 20px, 0) scale3d(1, 1, 1);
+    }
+}
+
+@keyframes workout-sheet-foreground-enter {
+    from {
+        opacity: .72;
+        transform: translate3d(0, 28px, 0) scale3d(.97, .97, 1);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+    }
+}
+
+@keyframes workout-sheet-foreground-exit {
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+    }
+
+    to {
+        opacity: .62;
+        transform: translate3d(0, 30px, 0) scale3d(.985, .985, 1);
+    }
+}
+
+[data-theme="dark"] .workout-sheet-dialog::before {
+    background: color-mix(in srgb, var(--bg) 76%, #000000 24%);
+}
+
+[data-theme="dark"] .workout-sheet-dialog::after {
+    border-color: rgba(71, 85, 105, .8);
+    background: color-mix(in srgb, var(--surface) 92%, #000000 8%);
+    box-shadow: 0 18px 54px rgba(0, 0, 0, .24);
+}
+
+[data-theme="dark"] .add-sheet {
+    border-color: rgba(71, 85, 105, .72);
+    box-shadow: 0 -18px 64px rgba(0, 0, 0, .42), 0 18px 54px rgba(0, 0, 0, .26), 0 1px 0 rgba(255, 255, 255, .08) inset;
 }
 
 .workout-sheet-dialog .sticky-form-actions {
@@ -1125,6 +1265,88 @@ textarea {
 
 .workout-sheet-dialog .sticky-form-actions.single-action {
     grid-template-columns: 1fr;
+}
+
+/* Mobile portrait keeps one synthetic background card.
+ * The ambient layer remains full-screen and is never transformed.
+ */
+@media (max-width: 599px) and (orientation: portrait) {
+    .workout-sheet-dialog::after {
+        transform-origin: center top;
+    }
+}
+
+/* iPad and desktop retain the portrait-phone content width. */
+@media (min-width: 600px) {
+    .add-sheet {
+        padding-right: 24px;
+        padding-left: 24px;
+        border-radius: 34px;
+    }
+
+    #add-dialog .sticky-form-actions {
+        right: 24px;
+        left: 24px;
+    }
+}
+
+@media (min-width: 720px) and (min-height: 680px) {
+    .workout-sheet-dialog {
+        padding: calc(24px + var(--tg-content-safe-area-top)) 18px 18px;
+    }
+}
+
+@media (min-width: 720px) and (max-width: 900px) and (orientation: portrait) {
+    .add-sheet {
+        height: calc(100dvh - 28px - var(--tg-content-safe-area-top));
+        max-height: calc(100dvh - 28px - var(--tg-content-safe-area-top));
+    }
+
+    .workout-sheet-dialog::after {
+        height: calc(100dvh - 20px - var(--tg-content-safe-area-top));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .workout-sheet-dialog.sheet-opening::before,
+    .workout-sheet-dialog.sheet-opening .add-sheet,
+    .workout-sheet-dialog.sheet-opening .edit-sheet {
+        animation: workout-sheet-fade-enter 160ms linear both;
+    }
+
+    .workout-sheet-dialog.sheet-opening::after {
+        animation: workout-sheet-background-fade-enter 160ms linear both;
+    }
+
+    .workout-sheet-dialog.sheet-closing::before,
+    .workout-sheet-dialog.sheet-closing .add-sheet,
+    .workout-sheet-dialog.sheet-closing .edit-sheet {
+        animation: workout-sheet-fade-exit 160ms linear both;
+    }
+
+    .workout-sheet-dialog.sheet-closing::after {
+        animation: workout-sheet-background-fade-exit 160ms linear both;
+    }
+}
+
+@keyframes workout-sheet-fade-enter {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes workout-sheet-fade-exit {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes workout-sheet-background-fade-enter {
+    from { opacity: 0; }
+    to { opacity: var(--sheet-back-card-opacity); }
+}
+
+@keyframes workout-sheet-background-fade-exit {
+    from { opacity: var(--sheet-back-card-opacity); }
+    to { opacity: 0; }
 }
 
 .exercise-add-trigger {
@@ -1519,84 +1741,6 @@ textarea {
 
 .field-shell.exercise-missing .field-chevron {
     display: none;
-}
-
-@keyframes ios-sheet-enter {
-    from {
-        opacity: .72;
-        transform: translateY(22px) scale(.985);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-@keyframes ios-sheet-exit {
-    from {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-
-    to {
-        opacity: .62;
-        transform: translateY(30px) scale(.985);
-    }
-}
-
-@keyframes ios-sheet-backdrop-enter {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes ios-sheet-backdrop-exit {
-    from {
-        opacity: 1;
-    }
-
-    to {
-        opacity: 0;
-    }
-}
-
-@keyframes ios-sheet-card-enter {
-    from {
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100dvh;
-        border-radius: 0;
-        opacity: 0;
-        transform: translate3d(0, 0, -40px) rotateX(18deg) scale3d(1.04, 1.04, 1);
-    }
-
-    to {
-        opacity: .58;
-        transform: translate3d(-50%, 0, 0) rotateX(0deg) scale3d(.988, .988, 1);
-    }
-}
-
-@keyframes ios-sheet-card-exit {
-    from {
-        opacity: .58;
-        transform: translate3d(-50%, 0, 0) rotateX(0deg) scale3d(.988, .988, 1);
-    }
-
-    to {
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100dvh;
-        border-radius: 0;
-        opacity: 0;
-        transform: translate3d(0, 0, -40px) rotateX(18deg) scale3d(1.04, 1.04, 1);
-    }
 }
 
 .modal-heading,
@@ -3416,27 +3560,6 @@ body.keyboard-open .bottom-nav {
     line-height: 1;
 }
 
-/* Add and edit workout sheet */
-.add-sheet {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    width: min(100%, var(--sheet-max-width));
-    max-width: 100%;
-    height: calc(100dvh - 28px - var(--tg-content-safe-area-top));
-    max-height: calc(100dvh - 28px - var(--tg-content-safe-area-top));
-    overflow: hidden;
-    padding: 8px 16px 0;
-    border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
-    border-radius: 30px;
-    background: color-mix(in srgb, var(--surface) 97%, var(--surface-soft));
-    box-shadow: 0 -18px 64px rgba(15, 23, 42, .16), 0 18px 54px rgba(15, 23, 42, .10), 0 1px 0 rgba(255, 255, 255, .72) inset;
-    backface-visibility: hidden;
-    transform-style: preserve-3d;
-    transform-origin: center bottom;
-    will-change: transform, opacity;
-}
 
 .confirm-dialog {
     width: min(calc(100% - 32px), 360px);
@@ -3506,33 +3629,6 @@ body.keyboard-open .bottom-nav {
     animation: button-spin .8s linear infinite;
 }
 
-[data-theme="dark"] .add-sheet {
-    border-color: rgba(71, 85, 105, .72);
-    box-shadow: 0 -18px 64px rgba(0, 0, 0, .42), 0 18px 54px rgba(0, 0, 0, .26), 0 1px 0 rgba(255, 255, 255, .08) inset;
-}
-
-@media (min-width: 720px) and (min-height: 680px) {
-    .workout-sheet-dialog {
-        padding: calc(24px + var(--tg-content-safe-area-top)) 18px 18px;
-    }
-
-    .add-sheet {
-        height: min(860px, calc(100dvh - 44px - var(--tg-content-safe-area-top)));
-        max-height: min(860px, calc(100dvh - 44px - var(--tg-content-safe-area-top)));
-        border-radius: 32px;
-    }
-
-    .workout-sheet-dialog::after {
-        top: calc(10px + var(--tg-content-safe-area-top));
-        height: min(860px, calc(100dvh - 28px - var(--tg-content-safe-area-top)));
-        transform: translate3d(-50%, 0, 0) scale3d(.965, .965, 1);
-    }
-
-    .exercise-sheet {
-        height: min(860px, calc(100dvh - 44px - var(--tg-content-safe-area-top)));
-        min-height: min(860px, calc(100dvh - 44px - var(--tg-content-safe-area-top)));
-    }
-}
 
 .sheet-grabber {
     flex: 0 0 5px;
@@ -4101,20 +4197,11 @@ body.keyboard-open .bottom-nav {
         padding-left: 18px;
     }
 
-    .add-sheet {
-        padding-right: 24px;
-        padding-left: 24px;
-        border-radius: 34px;
-    }
 
     .add-form {
         gap: 20px;
     }
 
-    #add-dialog .sticky-form-actions {
-        right: 24px;
-        left: 24px;
-    }
 }
 
 @media (max-width: 390px) {

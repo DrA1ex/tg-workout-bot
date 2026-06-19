@@ -91,21 +91,33 @@ export function animateSheetElement(sheet, direction, onFinish) {
         return;
     }
 
-    const frames = direction === "in"
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const openFrames = reducedMotion
         ? [
-            {opacity: 0, transform: "translate3d(0, 38px, -28px) rotateX(14deg) scale3d(.972, .972, 1)"},
-            {opacity: 1, transform: "translate3d(0, 0, 0) rotateX(0deg) scale3d(1, 1, 1)"},
+            {opacity: 0},
+            {opacity: 1},
         ]
         : [
-            {opacity: 1, transform: "translate3d(0, 0, 0) rotateX(0deg) scale3d(1, 1, 1)"},
-            {opacity: 0, transform: "translate3d(0, 30px, -24px) rotateX(12deg) scale3d(.975, .975, 1)"},
+            {opacity: 0, transform: "translate3d(0, 30px, 0) scale3d(.97, .97, 1)"},
+            {opacity: 1, transform: "translate3d(0, 0, 0) scale3d(1, 1, 1)"},
         ];
+    const closeFrames = reducedMotion
+        ? [
+            {opacity: 1},
+            {opacity: 0},
+        ]
+        : [
+            {opacity: 1, transform: "translate3d(0, 0, 0) scale3d(1, 1, 1)"},
+            {opacity: 0, transform: "translate3d(0, 24px, 0) scale3d(.98, .98, 1)"},
+        ];
+
+    const frames = direction === "in" ? openFrames : closeFrames;
 
     requestAnimationFrame(() => {
         if (sheet.dataset.sheetAnimation !== animationToken) return;
         const animation = sheet.animate(frames, {
-            duration: direction === "in" ? 338 : 273,
-            easing: direction === "in" ? "cubic-bezier(.22, 1, .36, 1)" : "cubic-bezier(.4, 0, 1, 1)",
+            duration: direction === "in" ? (reducedMotion ? 120 : 400) : (reducedMotion ? 100 : 320),
+            easing: direction === "in" ? (reducedMotion ? "linear" : "cubic-bezier(.22, 1, .36, 1)") : (reducedMotion ? "linear" : "cubic-bezier(.4, 0, .6, 1)"),
             fill: "both",
         });
         animation.finished.then(() => {
@@ -122,6 +134,7 @@ export function openSheetDialog(dialog, {dismissible = true, animate = true} = {
     if (dialog.open) return;
     const sheet = dialog.querySelector(".add-sheet");
     dialog.classList.remove("sheet-closing", "sheet-opening");
+    document.body.classList.remove("sheet-closing");
     dialog.dataset.dismissible = dismissible ? "true" : "false";
     ensureSheetCancelHandler(dialog);
     document.body.classList.add("sheet-open");
@@ -139,6 +152,7 @@ export function closeSheetDialog(dialog) {
     if (!dialog.open || dialog.classList.contains("sheet-closing")) return;
     const sheet = dialog.querySelector(".add-sheet");
     dialog.classList.add("sheet-closing");
+    document.body.classList.add("sheet-closing");
     const finish = () => {
         if (!dialog.open) return;
         dialog.classList.remove("sheet-closing");
@@ -161,6 +175,7 @@ export function bindSheetDialog(dialogSelector, closeSelector) {
             renderSettingsExerciseSearchState();
         }
         document.body.classList.remove("sheet-open");
+        document.body.classList.remove("sheet-closing");
     });
 }
 
