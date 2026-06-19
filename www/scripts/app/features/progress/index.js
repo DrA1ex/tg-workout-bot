@@ -117,7 +117,7 @@ export function metricLabel(metric) {
 
 export function renderProgressRecent(rows) {
     const data = state.progress;
-    const metric = state.progressMetric;
+    const metric = "volume";
     const metricValues = (data?.points || []).map(point => metricValue(point, metric));
     const uniqueMetricValues = new Set(metricValues);
     const bestMetricValue = Math.max(...metricValues, 0);
