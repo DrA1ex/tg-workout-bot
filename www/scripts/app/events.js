@@ -5,7 +5,7 @@ import {runtime} from './core/runtime.js';
 import {createDelayedLoader, delay, nextAnimationFrame, normalizeTimezoneInputValue} from './core/utils.js';
 import {refreshAll} from './data/refresh.js';
 import {$, $$, api, applyI18n, applyTheme, authApi, showAuthScreen, state} from './deps.js';
-import {renderDashboard} from './features/dashboard/index.js';
+import {renderDashboard, toggleActivityCalendar} from './features/dashboard/index.js';
 import {addGlobalExercise, deleteExercise, findExercise, loadGlobalExercises, openExerciseAddDialog, openExerciseDialog, renderExerciseScope, renderExercises, saveExerciseNotes, setExerciseAddPending, syncExerciseState} from './features/exercises/catalog.js';
 import {setupHistoryInfiniteScroll} from './features/history/index.js';
 import {completeOnboarding, loadOnboardingGlobalExercises, onboardingSelectedSet, openOnboardingIfNeeded, renderOnboardingGlobalExercises, renderOnboardingSearchState, saveOnboardingLanguage, updateOnboardingStartState} from './features/onboarding/index.js';
@@ -22,6 +22,11 @@ import {closeSwipeRows} from './ui/swipe.js';
 export function bindEvents() {
     $$("button[data-tab]").forEach(button => button.addEventListener("click", () => navigateTab(button.dataset.tab)));
     setupHistoryInfiniteScroll();
+
+    $("#weekly-streak-toggle").addEventListener("click", event => {
+        event.stopPropagation();
+        toggleActivityCalendar();
+    });
 
     $("#workout-notes").addEventListener("input", event => {
         $("#notes-count").textContent = String(event.target.value.length);

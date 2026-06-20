@@ -143,7 +143,7 @@
 .history-link-card,
 .dashboard-stat-card {
     border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
-    border-radius: 14px;
+    border-radius: 16px;
     background: var(--surface);
     box-shadow: 0 2px 10px rgba(15, 23, 42, .025);
 }
@@ -412,15 +412,114 @@
     padding: 0;
 }
 
+.activity-calendar-panel {
+    display: grid;
+    grid-template-rows: 1fr;
+    padding-top: 8px;
+    opacity: 1;
+    transition: grid-template-rows .22s ease, opacity .18s ease, padding-top .22s ease;
+}
+
+.weekly-streak-card.activity-collapsed .activity-calendar-panel {
+    grid-template-rows: 0fr;
+    gap: 0;
+    max-height: 0;
+    padding-top: 0;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.weekly-streak-card.activity-collapsed .activity-calendar-weekdays,
+.weekly-streak-card.activity-collapsed .activity-calendar-shell,
+.weekly-streak-card.activity-collapsed .activity-calendar-grid {
+    overflow: hidden;
+}
+
+.activity-calendar-shell {
+    display: grid;
+    gap: 10px;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--line) 74%, transparent);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--surface) 96%, transparent);
+    box-shadow: 0 16px 34px rgba(15, 23, 42, .16), inset 0 1px 0 color-mix(in srgb, var(--surface-soft) 62%, transparent);
+}
+
+.activity-calendar-weekdays,
+.activity-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.activity-calendar-weekdays {
+    gap: 6px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.activity-calendar-grid {
+    gap: 8px;
+}
+
+.activity-calendar-day {
+    display: grid;
+    width: 100%;
+    min-height: 46px;
+    min-width: 0;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--line) 74%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface-soft) 64%, var(--surface));
+    color: color-mix(in srgb, var(--muted) 82%, var(--text));
+    font-size: 13px;
+    font-weight: 820;
+    line-height: 1;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 72%, transparent), 0 1px 4px rgba(15, 23, 42, .05);
+}
+
+.activity-calendar-day em {
+    font-style: normal;
+}
+
+.activity-calendar-day.active {
+    border-color: color-mix(in srgb, var(--primary) 34%, var(--line));
+    background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+    color: color-mix(in srgb, var(--primary) 88%, var(--text));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 14%, transparent), 0 2px 8px rgba(124, 58, 237, .10);
+}
+
+.activity-calendar-day.today {
+    border-color: transparent;
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--primary) 92%, #8b5cf6),
+        color-mix(in srgb, var(--primary) 72%, #5b21b6));
+    color: #ffffff;
+    box-shadow: 0 10px 18px color-mix(in srgb, var(--primary) 28%, transparent), inset 0 1px 0 rgba(255, 255, 255, .28);
+}
+
+.activity-calendar-day.active.today {
+    box-shadow: 0 12px 22px color-mix(in srgb, var(--primary) 32%, transparent), inset 0 1px 0 rgba(255, 255, 255, .30);
+}
+
+.activity-calendar-day.future,
+.activity-calendar-day.outside-month {
+    background: color-mix(in srgb, var(--surface-soft) 38%, var(--surface));
+    color: color-mix(in srgb, var(--muted) 44%, transparent);
+}
+
 .dashboard-skeleton .skeleton-today-card {
     padding: 10px 12px;
 }
 
 .weekly-streak-card {
     display: grid;
-    gap: 17px;
-    margin-bottom: 12px;
-    padding: 15px 15px 14px;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding: 16px 18px 28px;
     background: radial-gradient(circle at 86% 12%, rgba(255, 255, 255, .22), transparent 30%),
         radial-gradient(circle at 16% -12%, rgba(255, 255, 255, .18), transparent 32%),
         linear-gradient(135deg,
@@ -431,6 +530,11 @@
     border-color: transparent;
     color: #ffffff;
     box-shadow: 0px 1px 16px color-mix(in srgb, var(--primary) 28%, transparent);
+    overflow: hidden;
+}
+
+.weekly-streak-card.activity-collapsed {
+    padding-bottom: 18px;
 }
 
 .weekly-streak-card.at-risk {
@@ -455,7 +559,7 @@
 .weekly-streak-label {
     display: inline-block;
     vertical-align: middle;
-    color: var(--text);
+    color: rgba(255, 255, 255, .88);
     font-size: 15px;
     font-weight: 750;
     line-height: 1.1;
@@ -518,18 +622,18 @@
     align-items: baseline;
     gap: 8px;
     margin-top: 11px;
-    color: var(--text);
+    color: #ffffff;
     font-size: 36px;
     font-weight: 780;
     line-height: 1;
 }
 
 .weekly-streak-card:not(.at-risk) .weekly-streak-heading strong span:first-child {
-    color: var(--primary);
+    color: #ffffff;
 }
 
 .weekly-streak-heading strong em {
-    color: var(--muted);
+    color: rgba(255, 255, 255, .68);
     font-size: 17px;
     font-style: normal;
     font-weight: 690;
@@ -556,6 +660,81 @@
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18);
 }
 
+.weekly-streak-toggle-button {
+    position: absolute;
+    bottom: -17px;
+    left: 50%;
+    display: grid;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    transform: translateX(-50%);
+    z-index: 2;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.weekly-streak-toggle-button:before {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    width: 48px;
+    height: 14px;
+    border: 1px solid rgba(255,255,255,.16);
+    border-top: 0;
+    border-radius: 0 0 999px 999px;
+    content: "";
+    background: radial-gradient(circle at 50% 18%,#ffffff2e,#ffffff1a 56%,#ffffff08);
+    box-shadow: inset 0 1px #ffffff24,0 -6px 14px #ffffff0f;
+    transform: translate(-50%) translateY(3px) rotate(180deg);
+}
+
+.weekly-streak-toggle-button:focus {
+    outline: none;
+}
+
+.weekly-streak-toggle-button:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, .72);
+    outline-offset: -8px;
+}
+
+.weekly-streak-toggle-icon {
+    position: relative;
+    display: grid;
+    width: 32px;
+    height: 18px;
+    place-items: center;
+    border-radius: 999px;
+    background: transparent;
+    transition: background .16s ease, transform .16s ease;
+    transform: translateY(-1px);
+    z-index: 1;
+}
+
+.weekly-streak-toggle-button:hover .weekly-streak-toggle-icon,
+.weekly-streak-toggle-button:focus-visible .weekly-streak-toggle-icon {
+    background: transparent;
+}
+
+.weekly-streak-toggle-icon::before {
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid rgba(255, 255, 255, .82);
+    border-bottom: 2px solid rgba(255, 255, 255, .82);
+    content: "";
+    transform: translateY(4px) rotate(-135deg);
+    transition: transform .18s ease;
+}
+
+.weekly-streak-card.activity-collapsed .weekly-streak-toggle-icon::before {
+    transform: translateY(-2px) rotate(45deg);
+}
+
 .weekly-streak-badge {
     display: none;
     justify-self: end;
@@ -576,10 +755,10 @@
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 7px;
-    padding: 10px 9px;
+    padding: 8px 8px;
     border: 1px solid rgba(255, 255, 255, .16);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, .08);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .06);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10);
 }
 
@@ -594,7 +773,7 @@
 .streak-week small {
     overflow: hidden;
     max-width: 100%;
-    color: var(--muted);
+    color: rgba(255, 255, 255, .64);
     font-size: 9px;
     font-weight: 620;
     text-overflow: ellipsis;
@@ -603,12 +782,12 @@
 
 .streak-week strong {
     display: grid;
-    width: 31px;
-    height: 31px;
+    width: 28px;
+    height: 28px;
     place-items: center;
     border: 1px solid var(--line);
     border-radius: 999px;
-    background: rgba(255, 255, 255, .08);
+    background: rgba(255, 255, 255, .1);
     color: rgba(255, 255, 255, .72);
     font-size: 16px;
     font-weight: 760;
@@ -803,7 +982,7 @@
     min-height: 72px;
     padding: 11px 13px;
     border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
-    border-radius: 14px;
+    border-radius: 16px;
     background: var(--surface);
     color: var(--text);
     box-shadow: 0 2px 10px rgba(15, 23, 42, .025);
@@ -879,7 +1058,11 @@
 
 @media (max-width: 430px) {
     .weekly-streak-card {
-        padding: 14px 14px 13px;
+        padding: 14px 14px 24px;
+    }
+
+    .weekly-streak-card.activity-collapsed {
+        padding-bottom: 10px;
     }
 
     .weekly-streak-heading {
@@ -916,6 +1099,22 @@
     .streak-week strong {
         width: 30px;
         height: 30px;
+    }
+
+    .activity-calendar-grid {
+        gap: 6px;
+    }
+
+    .activity-calendar-shell {
+        gap: 10px;
+        padding: 16px 14px 14px;
+        border-radius: 16px;
+    }
+
+    .activity-calendar-day {
+        min-height: 42px;
+        border-radius: 10px;
+        font-size: 12px;
     }
 
     .workout-log-card {
@@ -1013,4 +1212,3 @@
     background: transparent;
     box-shadow: none;
 }
-

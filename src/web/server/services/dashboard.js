@@ -82,6 +82,20 @@ export async function getDashboard(user) {
             isCurrent: dateOnly(start) === currentWeekKey,
         };
     });
+    const calendarStart = addWeeks(currentWeekStart, -4);
+    const calendarEnd = addDays(currentWeekStart, 6);
+    const activityCalendarDays = Math.round((calendarEnd.getTime() - calendarStart.getTime()) / 86400000) + 1;
+    const activityCalendar = Array.from({length: activityCalendarDays}, (_unused, index) => {
+        const day = dateOnly(addDays(calendarStart, index));
+        return {
+            date: day,
+            day: Number(day.slice(8, 10)),
+            active: workoutDatesSet.has(day),
+            today: day === todayKey,
+            future: day > todayKey,
+            outsideMonth: day.slice(0, 7) !== todayKey.slice(0, 7),
+        };
+    });
 
     const todayDateLabel = formatDate(today, language, timezone, {month: "short", day: "numeric", year: "numeric"});
     const todayWeekdayLabel = new Intl.DateTimeFormat(t(language, "locale.date"), {
@@ -115,6 +129,7 @@ export async function getDashboard(user) {
             weeks: activity,
         },
         activity,
+        activityCalendar,
         lastSession: lastSessionBeforeToday ? workoutPayload(lastSessionBeforeToday, language, timezone) : null,
         recent,
     };
