@@ -530,7 +530,6 @@
     border-color: transparent;
     color: #ffffff;
     box-shadow: 0px 1px 16px color-mix(in srgb, var(--primary) 28%, transparent);
-    overflow: hidden;
 }
 
 .weekly-streak-card.activity-collapsed {
@@ -1177,6 +1176,7 @@
         radial-gradient(circle at 55% 35%, rgba(255, 255, 255, .12), transparent 3px),
         radial-gradient(circle at 62% 26%, rgba(255, 255, 255, .10), transparent 3px),
         radial-gradient(circle at 70% 44%, rgba(255, 255, 255, .10), transparent 3px);
+    border-radius: 16px;
     pointer-events: none;
 }
 
