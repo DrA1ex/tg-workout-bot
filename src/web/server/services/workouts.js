@@ -58,7 +58,22 @@ function achievementVolumeFor(row) {
     return row.sets * (row.weight || 1) * row.repsOrTime;
 }
 
+function emptyAchievements() {
+    return {
+        newVolumeRecord: false,
+        firstExerciseWorkout: false,
+        comebackAfterTwoMonths: false,
+        comebackAfterMonth: false,
+        hundredthWorkout: false,
+    };
+}
+
 export async function workoutAchievements(telegramId, workoutData, timezone = "UTC") {
+    const workoutDate = new Date(workoutData.date);
+    const workoutDateKey = dateKeyInTimezone(workoutDate, timezone);
+    const isTodayWorkout = workoutDateKey === dateKeyInTimezone(new Date(), timezone);
+    if (!isTodayWorkout) return emptyAchievements();
+
     const q = models.Workout.sequelize;
     const userWhere = {
         telegramId: String(telegramId),
@@ -78,9 +93,6 @@ export async function workoutAchievements(telegramId, workoutData, timezone = "U
         raw: true,
     });
     const currentVolume = achievementVolumeFor(workoutData);
-    const workoutDate = new Date(workoutData.date);
-    const workoutDateKey = dateKeyInTimezone(workoutDate, timezone);
-    const isTodayWorkout = workoutDateKey === dateKeyInTimezone(new Date(), timezone);
     const previousCount = Number(previous?.exerciseCount || 0);
     const bestPreviousVolume = Number(previous?.exerciseVolume || 0);
     const latestPreviousDate = previous?.exerciseDate ? new Date(previous.exerciseDate) : null;
@@ -92,7 +104,7 @@ export async function workoutAchievements(telegramId, workoutData, timezone = "U
     inactiveMonthThreshold.setMonth(inactiveMonthThreshold.getMonth() - 1);
 
     return {
-        newVolumeRecord: isTodayWorkout && previousCount > 0 && currentVolume > 0 && currentVolume > bestPreviousVolume,
+        newVolumeRecord: previousCount > 0 && currentVolume > 0 && currentVolume > bestPreviousVolume,
         firstExerciseWorkout: previousCount === 0,
         comebackAfterTwoMonths: Boolean(latestPreviousDate && latestPreviousDate <= staleThreshold),
         comebackAfterMonth: Boolean(latestUserWorkoutDate && latestUserWorkoutDate <= inactiveMonthThreshold),

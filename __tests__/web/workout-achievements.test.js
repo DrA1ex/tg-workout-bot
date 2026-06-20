@@ -74,8 +74,8 @@ describe("workoutAchievements", () => {
         expect(result).not.toHaveProperty("biggestDayVolume");
     });
 
-    it("does not count a volume record for a past-day workout", async () => {
-        const {workoutAchievements} = await loadService({
+    it("does not compute achievements for a past-day workout", async () => {
+        const {findOne, workoutAchievements} = await loadService({
             userCount: 5,
             userDate: "2026-06-18T07:00:00.000Z",
             exerciseCount: 2,
@@ -88,7 +88,14 @@ describe("workoutAchievements", () => {
             weight: 45,
         }), "+05:00");
 
-        expect(result.newVolumeRecord).toBe(false);
+        expect(findOne).not.toHaveBeenCalled();
+        expect(result).toEqual({
+            newVolumeRecord: false,
+            firstExerciseWorkout: false,
+            comebackAfterTwoMonths: false,
+            comebackAfterMonth: false,
+            hundredthWorkout: false,
+        });
     });
 
     it("counts bodyweight workouts as volume records using weight 1", async () => {
