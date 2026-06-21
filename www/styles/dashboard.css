@@ -680,7 +680,7 @@
 .weekly-streak-toggle-button:before {
     position: absolute;
     left: 50%;
-    bottom: 18px;
+    bottom: 19px;
     width: 48px;
     height: 14px;
     border: 1px solid rgba(255,255,255,.16);
@@ -688,7 +688,7 @@
     border-radius: 0 0 999px 999px;
     content: "";
     background: radial-gradient(circle at 50% 18%,#ffffff2e,#ffffff1a 56%,#ffffff08);
-    box-shadow: inset 0 1px #ffffff24,0 -6px 14px #ffffff0f;
+    box-shadow: inset 0 0px #ffffff24,0 -6px 14px #ffffff0f;
     transform: translate(-50%) translateY(3px) rotate(180deg);
 }
 
