@@ -188,7 +188,7 @@ function workoutValidationMessages(prefix) {
         [fields.exercise, fields.exercise.value ? "" : t("validation.required")],
         [fields.sets, numericFieldMessage(fields.sets, {min: 1})],
         [fields.weight, fields.hasWeight.checked
-            ? numericFieldMessage(fields.weight, {min: 0})
+            ? numericFieldMessage(fields.weight, {min: 0.5})
             : ""],
         [fields.reps, numericFieldMessage(fields.reps, {min: 1})],
     ]);
