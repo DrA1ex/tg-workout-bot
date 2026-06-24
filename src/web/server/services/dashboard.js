@@ -7,9 +7,13 @@ import {convertToUserTimezone, createDateGroupAttribute, dateKeyInTimezone, date
 import {addDays, addWeeks, dateOnly, shortWeekLabel, weekStartUtc} from "./dates.js";
 import {volumeFor, workoutPayload} from "./workouts.js";
 
-export async function getRecentWorkouts(telegramId, language, timezone, limit = 8) {
+export async function getRecentWorkouts(telegramId, language, timezone, {limit = 8, beforeDate = null} = {}) {
+    const where = {telegramId};
+    if (beforeDate) {
+        where.date = {[Op.lt]: beforeDate};
+    }
     const rows = await models.Workout.findAll({
-        where: {telegramId},
+        where,
         order: [["date", "DESC"], ["id", "DESC"]],
         limit,
     });
@@ -56,7 +60,7 @@ export async function getDashboard(user) {
         cursor = addDays(cursor, -7);
     }
 
-    const recent = await getRecentWorkouts(user.telegramId, language, timezone);
+    const recent = await getRecentWorkouts(user.telegramId, language, timezone, {beforeDate: todayStart});
     const lastSessionBeforeToday = await models.Workout.findOne({
         where: {
             telegramId: user.telegramId,

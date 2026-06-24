@@ -132,7 +132,15 @@ export function updateWorkoutInLoadedState(workout) {
 export function addWorkoutToLoadedState(workout, dateKey) {
     if (state.dashboard) {
         const isToday = dateKey === dashboardTodayKey();
-        const recent = [workout, ...(state.dashboard.recent || []).filter(row => String(row.id) !== String(workout.id))].slice(0, 8);
+        const recent = isToday
+            ? (state.dashboard.recent || []).filter(row => String(row.id) !== String(workout.id))
+            : [workout, ...(state.dashboard.recent || []).filter(row => String(row.id) !== String(workout.id))]
+                .sort((a, b) => {
+                    const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+                    if (dateDiff) return dateDiff;
+                    return Number(b.id) - Number(a.id);
+                })
+                .slice(0, 8);
         const todayWorkouts = state.dashboard.today?.workouts || [];
         state.dashboard = {
             ...state.dashboard,
@@ -143,7 +151,7 @@ export function addWorkoutToLoadedState(workout, dateKey) {
                     : todayWorkouts,
             },
             recent,
-            lastSession: recent[0] || workout,
+            lastSession: recent[0] || null,
         };
         renderDashboard();
     }

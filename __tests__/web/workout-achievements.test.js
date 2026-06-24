@@ -98,6 +98,25 @@ describe("workoutAchievements", () => {
         });
     });
 
+    it("computes achievements when the user's current day is behind UTC", async () => {
+        jest.setSystemTime(new Date("2026-06-20T02:30:00.000Z"));
+        const {findOne, workoutAchievements} = await loadService({
+            userCount: 5,
+            userDate: "2026-06-18T07:00:00.000Z",
+            exerciseCount: 2,
+            exerciseVolume: 1200,
+            exerciseDate: "2026-06-10T07:00:00.000Z",
+        });
+
+        const result = await workoutAchievements("42", weightedWorkout({
+            date: "2026-06-19T18:00:00.000Z",
+            weight: 45,
+        }), "America/New_York");
+
+        expect(findOne).toHaveBeenCalledTimes(1);
+        expect(result.newVolumeRecord).toBe(true);
+    });
+
     it("counts bodyweight workouts as volume records using weight 1", async () => {
         const {findOne, workoutAchievements} = await loadService({
             userCount: 5,
