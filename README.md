@@ -181,7 +181,7 @@ Build the WebUI:
 npm run build:web
 ```
 
-Install the Playwright Chromium runtime once, then run the real-application WebUI smoke tests:
+Install the Playwright Chromium runtime once, then run the real-application WebUI browser tests:
 
 ```bash
 npm run test:web:e2e:install
@@ -190,9 +190,11 @@ npm run test:web:e2e
 
 The E2E command builds the production client bundle, starts the real HTTP backend on a temporary SQLite database,
 enables the existing local development authentication mode for the isolated test user, and drives the interface in
-Chromium. It does not start or exercise the Telegram bot. The covered flows include core navigation, IANA timezone
-persistence, first-run onboarding, exercise management, workout CRUD, progress rendering, and editing historical
-workouts whose exercise is no longer in the catalog.
+Chromium. It does not start or exercise the Telegram bot. The suite contains 54 independent browser tests covering
+navigation and direct URLs, dashboard summaries, activity state, onboarding, workout form modes and validation,
+workout CRUD, history grouping and pagination, history error recovery, progress metrics and periods, chart compression,
+IANA timezone persistence, exercise management, and editing historical workouts whose exercise is no longer in the
+catalog. Visual-regression and browser login-widget tests are intentionally outside this suite.
 
 A locally installed Chromium can be used instead of the Playwright-managed browser:
 

@@ -6,8 +6,17 @@ node_modules/
 coverage/
 dist/
 
+/test-results/
+/playwright-report/
+/.tmp/
+
 db.sqlite
 *.sqlite-shm
 *.sqlite-wal
 
 .env
+
+# Playwright
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
