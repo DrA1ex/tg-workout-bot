@@ -184,9 +184,17 @@ export function bindHistoryNavigation() {
 
 export function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) return;
-    window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/sw.js").catch(error => {
+    window.addEventListener("load", async () => {
+        try {
+            const registration = await navigator.serviceWorker.register("/sw.js", {
+                updateViaCache: "none",
+            });
+            if (registration.waiting) {
+                registration.waiting.postMessage({type: "SKIP_WAITING"});
+            }
+            await registration.update();
+        } catch (error) {
             console.warn("Service worker registration failed:", error);
-        });
+        }
     });
 }

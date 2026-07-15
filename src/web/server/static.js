@@ -21,6 +21,21 @@ const types = {
     ".map": "application/json; charset=utf-8",
 };
 
+const REVALIDATED_EXTENSIONS = new Set([".html", ".css", ".js", ".mjs", ".webmanifest", ".map"]);
+
+function cacheHeaders(file, extension) {
+    if (file === "sw.js") {
+        return {
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+            "Service-Worker-Allowed": "/",
+        };
+    }
+    if (REVALIDATED_EXTENSIONS.has(extension)) {
+        return {"Cache-Control": "no-cache, must-revalidate"};
+    }
+    return {"Cache-Control": "public, max-age=86400"};
+}
+
 export async function serveStatic(res, pathname, publicDir) {
     let decoded;
     try {
@@ -35,10 +50,10 @@ export async function serveStatic(res, pathname, publicDir) {
 
     try {
         const data = await readFile(target);
-        const isHtml = path.extname(target) === ".html";
+        const extension = path.extname(target).toLowerCase();
         res.writeHead(200, {
-            "Content-Type": types[path.extname(target).toLowerCase()] || "application/octet-stream",
-            "Cache-Control": isHtml ? "no-cache" : "public, max-age=3600",
+            "Content-Type": types[extension] || "application/octet-stream",
+            ...cacheHeaders(file, extension),
         });
         res.end(data);
     } catch {
