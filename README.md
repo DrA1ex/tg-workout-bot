@@ -169,7 +169,7 @@ keys are used by the WebUI instead of the browser's local timezone.
 
 ## Testing
 
-Run the complete test suite:
+Run the unit and integration test suite:
 
 ```bash
 npm test
@@ -181,6 +181,29 @@ Build the WebUI:
 npm run build:web
 ```
 
+Install the Playwright Chromium runtime once, then run the real-application WebUI smoke tests:
+
+```bash
+npm run test:web:e2e:install
+npm run test:web:e2e
+```
+
+The E2E command builds the production client bundle, starts the real HTTP backend on a temporary SQLite database,
+enables the existing local development authentication mode for the isolated test user, and drives the interface in
+Chromium. It does not start or exercise the Telegram bot. The covered flows include core navigation, IANA timezone
+persistence, first-run onboarding, exercise management, workout CRUD, progress rendering, and editing historical
+workouts whose exercise is no longer in the catalog.
+
+A locally installed Chromium can be used instead of the Playwright-managed browser:
+
+```bash
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/path/to/chromium npm run test:web:e2e
+```
+
+Failure traces, screenshots, and the HTML report are written to `test-results/` and `playwright-report/`. Video is off
+by default to keep the test runtime small; enable retained failure videos with `PLAYWRIGHT_VIDEO=true`. Headed and UI
+runners are available through `npm run test:web:e2e:headed` and `npm run test:web:e2e:ui`.
+
 Optional coverage report:
 
 ```bash
@@ -188,7 +211,15 @@ npm run test:coverage
 ```
 
 The test configuration ignores macOS archive metadata such as `__MACOSX`. Project archives should not include those
-files, `node_modules`, generated `dist`, test databases, or SQLite WAL/SHM files.
+files, `node_modules`, generated `dist`, test databases, Playwright output, or SQLite WAL/SHM files.
+
+## Dependency installation policy
+
+The lock file resolves only through the public npm registry. Required native/postinstall scripts are approved by exact
+package version in `package.json#allowScripts`; upgrading one of those packages intentionally requires reviewing and
+updating the approval. Sequelize 6 still depends on the deprecated `dottie` npm package, so the fixed MIT-licensed
+2.0.7 compatibility implementation is vendored under `vendor/dottie` and covered by compatibility and
+prototype-pollution tests. Remove it when migrating to a Sequelize release that no longer needs `dottie`.
 
 ## Security notes
 

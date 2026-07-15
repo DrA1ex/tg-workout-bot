@@ -1,7 +1,7 @@
 export default {
     testEnvironment: 'node',
     testMatch: ['**/?(*.)+(spec|test).js'],
-    testPathIgnorePatterns: ['/node_modules/', '/__MACOSX/'],
+    testPathIgnorePatterns: ['/node_modules/', '/__MACOSX/', '/e2e/'],
     collectCoverageFrom: [
         'src/**/*.js',
         '!src/**/*.test.js',

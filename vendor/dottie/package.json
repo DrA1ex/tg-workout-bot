@@ -1,0 +1,8 @@
+{
+  "name": "dottie",
+  "version": "2.0.7",
+  "description": "Vendored MIT-licensed dottie compatibility module required by Sequelize 6",
+  "main": "dottie.js",
+  "license": "MIT",
+  "private": true
+}
