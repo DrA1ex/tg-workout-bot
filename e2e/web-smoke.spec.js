@@ -53,6 +53,7 @@ test("loads the real WebUI and navigates through core screens", async ({page, re
 
 test("completes first-run onboarding with a custom exercise", async ({page}) => {
     const problems = monitorBrowser(page);
+    const exerciseName = `E2E Onboarding Custom ${Date.now()}`;
     await page.route("https://telegram.org/**", route => route.fulfill({
         status: 200,
         contentType: "application/javascript",
@@ -61,9 +62,20 @@ test("completes first-run onboarding with a custom exercise", async ({page}) => 
     await page.goto("/", {waitUntil: "domcontentloaded"});
 
     await expect(page.locator("#onboarding-dialog")).toHaveJSProperty("open", true);
-    await page.locator("#onboarding-exercise-search").fill("E2E Squat");
-    await page.locator("[data-onboarding-add-search]").click();
+    const searchResponse = page.waitForResponse(response => {
+        const url = new URL(response.url());
+        return url.pathname === "/api/exercises/global"
+            && url.searchParams.get("search") === exerciseName
+            && response.ok();
+    });
+    await page.locator("#onboarding-exercise-search").fill(exerciseName);
+    await searchResponse;
+
+    const addSuggestion = page.locator("[data-onboarding-add-search]", {hasText: exerciseName});
+    await expect(addSuggestion).toBeVisible();
+    await addSuggestion.click();
     await expect(page.locator("#exercise-add-dialog")).toHaveJSProperty("open", true);
+    await expect(page.locator("#exercise-name")).toHaveValue(exerciseName);
     await page.locator("#exercise-notes").fill("Created during onboarding");
     await page.locator("#exercise-add-save").click();
 
@@ -74,7 +86,7 @@ test("completes first-run onboarding with a custom exercise", async ({page}) => 
     await expect(page.locator("#onboarding-dialog")).toHaveJSProperty("open", false);
     await expect(page.locator("#nav-add")).toBeEnabled();
     await page.locator("#nav-add").click();
-    await expect(page.locator("#workout-exercise option", {hasText: "E2E Squat"})).toHaveCount(1);
+    await expect(page.locator("#workout-exercise option", {hasText: exerciseName})).toHaveCount(1);
 
     await expectNoBrowserProblems(problems);
 });
