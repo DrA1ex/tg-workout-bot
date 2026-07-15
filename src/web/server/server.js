@@ -10,11 +10,14 @@ export function createWebServer({config, publicDir}) {
     const server = http.createServer(async (req, res) => {
         const requestId = crypto.randomUUID();
         res.setHeader("X-Request-Id", requestId);
-        applySecurityHeaders(res, {secure: config.cookieSecure});
 
         let url;
         try {
             url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+            applySecurityHeaders(res, {
+                secure: config.cookieSecure,
+                telegramLoginWidget: url.pathname === "/telegram-login-widget.html",
+            });
             if (url.pathname.startsWith("/api/")) {
                 return await handleApi(req, res, url, config);
             }

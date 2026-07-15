@@ -42,20 +42,47 @@ async function loadAuthConfig() {
     return state.authConfig;
 }
 
+const TELEGRAM_LOGIN_MESSAGE_SOURCE = "workout-log-telegram-login";
+let telegramLoginFrame = null;
+
+async function authenticateTelegramUser(user) {
+    try {
+        const auth = await authApi("telegram-login", {
+            method: "POST",
+            body: JSON.stringify(user),
+        });
+        await completeAuth(auth.user);
+    } catch (error) {
+        await showAuthScreen(error.message);
+    }
+}
+
+window.addEventListener("message", event => {
+    if (event.origin !== window.location.origin) return;
+    if (!telegramLoginFrame || event.source !== telegramLoginFrame.contentWindow) return;
+    if (event.data?.source !== TELEGRAM_LOGIN_MESSAGE_SOURCE) return;
+
+    if (event.data.type === "authenticated" && event.data.user) {
+        void authenticateTelegramUser(event.data.user);
+    } else if (event.data.type === "error" && event.data.message) {
+        $("#auth-message").textContent = event.data.message;
+    }
+});
+
 function renderTelegramLoginWidget(botUsername) {
     const container = $("#telegram-login-widget");
     container.innerHTML = "";
+    telegramLoginFrame = null;
     if (!botUsername) return;
 
-    const script = document.createElement("script");
-    script.src = "https://telegram.org/js/telegram-widget.js?22";
-    script.async = true;
-    script.dataset.telegramLogin = botUsername;
-    script.dataset.size = "large";
-    script.dataset.radius = "8";
-    script.dataset.requestAccess = "write";
-    script.dataset.onauth = "onTelegramLogin(user)";
-    container.appendChild(script);
+    const iframe = document.createElement("iframe");
+    iframe.className = "telegram-login-frame";
+    iframe.title = "Telegram Login";
+    iframe.src = `/telegram-login-widget.html?bot=${encodeURIComponent(botUsername)}`;
+    iframe.referrerPolicy = "same-origin";
+    iframe.setAttribute("scrolling", "no");
+    container.appendChild(iframe);
+    telegramLoginFrame = iframe;
 }
 
 export async function showAuthScreen(message) {
@@ -114,14 +141,6 @@ export async function ensureAuth() {
     }
 }
 
-window.onTelegramLogin = async user => {
-    try {
-        const auth = await authApi("telegram-login", {
-            method: "POST",
-            body: JSON.stringify(user),
-        });
-        await completeAuth(auth.user);
-    } catch (error) {
-        await showAuthScreen(error.message);
-    }
+window.onTelegramLogin = user => {
+    void authenticateTelegramUser(user);
 };

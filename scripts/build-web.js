@@ -19,6 +19,7 @@ const html = sourceHtml.replace(
     getStartupImageLinks(),
 );
 await writeFile(path.join(outDir, "index.html"), html);
+await cp(path.join(srcDir, "telegram-login-widget.html"), path.join(outDir, "telegram-login-widget.html"));
 await cp(path.join(srcDir, "manifest.webmanifest"), path.join(outDir, "manifest.webmanifest"));
 await cp(path.join(srcDir, "sw.js"), path.join(outDir, "sw.js"));
 await cp(path.join(srcDir, "icons"), path.join(outDir, "icons"), {recursive: true});
@@ -31,6 +32,16 @@ await esbuild.build({
     target: ["es2020"],
     outfile: path.join(outDir, "styles.css"),
     minify: true,
+});
+
+await esbuild.build({
+    entryPoints: [path.join(srcDir, "scripts", "telegram-login-frame.js")],
+    bundle: true,
+    format: "iife",
+    platform: "browser",
+    target: ["es2020"],
+    outfile: path.join(outDir, "assets", "telegram-login-frame.js"),
+    minify: process.env.NODE_ENV === "production",
 });
 
 await esbuild.build({

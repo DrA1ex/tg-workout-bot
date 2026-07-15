@@ -1,22 +1,41 @@
 import {HttpError} from "./errors.js";
 
-export function applySecurityHeaders(res, {secure = false} = {}) {
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("Referrer-Policy", "same-origin");
-    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-    res.setHeader("Content-Security-Policy", [
+function contentSecurityPolicy({telegramLoginWidget = false} = {}) {
+    if (telegramLoginWidget) {
+        return [
+            "default-src 'none'",
+            "base-uri 'none'",
+            "form-action https://oauth.telegram.org",
+            "frame-ancestors 'self'",
+            "frame-src https://oauth.telegram.org https://*.telegram.org",
+            "img-src data: https://*.telegram.org https://t.me",
+            "style-src 'unsafe-inline'",
+            "script-src 'self' https://telegram.org 'unsafe-eval'",
+            "connect-src https://telegram.org https://*.telegram.org",
+            "object-src 'none'",
+        ].join("; ");
+    }
+
+    return [
         "default-src 'self'",
         "base-uri 'self'",
         "form-action 'self' https://oauth.telegram.org",
         "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org",
-        "frame-src https://oauth.telegram.org https://*.telegram.org",
+        "frame-src 'self' https://oauth.telegram.org https://*.telegram.org",
         "img-src 'self' data: blob: https://*.telegram.org https://t.me",
         "style-src 'self' 'unsafe-inline'",
         "script-src 'self' https://telegram.org",
         "connect-src 'self'",
         "object-src 'none'",
-    ].join("; "));
+    ].join("; ");
+}
+
+export function applySecurityHeaders(res, {secure = false, telegramLoginWidget = false} = {}) {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "same-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    res.setHeader("Content-Security-Policy", contentSecurityPolicy({telegramLoginWidget}));
     if (secure) res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 }
 

@@ -51,3 +51,11 @@
     text-decoration: none;
 }
 
+
+.telegram-login-frame {
+    display: block;
+    width: 100%;
+    min-height: 52px;
+    border: 0;
+    background: transparent;
+}
