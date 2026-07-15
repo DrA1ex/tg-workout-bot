@@ -1,5 +1,5 @@
 // Extracted from main.js without changing feature behavior.
-import {currentLocale, formatMetricNumber, parseClientDate} from '../../core/utils.js';
+import {currentLocale, dateInputValueInTimezone, formatMetricNumber, formatUserDateKey, parseClientDate} from '../../core/utils.js';
 import {escapeHtml, state, t} from '../../deps.js';
 
 export function workoutRow(workout) {
@@ -71,9 +71,7 @@ export function workoutVolume(workout) {
 }
 
 export function workoutTimeLabel(workout) {
-    const date = parseClientDate(workout.date);
-    if (!date) return workout.dateLabel || "";
-    return date.toLocaleTimeString(currentLocale(), {hour: "numeric", minute: "2-digit"});
+    return workout.timeLabel || workout.dateLabel || "";
 }
 
 export function renderList(target, items, emptyKey) {
@@ -115,9 +113,8 @@ export function todaySubtitle(data) {
 }
 
 export function shortDateLabel(workout) {
-    const date = parseClientDate(workout?.date);
-    if (!date) return workout?.dateLabel || "";
-    return date.toLocaleDateString(currentLocale(), {day: "numeric", month: "short"});
+    const dateKey = workout?.dateKey || dateInputValueInTimezone(parseClientDate(workout?.date));
+    return formatUserDateKey(dateKey, {day: "numeric", month: "short"}) || workout?.dateLabel || "";
 }
 
 export function allWorkouts() {
@@ -135,7 +132,5 @@ export function findWorkout(id) {
 
 export function workoutDateInputValue(workout) {
     if (workout.dateKey) return workout.dateKey;
-    const date = parseClientDate(workout.date) || new Date();
-    const offset = date.getTimezoneOffset();
-    return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 10);
+    return dateInputValueInTimezone(parseClientDate(workout.date) || new Date());
 }

@@ -6,6 +6,7 @@ import {$, $$, api, interpolate, state, t, telegramWebApp} from '../../deps.js';
 import {closeSheetDialog, openSheetDialog, showToast} from '../../ui/dialogs.js';
 import {workoutDateInputValue, workoutDetail} from './presentation.js';
 import {updateWorkoutInLoadedState} from './state.js';
+import {refreshWorkoutData} from '../../data/workout-refresh.js';
 
 export function updateWorkoutFormState() {
     const disabled = state.savingWorkout || state.workoutSubmitted || state.exercises.length === 0;
@@ -181,11 +182,14 @@ function numericFieldMessage(control, {min = 0, requiredKey = "validation.requir
 function workoutValidationMessages(prefix) {
     const fields = workoutFormFields(prefix);
     const today = todayInputValue();
+    const lockedExerciseVisible = fields.exerciseLocked && !fields.exerciseLocked.hidden;
+    const exerciseControl = lockedExerciseVisible ? fields.exerciseLocked : fields.exercise;
+    const exerciseValue = lockedExerciseVisible ? fields.exerciseLocked.value : fields.exercise.value;
     return new Map([
         [fields.date, !fields.date.value
             ? t("validation.required")
             : fields.date.value > today ? t("validation.futureDate") : ""],
-        [fields.exercise, fields.exercise.value ? "" : t("validation.required")],
+        [exerciseControl, exerciseValue ? "" : t("validation.required")],
         [fields.sets, numericFieldMessage(fields.sets, {min: 1})],
         [fields.weight, fields.hasWeight.checked
             ? numericFieldMessage(fields.weight, {min: 0.5})
@@ -216,7 +220,7 @@ export function validateWorkoutForm(prefix) {
 
 export function clearWorkoutValidation(prefix) {
     const fields = workoutFormFields(prefix);
-    [fields.date, fields.exercise, fields.sets, fields.weight, fields.reps].forEach(control => setFieldValidation(control, ""));
+    [fields.date, fields.exercise, fields.exerciseLocked, fields.sets, fields.weight, fields.reps].forEach(control => setFieldValidation(control, ""));
 }
 
 export function bindWorkoutValidation() {
@@ -225,10 +229,12 @@ export function bindWorkoutValidation() {
         const form = prefix === "workout" ? $("#workout-form") : $("#edit-form");
         form.noValidate = true;
         const fields = workoutFormFields(prefix);
-        [fields.date, fields.exercise, fields.sets, fields.weight, fields.reps].forEach(control => {
-            control.addEventListener("input", () => updateWorkoutValidation(prefix));
-            control.addEventListener("change", () => updateWorkoutValidation(prefix));
-        });
+        [fields.date, fields.exercise, fields.exerciseLocked, fields.sets, fields.weight, fields.reps]
+            .filter(Boolean)
+            .forEach(control => {
+                control.addEventListener("input", () => updateWorkoutValidation(prefix));
+                control.addEventListener("change", () => updateWorkoutValidation(prefix));
+            });
         fields.hasWeight.addEventListener("change", () => updateWorkoutValidation(prefix));
         fields.isTime.addEventListener("change", () => updateWorkoutValidation(prefix));
     });
@@ -281,6 +287,12 @@ export async function saveEditedWorkout() {
         loader.cancel();
         await loader.waitForMinVisible();
         updateWorkoutInLoadedState(workout);
+        try {
+            await refreshWorkoutData();
+        } catch (refreshError) {
+            console.error(refreshError);
+            showToast("toast.refreshFailed", {variant: "danger"});
+        }
         state.savingEditedWorkout = false;
         state.editedWorkoutSaveLoading = false;
         state.editedWorkoutSubmitted = true;

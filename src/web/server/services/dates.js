@@ -1,3 +1,5 @@
+import {dateKeyInTimezone, startOfUserDate} from "../../../utils/timezone.js";
+
 export function weekStartUtc(date) {
     const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
     const day = d.getUTCDay() || 7;
@@ -24,9 +26,10 @@ export function shortWeekLabel(date) {
     return `${value.slice(8, 10)}.${value.slice(5, 7)}`;
 }
 
-export function periodStart(period) {
-    const now = new Date();
-    if (period === "30d") return addDays(now, -30);
-    if (period === "90d") return addDays(now, -90);
-    return null;
+export function periodStart(period, timezone = "UTC", now = new Date()) {
+    const days = period === "30d" ? 30 : period === "90d" ? 90 : null;
+    if (!days) return null;
+    const currentKey = dateKeyInTimezone(now, timezone);
+    const synthetic = new Date(`${currentKey}T00:00:00Z`);
+    return startOfUserDate(dateOnly(addDays(synthetic, -(days - 1))), timezone);
 }

@@ -124,26 +124,17 @@ export function renderLastSession(workout) {
 }
 
 export function renderActivity() {
-    const now = new Date();
-    const monday = new Date(now);
-    const day = monday.getDay() || 7;
-    monday.setDate(monday.getDate() - day + 1);
-    const activeDates = new Set((state.history?.groups || []).map(group => group.date));
-    const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-    $("#activity-strip").innerHTML = labels.map((label, index) => {
-        const date = new Date(monday);
-        date.setDate(monday.getDate() + index);
-        const key = date.toISOString().slice(0, 10);
-        const isToday = date.toDateString() === now.toDateString();
-        const isActive = activeDates.has(key);
-        return `
-            <div class="week-day ${isActive ? "done" : ""} ${isToday ? "today" : ""}">
-                <span>${label}</span>
-                <strong>${isActive ? "✓" : date.getDate()}</strong>
-            </div>
-        `;
-    }).join("");
+    const days = state.dashboard?.weekDays || [];
+    const labels = [
+        t("calendar.mon"), t("calendar.tue"), t("calendar.wed"), t("calendar.thu"),
+        t("calendar.fri"), t("calendar.sat"), t("calendar.sun"),
+    ];
+    $("#activity-strip").innerHTML = days.map((day, index) => `
+        <div class="week-day ${day.active ? "done" : ""} ${day.today ? "today" : ""} ${day.future ? "future" : ""}">
+            <span>${escapeHtml(labels[index] || "")}</span>
+            <strong>${day.active ? "✓" : day.day}</strong>
+        </div>
+    `).join("");
 }
 
 export function renderActivityCalendar(days) {

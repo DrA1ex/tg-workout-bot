@@ -53,6 +53,7 @@ export async function refreshHistoryOnly() {
         nextOffset: data.nextOffset || 0,
         loading: false,
         loaded: true,
+        error: "",
     };
     renderHistory();
 }

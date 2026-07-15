@@ -208,6 +208,7 @@ export async function saveOnboardingLanguage() {
     } catch (error) {
         console.error(error);
         showToast("toast.saveFailed", {variant: "danger"});
+        throw error;
     }
 }
 
@@ -227,9 +228,9 @@ export async function completeOnboarding() {
         window.clearTimeout(runtime.onboardingLanguageTimer);
         await saveOnboardingLanguage();
         if (selected.length) {
-            const data = await api("exercises/batch", {
-                method: "POST",
-                body: JSON.stringify({exercises: selected}),
+            const data = await api("exercises", {
+                method: "PATCH",
+                body: JSON.stringify({added: selected, deleted: []}),
             });
             syncExerciseState(data.exercises);
         }

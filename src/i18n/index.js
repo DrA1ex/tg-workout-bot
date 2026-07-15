@@ -111,19 +111,7 @@ export function t(language, key, params = {}) {
  * @returns {string} Formatted date
  */
 export function formatDate(date, language = 'en', timezone = 'UTC', options = {}) {
-    if (timezone && timezone !== 'UTC') {
-        return formatDateInTimezone(date, timezone, language, options);
-    }
-
-    // Fallback to original implementation for UTC
-    const locale = t(language, 'locale.date');
-    const defaultOptions = {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-    };
-
-    return new Intl.DateTimeFormat(locale, {...defaultOptions, ...options}).format(date);
+    return formatDateInTimezone(date, timezone || 'UTC', language, options);
 }
 
 /**

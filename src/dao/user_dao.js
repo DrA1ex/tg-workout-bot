@@ -91,13 +91,4 @@ export class UserDAO {
         return await this.update(telegramId, {timezone});
     }
 
-    /**
-     * Update user's exercises
-     * @param {string} telegramId - User's Telegram ID
-     * @param {Array} exercises - New exercises array
-     * @returns {Promise<Object>} Updated user object
-     */
-    static async updateExercises(telegramId, exercises) {
-        return await this.update(telegramId, {exercises: JSON.stringify(exercises)});
-    }
 }

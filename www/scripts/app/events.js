@@ -4,6 +4,7 @@ import {closeAddWorkoutDialog, closeExerciseAddRouteDialog, dialogFromUrl, navig
 import {runtime} from './core/runtime.js';
 import {createDelayedLoader, delay, nextAnimationFrame, normalizeTimezoneInputValue} from './core/utils.js';
 import {refreshAll} from './data/refresh.js';
+import {refreshWorkoutData} from './data/workout-refresh.js';
 import {$, $$, api, applyI18n, applyTheme, authApi, showAuthScreen, state} from './deps.js';
 import {renderDashboard, toggleActivityCalendar} from './features/dashboard/index.js';
 import {addGlobalExercise, deleteExercise, findExercise, loadGlobalExercises, openExerciseAddDialog, openExerciseDialog, renderExerciseScope, renderExercises, saveExerciseNotes, setExerciseAddPending, syncExerciseState} from './features/exercises/catalog.js';
@@ -67,6 +68,12 @@ export function bindEvents() {
             loader.cancel();
             await loader.waitForMinVisible();
             addWorkoutToLoadedState(workout, workoutDate);
+            try {
+                await refreshWorkoutData();
+            } catch (refreshError) {
+                console.error(refreshError);
+                showToast("toast.refreshFailed", {variant: "danger"});
+            }
             state.savingWorkout = false;
             state.workoutSaveLoading = false;
             state.workoutSubmitted = true;
@@ -155,10 +162,10 @@ export function bindEvents() {
             }
 
             const data = await api("exercises", {
-                method: "POST",
+                method: "PATCH",
                 body: JSON.stringify({
-                    name: createdName,
-                    notes: createdNotes,
+                    added: [{name: createdName, notes: createdNotes}],
+                    deleted: [],
                 }),
             });
             window.clearTimeout(loaderTimer);
@@ -492,6 +499,13 @@ export function bindEvents() {
         await saveExerciseNotes();
     });
     document.addEventListener("click", async event => {
+        const historyRetryButton = event.target.closest("[data-history-retry]");
+        if (historyRetryButton) {
+            const {loadHistory} = await import("./features/history/index.js");
+            await loadHistory({reset: true}).catch(console.error);
+            return;
+        }
+
         const quickAddButton = event.target.closest("[data-action='quick-add']");
         if (quickAddButton) {
             if (!state.appReady) return;

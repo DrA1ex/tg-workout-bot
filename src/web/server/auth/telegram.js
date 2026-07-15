@@ -4,13 +4,12 @@ import {UserDAO} from "../../../dao/index.js";
 import {AuthError} from "../errors.js";
 
 function requireBotToken(config) {
-    if (!config.botToken) {
-        throw new AuthError("BOT_TOKEN is required to verify Telegram auth");
-    }
+    if (!config.botToken) throw new AuthError("BOT_TOKEN is required to verify Telegram auth");
     return config.botToken;
 }
 
 function assertHash(expectedHash, calculatedHash, message) {
+    if (!/^[a-f0-9]{64}$/i.test(String(expectedHash || ""))) throw new AuthError(message);
     const expected = Buffer.from(expectedHash, "hex");
     const actual = Buffer.from(calculatedHash, "hex");
     if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) {
@@ -19,9 +18,21 @@ function assertHash(expectedHash, calculatedHash, message) {
 }
 
 function assertAuthDate(authDate, config, message) {
-    if (config.authMaxAgeSeconds <= 0 || !authDate) return;
-    const age = Math.floor(Date.now() / 1000) - Number(authDate);
-    if (age > config.authMaxAgeSeconds) throw new AuthError(message);
+    const value = Number(authDate);
+    if (!Number.isSafeInteger(value) || value <= 0) throw new AuthError("Telegram auth date is missing or invalid");
+    const now = Math.floor(Date.now() / 1000);
+    if (value > now + config.authFutureSkewSeconds) throw new AuthError("Telegram auth date is in the future");
+    if (now - value > config.authMaxAgeSeconds) throw new AuthError(message);
+}
+
+function parseTelegramUser(raw) {
+    try {
+        const user = JSON.parse(raw || "{}");
+        if (!user.id) throw new Error();
+        return user;
+    } catch {
+        throw new AuthError("Telegram user is missing or invalid");
+    }
 }
 
 export function verifyTelegramInitData(initData, config) {
@@ -39,11 +50,8 @@ export function verifyTelegramInitData(initData, config) {
     const secret = crypto.createHmac("sha256", "WebAppData").update(botToken).digest();
     const calculated = crypto.createHmac("sha256", secret).update(dataCheckString).digest("hex");
     assertHash(hash, calculated, "Telegram auth signature is invalid");
-    assertAuthDate(Number(params.get("auth_date") || 0), config, "Telegram auth data is expired");
-
-    const telegramUser = JSON.parse(params.get("user") || "{}");
-    if (!telegramUser.id) throw new AuthError("Telegram user is missing");
-    return telegramUser;
+    assertAuthDate(params.get("auth_date"), config, "Telegram auth data is expired");
+    return parseTelegramUser(params.get("user"));
 }
 
 export function verifyTelegramLoginData(payload, config) {
@@ -62,8 +70,7 @@ export function verifyTelegramLoginData(payload, config) {
     const calculated = crypto.createHmac("sha256", secret).update(dataCheckString).digest("hex");
 
     assertHash(hash, calculated, "Telegram login signature is invalid");
-    assertAuthDate(Number(data.auth_date || 0), config, "Telegram login data is expired");
-
+    assertAuthDate(data.auth_date, config, "Telegram login data is expired");
     if (!data.id) throw new AuthError("Telegram user is missing");
     return data;
 }

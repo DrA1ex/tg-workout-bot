@@ -1,5 +1,5 @@
 // Extracted from main.js without changing feature behavior.
-import {currentLocale, todayInputValue} from '../../core/utils.js';
+import {formatUserDateKey, todayInputValue} from '../../core/utils.js';
 import {state} from '../../deps.js';
 import {renderDashboard} from '../dashboard/index.js';
 import {renderExercises} from '../exercises/catalog.js';
@@ -13,17 +13,11 @@ export function dashboardTodayKey() {
 }
 
 function historyDateLabel(dateKey, fallback = "") {
-    const date = new Date(`${dateKey}T12:00:00`);
-    if (Number.isNaN(date.getTime())) return fallback || dateKey;
-    try {
-        return new Intl.DateTimeFormat(currentLocale(), {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-        }).format(date);
-    } catch {
-        return fallback || dateKey;
-    }
+    return formatUserDateKey(dateKey, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+    }) || fallback || dateKey;
 }
 
 export function removeWorkoutFromLoadedState(id) {

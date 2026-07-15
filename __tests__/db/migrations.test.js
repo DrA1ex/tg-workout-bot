@@ -25,23 +25,19 @@ describeWithSilencedConsole('Database Migrations', ['warn', 'error', 'log'], () 
 
     it('applies pending migrations and records versions', async () => {
         // Import after setting env to bind sequelize to our temp db
-        const {sequelize} = await import('../../src/db/index.js');
+        const {ensureDb, sequelize} = await import('../../src/db/index.js');
         const {runPendingMigrations} = await import('../../src/db/migrator.js');
 
-        await sequelize.authenticate();
-        await sequelize.sync();
-
-        // First run should apply 0001
-        await runPendingMigrations();
+        await ensureDb();
 
         let [rows] = await sequelize.query('SELECT version, name FROM migrations ORDER BY version');
         expect(Array.isArray(rows)).toBe(true);
         expect(rows.length).toBeGreaterThanOrEqual(1);
-        expect(rows[0].version).toBe('0001');
+        expect(rows[0].version).toBe('0000');
 
         // Idempotency: second run should not duplicate
         await runPendingMigrations();
-        const [rows2] = await sequelize.query('SELECT COUNT(*) as c FROM migrations WHERE version = "0001"');
+        const [rows2] = await sequelize.query('SELECT COUNT(*) as c FROM migrations WHERE version = "0000"');
         expect(rows2[0].c || rows2[0].C || rows2[0]['COUNT(*)']).toBe(1);
 
         // Users table should have timezone column (either via model or migration)
@@ -49,13 +45,23 @@ describeWithSilencedConsole('Database Migrations', ['warn', 'error', 'log'], () 
         const hasTimezone = cols.some(col => col.name === 'timezone');
         const hasTheme = cols.some(col => col.name === 'theme');
         const hasAccentColor = cols.some(col => col.name === 'accentColor');
+        const hasSessionVersion = cols.some(col => col.name === 'sessionVersion');
         expect(hasTimezone).toBe(true);
         expect(hasTheme).toBe(true);
         expect(hasAccentColor).toBe(true);
+        expect(hasSessionVersion).toBe(true);
 
         const [workoutCols] = await sequelize.query('PRAGMA table_info(workouts);');
         const hasDedupeToken = workoutCols.some(col => col.name === 'dedupeToken');
         expect(hasDedupeToken).toBe(true);
+
+        const [journalModeRows] = await sequelize.query('PRAGMA journal_mode;');
+        const journalMode = String(journalModeRows[0]?.journal_mode || journalModeRows[0]?.journalMode || '').toLowerCase();
+        expect(journalMode).toBe('wal');
+
+        const [busyTimeoutRows] = await sequelize.query('PRAGMA busy_timeout;');
+        const busyTimeout = Number(busyTimeoutRows[0]?.timeout ?? busyTimeoutRows[0]?.busy_timeout ?? Object.values(busyTimeoutRows[0] || {})[0]);
+        expect(busyTimeout).toBeGreaterThanOrEqual(5000);
 
         const [workoutIndexes] = await sequelize.query('PRAGMA index_list(workouts);');
         const workoutIndexNames = new Set(workoutIndexes.map(index => index.name));

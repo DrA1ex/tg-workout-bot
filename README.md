@@ -1,161 +1,204 @@
 # TG Workout Bot
 
-TG Workout Bot is an interactive Telegram bot for tracking bodybuilding, fitness, or other exercise routines. Designed
-for a smooth user experience, it leverages Telegram's rich interface features to make logging and viewing workouts
-intuitive and fast.
-
-## WebUI
+TG Workout Bot is a Telegram bot with a companion WebUI for logging workouts, managing exercises, reviewing history,
+and tracking progress. Both runtimes use the same SQLite database and the same data-access layer.
 
 <img width="400" alt="Screenshot" src="https://github.com/user-attachments/assets/21538094-16ea-497c-ac2e-7303b95c1b94" />
 
-## Features
+## Requirements
 
-- **Main Menu Keyboard:** Instantly access core actions (Add Workout, Add Exercise, View Progress, etc.) from a
-  persistent Telegram button menu.
-- **Step-by-Step Flows:** Each bot action guides you through simple steps—selecting dates, choosing exercises, entering
-  details—using Telegram messages and inline buttons.
-- **Inline Calendar Picker:** Select workout dates using a visual calendar embedded directly in the chat.
-- **Customizable Exercises:** Build your own exercise list and select from it when logging workouts.
-- **Progress Review:** View summaries and progress for each exercise, with easy selection via buttons.
-- **Workout History:** Browse logged workouts interactively.
-- **Language Selection:** Instantly switch bot language from the menu, for a localized experience.
+- Node.js 20 or newer
+- npm
+- A Telegram bot token from BotFather
+- HTTPS in production for Telegram authentication and secure cookies
 
 ## Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/DrA1ex/tg-workout-bot.git
-   cd tg-workout-bot
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Configuration:**
-    - Create a `.env` file in the root directory:
-      ```
-      BOT_TOKEN=your_telegram_bot_token
-      ```
-
-4. **Database:**
-    - The project uses `sqlite3` for storage, and will automatically create a `db.sqlite` file in the project directory
-      when started. No additional setup is required.
-
-5. **Run the bot:**
-   ```bash
-   npm start
-   ```
-
-## Usage
-
-- Start the bot on Telegram and press **Start**.
-- Use the on-screen keyboard to choose actions.
-- Follow prompts and interact using buttons and the inline calendar.
-- All workflows are tailored for quick, conversational input—no command memorization required.
-
-## Project Structure
-
-- `src/index.js` – Bot entry and main menu handler
-- `src/flows/` – User interaction flows for all main features
-- `src/runtime/` – Runtime and effect processing layer
-    - `runtime/index.js` – Flow runner: advances generator, routes results, manages session life cycle
-    - `runtime/flow-handler.js` – Flow utilities: interruption signal, cleanup, error handling, processing of generator
-      values
-    - `runtime/effect-processor.js` – Processes effects yielded by flows:
-        - Supported effect types: `response`, `response_markdown`, `string`, `choice`, `date`, `cancel`
-        - Returns `{type: 'wait'}` for effects that expect user input (`string`, `choice`, `date`)
-        - Returns `{type: 'cancel'}` for `cancel` (via `processEffect`)
-        - Returns `{type: 'continue'}` for other immediate effects and unknown types
-    - `runtime/message-handler.js` – Handles incoming text based on session state (`string`, `choice`, `date`)
-    - `runtime/callback-handler.js` – Handles inline button callbacks, including calendar events
-    - `runtime/calendar-handler.js` – Day/month/cancel processing for the inline calendar
-    - `runtime/session-manager.js` – In‑memory session store and helpers (`skipError`, `getSession`, etc.)
-- `src/modules/calendar.js` – Inline calendar markup generator
-- `src/i18n/` – Language support and translation lookup
-- `src/dao/`, `src/db/` – Persistence and migrations
-
-## Runtime Architecture Overview
-
-Flows are implemented as generator functions. The runtime pulls values from a flow and handles three categories:
-
-- Promises: awaited and fed back into the generator
-- Functions: executed with `(session.state, ctx)`; result or error is routed
-- Effects (plain objects with `type`): processed by `runtime/effect-processor.js`
-
-Effect outcomes drive the runner (`runtime/index.js`):
-
-- `{type: 'wait'}` – runtime pauses and waits for user input
-- `{type: 'cancel'}` – runtime cleans up and ends the session
-- `{type: 'continue'}` – runtime proceeds to the next generator step
-
-Unknown or malformed effects are treated as `{type: 'continue'}` (the flow keeps going). Flows that need to wait for
-user input must yield one of the waiting effects (`string`, `choice`, `date`).
-
-Inline calendar interactions are handled by `runtime/callback-handler.js` + `runtime/calendar-handler.js` and update the
-message markup, selected date, or cancel accordingly.
-
-## License
-
-MIT
-
----
-
-## Development & Testing
-
-### Install & Run
-
 ```bash
 npm install
+```
+
+Create a `.env` file in the project root:
+
+```dotenv
+BOT_TOKEN=123456789:telegram_bot_token
+WEB_SESSION_SECRET=replace-with-at-least-32-random-bytes
+WEB_BOT_USERNAME=your_bot_username
+
+# Optional
+SQLITE_FILE=./db.sqlite
+WEB_PORT=8080
+WEB_COOKIE_SECURE=true
+```
+
+Generate a session secret, for example:
+
+```bash
+openssl rand -base64 48
+```
+
+`WEB_SESSION_SECRET` is intentionally independent from `BOT_TOKEN`. The WebUI refuses to start when the session secret
+is missing, too short, or when a numeric/boolean WebUI setting is malformed.
+
+## Running the Telegram bot
+
+```bash
 npm start
 ```
 
-### Tests
+## Running the WebUI
 
-- Test runner: Jest (see `jest.config.js`)
-- Tests live under `__tests__/runtime/` and use light mocks from `__tests__/mocks/`
-    - Telegram context/session mocks: `__tests__/mocks/telegram-mocks.js`
-    - Console silencing helpers: `__tests__/mocks/console-mocks.js`
-
-Run the full test suite:
+Build the static client first:
 
 ```bash
-npm test
+npm run build:web
 ```
 
-### Database migrations
+Then start the HTTP server:
 
-The project uses a simple, versioned migration system built on top of Sequelize with SQLite. Migrations are plain JS
-files in `src/db/migrations/` named with an incremental version prefix:
+```bash
+npm run web
+```
 
-- `src/db/migrations/0001_timezone_column.js`
+The default address is `http://localhost:8080`. In production, place the server behind an HTTPS reverse proxy and keep
+`WEB_COOKIE_SECURE=true`.
 
-Each migration must export an `async function up(sequelize) { ... }` and perform idempotent changes.
+For local UI development only, Telegram authentication can be bypassed explicitly:
 
-Storage:
+```dotenv
+WEB_DEV_AUTH=true
+WEB_DEV_AUTH_TELEGRAM_ID=123456789
+WEB_COOKIE_SECURE=false
+```
 
-- Applied migrations are tracked in the `migrations` table with columns: `version`, `name`, `applied_at`.
+Do not enable development authentication on a public deployment.
 
-Run all pending migrations:
+## WebUI environment variables
+
+| Variable | Default | Description |
+| --- | ---: | --- |
+| `WEB_SESSION_SECRET` | none | Required HMAC secret, at least 32 bytes |
+| `WEB_PORT` / `PORT` | `8080` | HTTP listen port |
+| `WEB_BOT_USERNAME` | empty | Bot username used by the Telegram login UI |
+| `WEB_AUTH_MAX_AGE_SECONDS` | `86400` | Maximum age of Telegram authentication data |
+| `WEB_AUTH_FUTURE_SKEW_SECONDS` | `300` | Allowed clock skew for future `auth_date` values |
+| `WEB_SESSION_MAX_AGE_SECONDS` | `2592000` | Web session lifetime |
+| `WEB_SESSION_COOKIE` | `tg_workout_session` | Session cookie name |
+| `WEB_MAX_BODY_BYTES` | `131072` | Maximum JSON request-body size |
+| `WEB_REQUEST_TIMEOUT_MS` | `30000` | HTTP request timeout |
+| `WEB_COOKIE_SECURE` | production: `true` | Adds the `Secure` cookie flag and HSTS header |
+| `WEB_DEV_AUTH` | `false` | Enables local-only authentication bypass |
+| `WEB_DEV_AUTH_TELEGRAM_ID` | empty | User ID used by the local authentication bypass |
+
+## Database and migrations
+
+The project uses Sequelize with SQLite. It enables:
+
+- WAL journal mode for file-backed databases
+- `busy_timeout=5000`
+- foreign-key enforcement
+- retry handling for `SQLITE_BUSY` and `SQLITE_LOCKED`
+- a single connection per process
+
+The schema is migration-owned; the application no longer calls `sequelize.sync()`. Pending migrations are applied by
+`ensureDb()` when either runtime starts, and can also be applied explicitly before deployment:
 
 ```bash
 npm run migrate
 ```
 
-How it works:
-
-- On app startup `ensureDb()` calls `sequelize.sync()` and then applies pending migrations (`runPendingMigrations()`)
-- The CLI `npm run migrate` can be used in CI/CD or manually to apply migrations ahead of time
-- New migration example:
-
-```bash
-# create a new file: src/db/migrations/0002_add_notes_index.js
-```
+Migration files live in `src/db/migrations/` and use incrementing names such as
+`0006_session_version.js`. A migration exports:
 
 ```js
-// src/db/migrations/0002_add_notes_index.js
-export async function up(sequelize) {
-  await sequelize.query("CREATE INDEX IF NOT EXISTS workouts_notes_idx ON workouts(notes);");
+export async function up(sequelize, transaction) {
+    await sequelize.query(
+        "CREATE INDEX IF NOT EXISTS example_idx ON workouts (telegramId, date);",
+        {transaction},
+    );
 }
 ```
+
+Each migration and its version record are committed in the same SQLite `IMMEDIATE` transaction. The migration runner
+is idempotent and safe against two application processes attempting to apply the same pending migration.
+
+Back up `db.sqlite` before deploying schema changes. When WAL is active, use SQLite-aware backup tooling or stop both
+runtimes before copying the database files.
+
+## Exercise-write consistency
+
+User exercises are currently stored as a JSON array on the user row. All supported mutations now go through a shared
+service that:
+
+1. acquires a per-user in-process lock;
+2. starts an SQLite `IMMEDIATE` transaction;
+3. rereads and validates the latest JSON value;
+4. applies the requested `{added, deleted}` delta;
+5. writes the merged result.
+
+Malformed exercise JSON is treated as a data-integrity error and is never converted into an empty list. This protects
+against silent data loss while retaining compatibility with the existing schema.
+
+## Project structure
+
+```text
+src/
+  dao/                         Database access
+  db/                          Sequelize models and migrations
+  domain/                      Domain error types
+  flows/                       Telegram bot flows
+  runtime/                     Telegram flow runtime
+  utils/                       Shared date, timezone, backup, and lock utilities
+  web/server/
+    auth/                      Telegram and session authentication
+    routes/                    HTTP controllers grouped by feature
+    services/                  Web application services
+www/                           WebUI source files
+scripts/build-web.js           WebUI build
+__tests__/                     Unit and integration tests
+```
+
+The WebUI route layer resolves authentication and dispatches to feature controllers. Controllers parse HTTP input,
+services implement application behavior, and DAOs/models own persistence.
+
+## Timezones
+
+User timezones may be IANA identifiers such as `Europe/Berlin` or fixed offsets such as `+05:00`. IANA offsets are
+calculated for each relevant date through `Intl`, so daylight-saving changes are respected. Server-generated user date
+keys are used by the WebUI instead of the browser's local timezone.
+
+## Testing
+
+Run the complete test suite:
+
+```bash
+npm test
+```
+
+Build the WebUI:
+
+```bash
+npm run build:web
+```
+
+Optional coverage report:
+
+```bash
+npm run test:coverage
+```
+
+The test configuration ignores macOS archive metadata such as `__MACOSX`. Project archives should not include those
+files, `node_modules`, generated `dist`, test databases, or SQLite WAL/SHM files.
+
+## Security notes
+
+The WebUI validates Telegram `auth_date`, uses signed versioned session cookies, limits request bodies, applies request
+timeouts, sends a Content Security Policy and other browser security headers, and does not expose internal exception
+messages in HTTP 500 responses.
+
+Logging out increments the user's session version, invalidating all WebUI session tokens previously issued for that
+user. This is deliberately broader than deleting only the browser cookie.
+
+## License
+
+MIT

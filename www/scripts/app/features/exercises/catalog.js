@@ -185,9 +185,12 @@ export function setExerciseAddPending(pending, {loading = pending, saved = false
 }
 
 export async function loadGlobalExercises() {
+    const requestSeq = ++runtime.exerciseGlobalRequestSeq;
+    const requestSearch = state.exerciseSearch;
     const params = new URLSearchParams();
-    if (state.exerciseSearch) params.set("search", state.exerciseSearch);
+    if (requestSearch) params.set("search", requestSearch);
     const data = await api(`exercises/global${params.toString() ? `?${params.toString()}` : ""}`);
+    if (requestSeq !== runtime.exerciseGlobalRequestSeq || requestSearch !== state.exerciseSearch) return;
     state.globalExercises = data.exercises || [];
     renderExercises();
 }
@@ -239,7 +242,10 @@ export async function deleteExercise(name) {
         ? window.setTimeout(() => setSettingsExercisePending(name, "delete"), 180)
         : null;
     try {
-        const data = await api(`exercises/${encodeURIComponent(name)}`, {method: "DELETE"});
+        const data = await api("exercises", {
+            method: "PATCH",
+            body: JSON.stringify({added: [], deleted: [name]}),
+        });
         if (pendingTimer) window.clearTimeout(pendingTimer);
         if (animateSettings) setSettingsExercisePending(null, "", {render: false});
 
@@ -276,8 +282,8 @@ export async function addGlobalExercise(name) {
         : null;
     try {
         const data = await api("exercises", {
-            method: "POST",
-            body: JSON.stringify({name, notes: ""}),
+            method: "PATCH",
+            body: JSON.stringify({added: [{name, notes: ""}], deleted: []}),
         });
         if (pendingTimer) window.clearTimeout(pendingTimer);
         if (animateSettings) setSettingsExercisePending(null, "", {render: false});

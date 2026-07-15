@@ -9,6 +9,7 @@ export default function initModels(sequelize) {
         timezone: {type: DataTypes.STRING, allowNull: false, defaultValue: 'UTC'}, // Timezone preference
         theme: {type: DataTypes.STRING, allowNull: false, defaultValue: 'system'},
         accentColor: {type: DataTypes.STRING, allowNull: false, defaultValue: 'blue'},
+        sessionVersion: {type: DataTypes.INTEGER, allowNull: false, defaultValue: 0},
     }, {tableName: 'users', timestamps: false});
 
     const Workout = sequelize.define('Workout', {

@@ -1,17 +1,14 @@
 #!/usr/bin/env node
-import {sequelize} from './index.js';
-import {runPendingMigrations} from './migrator.js';
+import {ensureDb, sequelize} from './index.js';
 
 async function main() {
     try {
-        await sequelize.authenticate();
-        // Ensure base tables exist (models) before structural migrations
-        await sequelize.sync();
-        await runPendingMigrations();
+        await ensureDb();
         console.log('[migrations] all pending migrations applied');
+        await sequelize.close();
         process.exit(0);
-    } catch (err) {
-        console.error('[migrations] failed:', err);
+    } catch (error) {
+        console.error('[migrations] failed:', error);
         process.exit(1);
     }
 }

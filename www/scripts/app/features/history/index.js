@@ -6,75 +6,83 @@ import {workoutRow} from '../workouts/presentation.js';
 
 export function renderHistory() {
     const groups = state.history?.groups || [];
-    const isInitialLoading = (state.history?.loading || !state.history?.loaded) && !groups.length;
+    const isInitialLoading = (state.history?.loading || !state.history?.loaded) && !groups.length && !state.history?.error;
     $("#history-skeleton").hidden = !isInitialLoading;
     $("#history-list").hidden = isInitialLoading;
     $("#history-list").innerHTML = isInitialLoading
         ? ""
-        : groups.length
-        ? groups.map(group => `
-            <section class="day-group history-day-group">
-                <header>
-                    <span>${escapeHtml(group.label)}</span>
-                    <span>${group.workouts.length}</span>
-                </header>
-                <div class="list history-workout-list">${group.workouts.map(workoutRow).join("")}</div>
-            </section>
-        `).join("")
-        : `<div class="empty">${t("empty.history")}</div>`;
+        : state.history?.error && !groups.length
+            ? `<div class="empty"><p>${escapeHtml(state.history.error)}</p><button class="secondary-button" type="button" data-history-retry>${escapeHtml(t("actions.retry"))}</button></div>`
+            : groups.length
+                ? groups.map(group => `
+                    <section class="day-group history-day-group">
+                        <header><span>${escapeHtml(group.label)}</span><span>${group.workouts.length}</span></header>
+                        <div class="list history-workout-list">${group.workouts.map(workoutRow).join("")}</div>
+                    </section>
+                `).join("")
+                : `<div class="empty">${t("empty.history")}</div>`;
     $("#history-sentinel").hidden = isInitialLoading || !state.history?.hasMore || !groups.length;
     $("#history-sentinel").textContent = state.history?.loading ? t("actions.loading") : "";
 }
 
 export function ensureHistoryLoaded() {
     if (state.history?.loaded || state.history?.loading) return;
-    if (!state.user) {
-        renderHistory();
-        return;
-    }
+    if (!state.user) return renderHistory();
     loadHistory({reset: true, limit: HISTORY_INITIAL_SIZE}).catch(console.error);
 }
 
 export async function loadHistory({reset = false, limit = HISTORY_PAGE_SIZE} = {}) {
     if (state.history?.loading) return;
     if (!reset && !state.history?.hasMore) return;
+    const previousGroups = reset ? [] : (state.history?.groups || []);
     const offset = reset ? 0 : (state.history?.nextOffset || 0);
     state.history = {
-        groups: reset ? [] : (state.history?.groups || []),
+        groups: previousGroups,
         hasMore: reset ? false : Boolean(state.history?.hasMore),
         nextOffset: offset,
         loading: true,
-        loaded: false,
+        loaded: !reset && Boolean(state.history?.loaded),
+        error: "",
     };
     renderHistory();
 
-    const data = await api(`history?offset=${offset}&limit=${limit}`);
-    state.history = {
-        groups: reset ? data.groups : [...(state.history?.groups || []), ...(data.groups || [])],
-        hasMore: Boolean(data.hasMore),
-        nextOffset: data.nextOffset || 0,
-        loading: false,
-        loaded: true,
-    };
-    renderHistory();
+    try {
+        const data = await api(`history?offset=${offset}&limit=${limit}`);
+        state.history = {
+            groups: reset ? (data.groups || []) : [...previousGroups, ...(data.groups || [])],
+            hasMore: Boolean(data.hasMore),
+            nextOffset: data.nextOffset || 0,
+            loading: false,
+            loaded: true,
+            error: "",
+        };
+    } catch (error) {
+        state.history = {
+            groups: previousGroups,
+            hasMore: Boolean(state.history?.hasMore),
+            nextOffset: offset,
+            loading: false,
+            loaded: Boolean(previousGroups.length),
+            error: error.message || t("toast.refreshFailed"),
+        };
+        throw error;
+    } finally {
+        renderHistory();
+    }
 }
 
 export function setupHistoryInfiniteScroll() {
     const sentinel = $("#history-sentinel");
     if (!sentinel || runtime.historyObserver) return;
-
     if (!("IntersectionObserver" in window)) {
         window.addEventListener("scroll", () => {
             if (state.tab !== "history" || state.history?.loading || !state.history?.hasMore) return;
-            const nearBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 240;
-            if (nearBottom) loadHistory().catch(console.error);
+            if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 240) loadHistory().catch(console.error);
         }, {passive: true});
         return;
     }
-
     runtime.historyObserver = new IntersectionObserver(entries => {
-        const visible = entries.some(entry => entry.isIntersecting);
-        if (!visible || state.tab !== "history" || state.history?.loading || !state.history?.hasMore) return;
+        if (!entries.some(entry => entry.isIntersecting) || state.tab !== "history" || state.history?.loading || !state.history?.hasMore) return;
         loadHistory().catch(console.error);
     }, {root: null, rootMargin: "240px 0px", threshold: 0});
     runtime.historyObserver.observe(sentinel);

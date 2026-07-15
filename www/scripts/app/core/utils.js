@@ -10,7 +10,7 @@ export function normalizeTimezoneInputValue(value) {
     if (!match) return text;
 
     const hours = Number.parseInt(match[2], 10);
-    if (hours > 12) return text;
+    if (hours > 14 || (hours === 14 && match[3] !== "00")) return text;
     return `${match[1]}${String(hours).padStart(2, "0")}:${match[3]}`;
 }
 
@@ -87,8 +87,40 @@ export function delay(ms) {
     return new Promise(resolve => window.setTimeout(resolve, ms));
 }
 
+export function dateInputValueInTimezone(value, timezoneValue = state.user?.timezone || "UTC") {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const timezone = normalizeTimezoneInputValue(timezoneValue || "UTC");
+    if (timezone === "UTC") return date.toISOString().slice(0, 10);
+    const offset = timezone.match(/^([+-])(\d{2}):([0-5]\d)$/);
+    if (offset) {
+        const minutes = (Number(offset[2]) * 60 + Number(offset[3])) * (offset[1] === "+" ? 1 : -1);
+        return new Date(date.getTime() + minutes * 60000).toISOString().slice(0, 10);
+    }
+    try {
+        const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+            timeZone: timezone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+        }).formatToParts(date).filter(part => part.type !== "literal").map(part => [part.type, part.value]));
+        return `${parts.year}-${parts.month}-${parts.day}`;
+    } catch {
+        return date.toISOString().slice(0, 10);
+    }
+}
+
+export function formatUserDateKey(dateKey, options = {}) {
+    const match = String(dateKey || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return "";
+    const date = new Date(`${dateKey}T12:00:00Z`);
+    try {
+        return new Intl.DateTimeFormat(currentLocale(), {...options, timeZone: "UTC"}).format(date);
+    } catch {
+        return dateKey;
+    }
+}
+
 export function todayInputValue() {
-    const d = new Date();
-    const offset = d.getTimezoneOffset();
-    return new Date(d.getTime() - offset * 60000).toISOString().slice(0, 10);
+    return state.dashboard?.today?.key || dateInputValueInTimezone(new Date());
 }

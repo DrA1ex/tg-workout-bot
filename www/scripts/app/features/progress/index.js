@@ -1,5 +1,6 @@
 // Extracted from main.js without changing feature behavior.
-import {currentLocale, parseClientDate} from '../../core/utils.js';
+import {currentLocale} from '../../core/utils.js';
+import {runtime} from '../../core/runtime.js';
 import {$, $$, api, escapeHtml, state, t} from '../../deps.js';
 import {workoutDetail} from '../workouts/presentation.js';
 
@@ -23,8 +24,13 @@ export function renderProgress() {
 
     const metric = state.progressMetric;
     const values = data.points.map(point => metricValue(point, metric));
-    const bestValue = Math.max(...values, 0);
-    const averageValue = values.reduce((sum, value) => sum + value, 0) / values.length;
+    const bestValue = progressAggregateValue(data, metric, "best", Math.max(...values, 0));
+    const averageValue = progressAggregateValue(
+        data,
+        metric,
+        "average",
+        values.reduce((sum, value) => sum + value, 0) / values.length,
+    );
 
     $("#progress-best").textContent = formatMetricWithUnit(bestValue, metric);
     $("#progress-latest").textContent = formatMetricWithUnit(averageValue, metric);
@@ -100,6 +106,18 @@ export function metricValue(point, metric) {
     return point.weight || 0;
 }
 
+export function progressAggregateValue(data, metric, kind, fallback = 0) {
+    const suffix = ({
+        weight: "Weight",
+        volume: "Volume",
+        repsOrTime: "RepsOrTime",
+        repsTotal: "RepsTotal",
+        sets: "Sets",
+    })[metric];
+    const value = suffix ? data?.summary?.[`${kind}${suffix}`] : null;
+    return Number.isFinite(Number(value)) ? Number(value) : fallback;
+}
+
 export function formatMetric(value, metric) {
     const rounded = Number.isInteger(value) ? value : Number(value.toFixed(1));
     if (metric === "weight") return rounded ? `${rounded}` : "0";
@@ -137,12 +155,9 @@ export function progressSummaryMetricLabel(metric) {
 export function renderProgressRecent(rows) {
     const data = state.progress;
     const metric = progressRecordMetric(data);
-    const metricValues = (data?.points || []).map(point => metricValue(point, metric));
-    const uniqueMetricValues = new Set(metricValues);
-    const bestMetricValue = Math.max(...metricValues, 0);
-    const prPoint = uniqueMetricValues.size > 1
-        ? (data?.points || []).find(point => metricValue(point, metric) === bestMetricValue)
-        : null;
+    const recordId = metric === "volume"
+        ? data?.summary?.bestVolumeRecordId
+        : data?.summary?.bestRepsTotalRecordId;
     $("#progress-recent").innerHTML = rows.length
         ? rows.map(row => `
             <button class="progress-record-row" type="button" data-edit-workout="${row.id}">
@@ -151,7 +166,7 @@ export function renderProgressRecent(rows) {
                     <strong>${escapeHtml(row.dateLabel)}</strong>
                     <small>${escapeHtml(workoutDetail(row))}</small>
                 </span>
-                ${prPoint?.id === row.id ? `<span class="progress-pr-badge">${t("progress.pr")}</span>` : ""}
+                ${String(recordId || "") === String(row.id) ? `<span class="progress-pr-badge">${t("progress.pr")}</span>` : ""}
                 <span class="progress-record-chevron">›</span>
             </button>
         `).join("")
@@ -231,9 +246,7 @@ export function formatAxisValue(value, metric) {
 }
 
 export function chartDateLabel(point) {
-    const date = parseClientDate(point?.date);
-    if (!date) return point?.label || "";
-    return date.toLocaleDateString(currentLocale(), {month: "short", day: "numeric"});
+    return point?.label || "";
 }
 
 export function ensureProgressLoaded() {
@@ -246,6 +259,10 @@ export function ensureProgressLoaded() {
 }
 
 export async function loadProgress() {
+    const requestSeq = ++runtime.progressRequestSeq;
+    runtime.progressController?.abort();
+    const controller = new AbortController();
+    runtime.progressController = controller;
     state.progressLoading = true;
     renderProgress();
     const exercise = $("#progress-exercise").value || state.exercises[0]?.name || "";
@@ -254,11 +271,19 @@ export async function loadProgress() {
     if (exercise) params.set("exercise", exercise);
     params.set("period", state.progressPeriod);
     try {
-        state.progress = await api(`progress?${params.toString()}`);
+        const data = await api(`progress?${params.toString()}`, {signal: controller.signal});
+        if (requestSeq !== runtime.progressRequestSeq) return;
+        state.progress = data;
         state.progressLoaded = true;
         if (state.progress.exercise) $("#progress-exercise").value = state.progress.exercise;
+    } catch (error) {
+        if (controller.signal.aborted) return;
+        throw error;
     } finally {
-        state.progressLoading = false;
-        renderProgress();
+        if (requestSeq === runtime.progressRequestSeq) {
+            state.progressLoading = false;
+            runtime.progressController = null;
+            renderProgress();
+        }
     }
 }

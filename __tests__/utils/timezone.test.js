@@ -16,9 +16,9 @@ describe("timezone utilities", () => {
         expect(normalizeTimezoneOffset("utc")).toBe("UTC");
     });
 
-    it("normalizes known timezone names to offsets", () => {
-        expect(normalizeTimezoneOffset("Asia/Yekaterinburg")).toBe("+05:00");
-        expect(normalizeTimezoneOffset("Europe/Moscow")).toBe("+03:00");
+    it("preserves IANA timezone names so DST can be calculated for each date", () => {
+        expect(normalizeTimezoneOffset("Asia/Yekaterinburg")).toBe("Asia/Yekaterinburg");
+        expect(normalizeTimezoneOffset("Europe/Berlin")).toBe("Europe/Berlin");
     });
 
     it("validates timezone inputs", () => {
@@ -27,7 +27,8 @@ describe("timezone utilities", () => {
         expect(isValidTimezone("+05:00")).toBe(true);
         expect(isValidTimezone("Asia/Yekaterinburg")).toBe(true);
         expect(isValidTimezone("Europe/Mosc")).toBe(false);
-        expect(isValidTimezone("+13:00")).toBe(false);
+        expect(isValidTimezone("+13:00")).toBe(true);
+        expect(isValidTimezone("+14:30")).toBe(false);
     });
 
     it("uses normalized offsets for SQLite modifiers", () => {
@@ -41,6 +42,13 @@ describe("timezone utilities", () => {
         expect(getTimezoneOffsetMinutes("+5:00")).toBe(300);
         expect(getTimezoneOffsetMinutes("-3:30")).toBe(-210);
         expect(getTimezoneOffsetMinutes("Asia/Yekaterinburg")).toBe(300);
+    });
+
+    it("uses the date-specific DST offset for IANA zones", () => {
+        expect(getTimezoneOffsetMinutes("America/New_York", new Date("2026-01-15T12:00:00Z"))).toBe(-300);
+        expect(getTimezoneOffsetMinutes("America/New_York", new Date("2026-06-15T12:00:00Z"))).toBe(-240);
+        expect(startOfUserDate("2026-06-23", "America/New_York").toISOString()).toBe("2026-06-23T04:00:00.000Z");
+        expect(startOfUserDate("2026-01-23", "America/New_York").toISOString()).toBe("2026-01-23T05:00:00.000Z");
     });
 
     it("creates UTC dates from user date input using user timezone noon", () => {

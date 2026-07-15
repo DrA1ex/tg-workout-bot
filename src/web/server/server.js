@@ -1,25 +1,35 @@
+import crypto from "node:crypto";
 import http from "node:http";
 
-import {AuthError} from "./errors.js";
-import {sendJson} from "./http.js";
+import {HttpError} from "./errors.js";
+import {applySecurityHeaders, sendJson} from "./http.js";
 import {handleApi} from "./routes/api.js";
 import {serveStatic} from "./static.js";
 
 export function createWebServer({config, publicDir}) {
-    return http.createServer(async (req, res) => {
-        const url = new URL(req.url, `http://${req.headers.host}`);
+    const server = http.createServer(async (req, res) => {
+        const requestId = crypto.randomUUID();
+        res.setHeader("X-Request-Id", requestId);
+        applySecurityHeaders(res, {secure: config.cookieSecure});
 
+        let url;
         try {
+            url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
             if (url.pathname.startsWith("/api/")) {
                 return await handleApi(req, res, url, config);
             }
             return await serveStatic(res, url.pathname, publicDir);
         } catch (error) {
-            console.error(error);
-            if (error instanceof AuthError) {
-                return sendJson(res, 401, {error: error.message});
+            if (error instanceof HttpError) {
+                return sendJson(res, error.status, {error: error.message, code: error.code});
             }
-            return sendJson(res, 500, {error: error.message || "Internal server error"});
+            console.error(`[web:${requestId}]`, error);
+            return sendJson(res, 500, {error: "Internal server error", code: "INTERNAL_ERROR"});
         }
     });
+
+    server.requestTimeout = config.requestTimeoutMs;
+    server.headersTimeout = Math.min(config.requestTimeoutMs + 5000, 305_000);
+    server.keepAliveTimeout = 5000;
+    return server;
 }

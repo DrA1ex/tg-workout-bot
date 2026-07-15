@@ -3,6 +3,7 @@ import {Op} from "sequelize";
 
 async function loadService() {
     const getWorkoutsByDate = jest.fn().mockResolvedValue([]);
+    const getDatesWithWorkouts = jest.fn().mockResolvedValue([]);
     const findAll = jest.fn().mockResolvedValue([]);
     const findOne = jest.fn().mockResolvedValue(null);
     const sequelize = {
@@ -17,7 +18,7 @@ async function loadService() {
             findByTelegramId: jest.fn(),
             findLanguageByTelegramId: jest.fn(),
         },
-        WorkoutDAO: {getWorkoutsByDate},
+        WorkoutDAO: {getWorkoutsByDate, getDatesWithWorkouts},
     }));
     jest.unstable_mockModule("../../src/db/index.js", () => ({
         models: {
@@ -30,7 +31,7 @@ async function loadService() {
     }));
 
     const {getDashboard} = await import("../../src/web/server/services/dashboard.js");
-    return {findAll, findOne, getDashboard, getWorkoutsByDate};
+    return {findAll, findOne, getDashboard, getWorkoutsByDate, getDatesWithWorkouts};
 }
 
 describe("dashboard service", () => {
@@ -74,7 +75,7 @@ describe("dashboard service", () => {
         expect(getWorkoutsByDate).toHaveBeenCalledWith("42", "2026-06-23", "America/New_York");
 
         const recentCall = findAll.mock.calls.find(([options]) => options.limit === 8);
-        expect(recentCall?.[0].where.date[Op.lt].toISOString()).toBe("2026-06-23T05:00:00.000Z");
-        expect(findOne.mock.calls[0][0].where.date[Op.lt].toISOString()).toBe("2026-06-23T05:00:00.000Z");
+        expect(recentCall?.[0].where.date[Op.lt].toISOString()).toBe("2026-06-23T04:00:00.000Z");
+        expect(findOne.mock.calls[0][0].where.date[Op.lt].toISOString()).toBe("2026-06-23T04:00:00.000Z");
     });
 });

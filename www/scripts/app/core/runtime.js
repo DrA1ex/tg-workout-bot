@@ -17,4 +17,7 @@ export const runtime = {
     onboardingLanguageTimer: null,
     onboardingMoveTimer: null,
     onboardingGlobalRequestSeq: 0,
+    exerciseGlobalRequestSeq: 0,
+    progressRequestSeq: 0,
+    progressController: null,
 };

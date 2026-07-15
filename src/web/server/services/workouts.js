@@ -1,7 +1,39 @@
+import {fn, literal} from "sequelize";
+
+import {models} from "../../../db/index.js";
 import {formatDate} from "../../../i18n/index.js";
 import {dateFromUserDateInput, dateKeyInTimezone} from "../../../utils/timezone.js";
-import {models} from "../../../db/index.js";
-import {fn, literal} from "sequelize";
+
+const LIMITS = Object.freeze({
+    exerciseLength: 120,
+    notesLength: 2000,
+    sets: 1000,
+    weight: 1_000_000,
+    repsOrTime: 1_000_000,
+});
+
+function parseBoolean(value, fieldName) {
+    if (value === true || value === "true" || value === 1 || value === "1") return true;
+    if (value === false || value === "false" || value === 0 || value === "0" || value == null || value === "") return false;
+    throw new Error(`${fieldName} must be a boolean`);
+}
+
+function parsePositiveInteger(value, fieldName, max) {
+    const numeric = typeof value === "number" ? value : Number(String(value || "").trim());
+    if (!Number.isSafeInteger(numeric) || numeric <= 0 || numeric > max) {
+        throw new Error(`${fieldName} must be an integer between 1 and ${max}`);
+    }
+    return numeric;
+}
+
+function parsePositiveNumber(value, fieldName, max, {allowZero = false} = {}) {
+    const numeric = typeof value === "number" ? value : Number(String(value || "").trim());
+    const minimumValid = allowZero ? numeric >= 0 : numeric > 0;
+    if (!Number.isFinite(numeric) || !minimumValid || numeric > max) {
+        throw new Error(`${fieldName} must be ${allowZero ? "between 0" : "greater than 0"} and ${max}`);
+    }
+    return numeric;
+}
 
 export function workoutPayload(row, language, timezone) {
     return {
@@ -13,7 +45,7 @@ export function workoutPayload(row, language, timezone) {
         sets: row.sets,
         weight: row.weight,
         repsOrTime: row.repsOrTime,
-        isTime: row.isTime,
+        isTime: Boolean(row.isTime),
         notes: row.notes || "",
         summary: row.formatStringWithoutDate(language),
     };
@@ -21,21 +53,21 @@ export function workoutPayload(row, language, timezone) {
 
 export function parseWorkoutBody(body, fallbackDate = new Date(), timezone = "UTC") {
     const exercise = String(body.exercise || "").trim();
-    const dateInput = body.date ? String(body.date) : dateKeyInTimezone(fallbackDate, timezone);
+    const notes = String(body.notes || "").trim();
+    const dateInput = body.date ? String(body.date).trim() : dateKeyInTimezone(fallbackDate, timezone);
     const date = dateFromUserDateInput(dateInput, timezone);
     if (dateInput > dateKeyInTimezone(new Date(), timezone)) throw new Error("Date cannot be in the future");
-    const sets = Number.parseInt(body.sets, 10);
-    const repsOrTime = Number.parseFloat(body.repsOrTime);
-    const hasWeight = body.hasWeight === true || body.hasWeight === "true";
-    const weight = hasWeight
-        ? Number.parseFloat(body.weight)
-        : body.weight === "" || body.weight == null ? null : Number.parseFloat(body.weight);
-
     if (!exercise) throw new Error("Exercise is required");
-    if (!Number.isFinite(sets) || sets <= 0) throw new Error("Sets must be a positive number");
-    if (!Number.isFinite(repsOrTime) || repsOrTime <= 0) throw new Error("Reps or time must be a positive number");
-    if (hasWeight && (!Number.isFinite(weight) || weight < 0)) throw new Error("Weight must be a valid number");
-    if (!hasWeight && weight != null && (!Number.isFinite(weight) || weight < 0)) throw new Error("Weight must be a valid number");
+    if (exercise.length > LIMITS.exerciseLength) throw new Error(`Exercise must be at most ${LIMITS.exerciseLength} characters`);
+    if (notes.length > LIMITS.notesLength) throw new Error(`Notes must be at most ${LIMITS.notesLength} characters`);
+
+    const sets = parsePositiveInteger(body.sets, "Sets", LIMITS.sets);
+    const repsOrTime = parsePositiveNumber(body.repsOrTime, "Reps or time", LIMITS.repsOrTime);
+    const hasWeight = parseBoolean(body.hasWeight, "hasWeight");
+    const isTime = parseBoolean(body.isTime, "isTime");
+    const weight = hasWeight
+        ? parsePositiveNumber(body.weight, "Weight", LIMITS.weight, {allowZero: true})
+        : null;
 
     return {
         date: date.toISOString(),
@@ -43,19 +75,21 @@ export function parseWorkoutBody(body, fallbackDate = new Date(), timezone = "UT
         sets,
         weight,
         repsOrTime,
-        isTime: Boolean(body.isTime),
-        notes: String(body.notes || "").trim(),
+        isTime,
+        notes,
     };
 }
 
 export function volumeFor(row) {
     if (row.isTime || !row.weight || !row.repsOrTime || !row.sets) return 0;
-    return row.sets * row.weight * row.repsOrTime;
+    const volume = row.sets * row.weight * row.repsOrTime;
+    return Number.isFinite(volume) ? volume : 0;
 }
 
 function achievementVolumeFor(row) {
     if (row.isTime || !row.repsOrTime || !row.sets) return 0;
-    return row.sets * (row.weight || 1) * row.repsOrTime;
+    const volume = row.sets * (row.weight || 1) * row.repsOrTime;
+    return Number.isFinite(volume) ? volume : 0;
 }
 
 function emptyAchievements() {
@@ -71,18 +105,14 @@ function emptyAchievements() {
 export async function workoutAchievements(telegramId, workoutData, timezone = "UTC") {
     const workoutDate = new Date(workoutData.date);
     const workoutDateKey = dateKeyInTimezone(workoutDate, timezone);
-    const isTodayWorkout = workoutDateKey === dateKeyInTimezone(new Date(), timezone);
-    if (!isTodayWorkout) return emptyAchievements();
+    if (workoutDateKey !== dateKeyInTimezone(new Date(), timezone)) return emptyAchievements();
 
     const q = models.Workout.sequelize;
-    const userWhere = {
-        telegramId: String(telegramId),
-    };
     const exerciseSql = q.escape(workoutData.exercise);
     const workoutDateSql = q.escape(workoutData.date);
     const volumeExpression = "CASE WHEN isTime = 0 AND repsOrTime IS NOT NULL AND sets IS NOT NULL THEN sets * COALESCE(NULLIF(weight, 0), 1) * repsOrTime ELSE 0 END";
     const previous = await models.Workout.findOne({
-        where: userWhere,
+        where: {telegramId: String(telegramId)},
         attributes: [
             [fn("COUNT", literal("1")), "userCount"],
             [fn("MAX", literal(`CASE WHEN date <= ${workoutDateSql} THEN date ELSE NULL END`)), "userDate"],
@@ -99,9 +129,9 @@ export async function workoutAchievements(telegramId, workoutData, timezone = "U
     const userPreviousCount = Number(previous?.userCount || 0);
     const latestUserWorkoutDate = previous?.userDate ? new Date(previous.userDate) : null;
     const staleThreshold = new Date(workoutDate);
-    staleThreshold.setMonth(staleThreshold.getMonth() - 2);
+    staleThreshold.setUTCMonth(staleThreshold.getUTCMonth() - 2);
     const inactiveMonthThreshold = new Date(workoutDate);
-    inactiveMonthThreshold.setMonth(inactiveMonthThreshold.getMonth() - 1);
+    inactiveMonthThreshold.setUTCMonth(inactiveMonthThreshold.getUTCMonth() - 1);
 
     return {
         newVolumeRecord: previousCount > 0 && currentVolume > 0 && currentVolume > bestPreviousVolume,
